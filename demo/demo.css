@@ -1,0 +1,405 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b0b12;
+  color: #f1f1f6;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  overflow-x: hidden;
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(124, 92, 255, 0.28),
+    transparent 60%
+  );
+}
+
+.etiqueta {
+  margin: 0;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b9a8ff;
+}
+
+h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.bajada {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 1.15rem;
+  color: #a9a9bd;
+}
+
+.boton {
+  margin-top: 0.75rem;
+  padding: 1rem 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: #7c5cff;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(124, 92, 255, 0.45);
+}
+
+.scroll {
+  position: absolute;
+  bottom: 2rem;
+  margin: 0;
+  color: #6f6f86;
+  font-size: 0.9rem;
+}
+
+.seccion {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem;
+}
+
+h2 {
+  margin: 0 0 2.5rem;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: -0.02em;
+}
+
+.grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.tarjeta {
+  min-height: 200px;
+  padding: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: linear-gradient(160deg, #1b1b2b, #12121c);
+}
+
+.tarjeta h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.3rem;
+}
+
+.tarjeta p {
+  margin: 0;
+  color: #a9a9bd;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.caja {
+  display: grid;
+  place-items: center;
+  width: 220px;
+  height: 140px;
+  border-radius: 16px;
+  background: #1b1b2b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 600;
+}
+
+.pie {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6f6f86;
+}
+
+/* ---- Lote 2 ---- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-contenido {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.bajada strong {
+  color: #f1f1f6;
+}
+
+.cinta {
+  padding: 1.25rem 0;
+  border-block: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cinta-item {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6f6f86;
+  white-space: nowrap;
+}
+
+.cifra {
+  padding: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: #12121c;
+}
+
+.cifra-numero {
+  display: block;
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.cifra p {
+  margin: 0.25rem 0 0;
+  color: #a9a9bd;
+}
+
+.parallax {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 0;
+}
+
+.caja-alta {
+  height: 200px;
+  background: linear-gradient(160deg, #2a2150, #1b1b2b);
+}
+
+.movil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+}
+
+.movil-texto {
+  flex: 1 1 260px;
+  display: grid;
+  gap: 1rem;
+  color: #a9a9bd;
+  font-size: 1.05rem;
+}
+
+.movil-texto p {
+  margin: 0;
+}
+
+.movil-texto strong {
+  color: #f1f1f6;
+}
+
+.pantalla {
+  display: grid;
+  gap: 0.9rem;
+  padding: 3.25rem 0 1.5rem;
+}
+
+.pantalla {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pantalla > :not(.a-sangre) {
+  margin-inline: 1rem;
+}
+
+.pantalla .etiqueta {
+  justify-self: start;
+}
+
+.pantalla h3,
+.hoja h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.boton-ancho {
+  width: auto;
+  margin-top: 0;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+.hoja .boton-ancho {
+  width: 100%;
+}
+
+.boton-claro {
+  background: #f1f1f6;
+  color: #12121c;
+  box-shadow: none;
+}
+
+.fila-lista {
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: #1b1b2b;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lamina {
+  height: 130px;
+  padding: 1rem;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #2a2150, #1b1b2b);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.lamina h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.lamina p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #a9a9bd;
+}
+
+.hoja {
+  display: grid;
+  gap: 1rem;
+  padding: 0.5rem 1.5rem 1.75rem;
+}
+
+.hoja p {
+  margin: 0;
+  color: #a9a9bd;
+}
+
+:focus-visible {
+  outline: 2px solid #b9a8ff;
+  outline-offset: 3px;
+}
+
+/* ---- Lote 3 ---- */
+
+.acento {
+  color: #b9a8ff;
+}
+
+.plan {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  min-height: 200px;
+  padding: 1.75rem;
+}
+
+.plan h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.plan p {
+  margin: 0;
+  color: #a9a9bd;
+}
+
+.esqueleto {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.enlace {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #b9a8ff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.seccion-angosta {
+  max-width: 720px;
+}
+
+.preguntas {
+  color: #f1f1f6;
+}
+
+.preguntas [role="region"] {
+  color: #a9a9bd;
+}
+
+.pantalla-nota {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6f6f86;
+}
+
+.pie a {
+  color: #b9a8ff;
+  font-weight: 600;
+}
+
+/* ---- Lote 4 ---- */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  min-height: 56px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.nav a {
+  color: #b9a8ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.plan .plan-precio {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f1f6;
+}
+
+.plan [role="tablist"] {
+  justify-self: start;
+}

@@ -1,0 +1,39 @@
+{
+  "name": "motion-kit",
+  "version": "0.1.0",
+  "description": "Librería propia de efectos y animaciones para React",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/motion-kit.cjs",
+  "module": "./dist/motion-kit.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/motion-kit.js",
+      "require": "./dist/motion-kit.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0"
+  }
+}
