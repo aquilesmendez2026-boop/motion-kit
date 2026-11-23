@@ -166,4 +166,27 @@ export const CSS_ENCABEZADO = `
 .mk-rot>span{grid-area:1/1;white-space:nowrap;opacity:0;translate:0 .35em;transition:opacity .45s ease,translate .45s ease}
 .mk-rot>span[data-activa]{opacity:1;translate:0 0}
 @media (prefers-reduced-motion:reduce){.mk-enc-apertura{display:none}.mk-tomas>img,.mk-rot>span{transition:none;animation:none}}
+/* Película: salida «barra», telón al bajar y estado del negocio */
+.mk-enc-barra{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.6rem clamp(1rem,4vw,2rem);background:color-mix(in srgb,var(--mk-fondo,#fff) 92%,transparent);border-bottom:1px solid color-mix(in srgb,var(--mk-texto,#000) 12%,transparent);backdrop-filter:blur(8px);translate:0 -110%;opacity:0;transition:translate .35s ease,opacity .35s ease}
+.mk-enc-barra[data-visible]{translate:0 0;opacity:1}
+.mk-enc-barra-logo{height:34px;width:auto}
+.mk-enc-barra-nombre{font-family:var(--mk-fuente-titulo,inherit);font-size:1.15rem}
+.mk-enc-barra .mk-btn{padding:.5rem 1rem;font-size:.85rem}
+.mk-enc-cortinas{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:clip}
+.mk-enc-cortinas i{position:absolute;top:0;bottom:0;width:50.5%;background:var(--mk-acento,#7c5cff)}
+.mk-enc-cortinas i:first-child{left:0;translate:-100% 0}
+.mk-enc-cortinas i:last-child{right:0;translate:100% 0}
+@supports (animation-timeline: view()){
+  .mk-enc[data-salida=barra]>.mk-enc-in{animation:mk-sal-achicar linear both;animation-timeline:view();animation-range:exit 0% exit 100%}
+  .mk-enc[data-salida=telon] .mk-enc-cortinas i{animation:linear both;animation-timeline:view();animation-range:exit 10% exit 90%}
+  .mk-enc[data-salida=telon] .mk-enc-cortinas i:first-child{animation-name:mk-sal-cortina-izq}
+  .mk-enc[data-salida=telon] .mk-enc-cortinas i:last-child{animation-name:mk-sal-cortina-der}
+}
+@keyframes mk-sal-cortina-izq{from{translate:-100% 0}to{translate:0 0}}
+@keyframes mk-sal-cortina-der{from{translate:100% 0}to{translate:0 0}}
+.mk-enc-estado{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem;margin:0;font-size:.9rem}
+.mk-enc-estado>i{width:.6rem;height:.6rem;border-radius:50%;background:color-mix(in srgb,var(--mk-texto,#000) 45%,transparent)}
+.mk-enc-estado[data-abierto]>i{background:#2fbf71;box-shadow:0 0 0 3px color-mix(in srgb,#2fbf71 30%,transparent)}
+.mk-enc-estado-proxima{opacity:.85}
+@media (prefers-reduced-motion:reduce){.mk-enc-cortinas{display:none}.mk-enc-barra{transition:none}}
 `;

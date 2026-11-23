@@ -118,6 +118,61 @@ const tomaActiva = (pagina) => pagina.locator(`${VISTA} .mk-tomas`).getAttribute
   await ctx.close();
 }
 
+// --- Barra al bajar, telón y estado del negocio ---
+const bajarHasta = (pagina, fraccion) => pagina.evaluate(async ([v, f]) => {
+  const h = document.querySelector(`${v} .mk-enc`);
+  const y = window.scrollY + h.getBoundingClientRect().top + h.offsetHeight * f;
+  window.scrollTo(0, y);
+  await new Promise((r) => setTimeout(r, 500));
+}, [VISTA, fraccion]);
+{
+  const { ctx, pagina, errores } = await abrir();
+  await pagina.locator('[data-prueba="salida"]').selectOption("barra");
+  await pagina.locator('[data-prueba="nombre"]').fill("Café Vinilo");
+  await pagina.waitForTimeout(300);
+  const antes = await pagina.evaluate(() => {
+    const b = document.querySelector(".mk-enc-barra");
+    return { hay: Boolean(b), inert: b?.inert, visible: b?.hasAttribute("data-visible"), h1: document.querySelectorAll('[data-prueba="vista"] h1').length, h1EnBarra: b?.querySelectorAll("h1,h2").length };
+  });
+  revisar(antes.hay && antes.inert && !antes.visible && antes.h1 === 1 && antes.h1EnBarra === 0, `barra: mientras se ve el encabezado está oculta e inert, y hay un solo h1 (${JSON.stringify(antes)})`);
+  await bajarHasta(pagina, 1.2);
+  const despues = await pagina.evaluate(() => {
+    const b = document.querySelector(".mk-enc-barra");
+    return { visible: b.hasAttribute("data-visible"), inert: b.inert, texto: b.textContent, botones: b.querySelectorAll("a,button").length };
+  });
+  revisar(despues.visible && !despues.inert && despues.texto.includes("Café Vinilo") && despues.texto.includes("Ver la carta") && despues.botones === 1,
+    `barra: al bajar aparece con el nombre y el botón principal (${JSON.stringify(despues)})`);
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  await pagina.locator('[data-prueba="barra-propia"]').check();
+  await pagina.waitForTimeout(300);
+  revisar((await pagina.locator(".mk-enc-barra").count()) === 0, "barraPropia: no dibuja otra barra");
+  // Telón
+  await pagina.locator('[data-prueba="salida"]').selectOption("telon");
+  await pagina.waitForTimeout(300);
+  const cortina = () => pagina.evaluate((v) => getComputedStyle(document.querySelector(`${v} .mk-enc-cortinas i`)).translate, VISTA);
+  const c0 = await cortina();
+  await bajarHasta(pagina, 0.7);
+  const c1 = await cortina();
+  revisar(c0 !== c1, `telón: al bajar, las cortinas avanzan (${c0} → ${c1})`);
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  // Estado del negocio
+  const estado = async (v) => {
+    await pagina.locator('[data-prueba="estado"]').selectOption(v);
+    await pagina.waitForTimeout(250);
+    return (await pagina.locator(`${VISTA} .mk-enc-estado`).count()) ? (await pagina.locator(`${VISTA} .mk-enc-estado`).textContent()) : null;
+  };
+  const abierto = await estado("abierto");
+  const cerrado = await estado("cerrado");
+  const proxima = await estado("proxima");
+  const nada = await estado("");
+  revisar(abierto?.includes("Abierto ahora · cierra a las 22:00"), `estado: abierto se lee («${abierto}»)`);
+  revisar(cerrado?.includes("Cerrado · abre el lunes a las 9:00"), `estado: cerrado se lee («${cerrado}»)`);
+  revisar(proxima?.includes("Próxima hora libre: hoy 17:30"), `estado: próxima hora se lee («${proxima}»)`);
+  revisar(nada === null, "estado: sin datos no se dibuja");
+  revisar(errores.length === 0, "barra, telón y estado: sin errores" + (errores.length ? ": " + errores[0] : ""));
+  await ctx.close();
+}
+
 await navegador.close();
 console.log(fallas ? `\n${fallas} fallas` : "\nTodo bien");
 process.exit(fallas ? 1 : 0);

@@ -17,6 +17,14 @@ const TEXTOS: TextoEfecto[] = ["revelar", "voltear", "rebote", "encender", "glit
 const EJEMPLO = { antetitulo: "Barrio Italia · desde 2019", titulo: "Café de *especialidad*, tostado aquí", bajada: "Granos de origen, pan de masa madre y un rincón tranquilo para quedarse.", boton: "Ver la carta", secundario: "Cómo llegar", datos: "Lun a sáb, 8:00 a 20:00, Santiago" };
 
 /** El editor. Con `id`, abre ese diseño de la biblioteca. */
+/** Datos de ejemplo del estado del negocio (en La Mente vienen de su horario y su agenda). */
+const hoyA = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString(); };
+const ESTADOS_DEMO = {
+  abierto: { abierto: true, cierraA: "22:00" },
+  cerrado: { abierto: false, abreA: { dia: "lunes", hora: "9:00" } },
+  proxima: { abierto: true, cierraA: "22:00", proximaHora: hoyA(17, 30) },
+};
+
 export function Encabezados({ id }: { id?: string } = {}) {
   const [estilo, setEstilo] = useState<EstiloId>("neon");
   const [composicion, setComposicion] = useState<ComposicionId>("letrero");
@@ -52,6 +60,9 @@ export function Encabezados({ id }: { id?: string } = {}) {
   const [fotosEjemplo, setFotosEjemplo] = useState(false);
   const [tomas, setTomas] = useState(false);
   const [palabras, setPalabras] = useState("");
+  const [nombreNegocio, setNombreNegocio] = useState("");
+  const [barraPropia, setBarraPropia] = useState(false);
+  const [estadoDemo, setEstadoDemo] = useState<keyof typeof ESTADOS_DEMO | "">("");
   // Biblioteca: el diseño abierto (si vino de ahí), su nombre y etiquetas, y el último aviso.
   const [abierto, setAbierto] = useState<DisenoBiblioteca | null>(null);
   const [nombre, setNombre] = useState("");
@@ -110,6 +121,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     ...(fotosEjemplo ? { imagenes: ["ejemplo/1", "ejemplo/2", "ejemplo/3"], alt: "Foto de ejemplo" } : {}),
     ...(apertura ? { apertura: presenta.trim() ? { presenta } : {} } : {}), ...(tomas ? { tomas: true } : {}),
     ...(palabras.trim() ? { palabras: palabras.split(",").map((w) => w.trim()).filter(Boolean) } : {}),
+    ...(nombreNegocio.trim() ? { nombre: nombreNegocio } : {}), ...(estadoDemo ? { estado: true } : {}),
   };
   const resultado = validarReceta(cruda);
   const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
@@ -131,6 +143,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     setShader(r.shader ?? ""); setForma(r.objeto?.forma ?? "");
     setApertura(Boolean(r.apertura)); setPresenta(r.apertura?.presenta ?? ""); setTomas(Boolean(r.tomas));
     setFotosEjemplo(Boolean(r.imagenes?.length && r.imagenes.every((k) => k.startsWith("ejemplo/")))); setPalabras((r.palabras ?? []).join(", "));
+    setNombreNegocio(r.nombre ?? ""); setEstadoDemo(r.estado ? "abierto" : "");
     otra();
   };
   useEffect(() => {
@@ -281,6 +294,18 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <button className="enc-repetir" onClick={() => { olvidarApertura(); otra(); }} data-prueba="apertura-otra-vez">↻ Ver la apertura otra vez</button>
           <label className="estudio-check"><input type="checkbox" checked={fotosEjemplo} onChange={(e) => setFotosEjemplo(e.target.checked)} data-prueba="fotos-ejemplo" /> Fotos de ejemplo (tres)</label>
           <label className="estudio-check"><input type="checkbox" checked={tomas} onChange={(e) => setTomas(e.target.checked)} data-prueba="tomas" /> Varias tomas (necesita dos o más fotos)</label>
+          <label>Nombre del negocio (para la barra al bajar)
+            <input value={nombreNegocio} onChange={(e) => setNombreNegocio(e.target.value)} placeholder="Café Vinilo" data-prueba="nombre" />
+          </label>
+          <label className="estudio-check"><input type="checkbox" checked={barraPropia} onChange={(e) => setBarraPropia(e.target.checked)} data-prueba="barra-propia" /> La página ya tiene su barra (como La Mente)</label>
+          <label>Estado del negocio (datos de ejemplo)
+            <select value={estadoDemo} onChange={(e) => setEstadoDemo(e.target.value as keyof typeof ESTADOS_DEMO | "")} data-prueba="estado">
+              <option value="">No mostrar</option>
+              <option value="abierto">Abierto, cierra a las 22:00</option>
+              <option value="cerrado">Cerrado, abre el lunes</option>
+              <option value="proxima">Abierto y próxima hora libre</option>
+            </select>
+          </label>
           <label>Palabras que rotan (en la palabra resaltada, separadas por coma)
             <input value={palabras} onChange={(e) => setPalabras(e.target.value)} placeholder="barrio, autor" data-prueba="palabras" />
           </label>
@@ -375,7 +400,8 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <Marco key={`${lmTema}-${lmPaleta}`} tema={lmTema} paleta={lmPaleta} estilo={estilo}>
             {/* La vista sale de la receta validada: lo que se ve es lo que se guarda (más shader, objeto y foto local). */}
             <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#encabezados" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#encabezados" }}
-              imagenes={foto ? [foto, foto, foto] : props.imagenes} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel} />
+              imagenes={foto ? [foto, foto, foto] : props.imagenes} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel}
+              barraPropia={barraPropia} estadoNegocio={estadoDemo ? ESTADOS_DEMO[estadoDemo] : undefined} />
           </Marco>
         </div>
         <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>

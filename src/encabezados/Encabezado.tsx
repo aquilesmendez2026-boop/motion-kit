@@ -20,6 +20,8 @@ import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/niv
 import { Apertura, aperturaYaVista } from "./Apertura";
 import { Tomas } from "./Tomas";
 import { PalabrasRotan } from "./PalabrasRotan";
+import { BarraEncabezado } from "./BarraEncabezado";
+import { EstadoNegocio, type DatosEstado } from "./EstadoNegocio";
 
 export { ALTOS, ALTO_IDS, SALIDAS, SALIDA_IDS } from "./catalogo";
 export type { AltoEncabezado, SalidaEncabezado } from "./catalogo";
@@ -83,6 +85,14 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   tomas?: boolean;
   /** Palabras que rotan en la palabra resaltada del título (la del título va primero). */
   palabras?: string[];
+  /** Con salida «barra»: la página ya tiene su barra (La Mente); el encabezado solo se achica. */
+  barraPropia?: boolean;
+  /** Para la barra: logo (URL) y nombre del negocio. */
+  logo?: string;
+  nombre?: string;
+  /** Muestra el estado del negocio (abierto, cerrado, próxima hora) con `estadoNegocio`. */
+  estado?: boolean;
+  estadoNegocio?: DatosEstado;
 }
 
 /**
@@ -92,7 +102,8 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function Encabezado({
   composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
-  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, palabras, className, style, ...resto
+  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, palabras,
+  barraPropia, logo, nombre, estado, estadoNegocio, className, style, ...resto
 }: EncabezadoProps) {
   useStyles("encabezado", CSS_ENCABEZADO);
   const estilo = useEstilo();
@@ -156,7 +167,8 @@ export function Encabezado({
     <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre"
       retraso={entrada === "telon" ? 900 : entrada === "foco" ? 600 : 150} resaltado={rotacion && <PalabrasRotan palabras={rotacion} quieto={quieto} />} />
   );
-  const baj = bajada && <p className="mk-enc-bajada">{bajada}</p>;
+  const est = estado && estadoNegocio && <EstadoNegocio datos={estadoNegocio} />;
+  const baj = (bajada || est) && <>{bajada && <p className="mk-enc-bajada">{bajada}</p>}{est}</>;
   const dat = datos && datos.length > 0 && <ul className="mk-enc-datos">{datos.map((d) => <li key={d}>{d}</li>)}</ul>;
   const bot = boton && (
     <div className="mk-enc-botones">
@@ -192,6 +204,7 @@ export function Encabezado({
 
   const fondoFoto = composicion === "tarjeta" || composicion === "imagen";
   return (
+    <>
     <header
       {...resto}
       ref={ref}
@@ -226,7 +239,12 @@ export function Encabezado({
       </div>
       {composicion !== "dividido" && protagonista}
       <div className="mk-enc-telon" aria-hidden="true"><i /><i /></div>
+      {salida === "telon" && <div className="mk-enc-cortinas" aria-hidden="true"><i /><i /></div>}
       {abriendo && <Apertura presenta={apertura?.presenta} titulo={titulo.replace(/\*/g, "")} alTerminar={terminarApertura} />}
     </header>
+    {salida === "barra" && !barraPropia && (
+      <BarraEncabezado objetivo={ref} logo={logo} nombre={nombre ?? titulo.replace(/\*/g, "")} boton={boton} pack={pack ?? estilo?.pack ?? "clasico"} />
+    )}
+    </>
   );
 }

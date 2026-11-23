@@ -42,7 +42,7 @@ export const SALIDAS: Record<SalidaEncabezado, string> = {
   desvanecer: "Sube y se desvanece",
   abrir: "Se abre (texto arriba, foto abajo)",
   barra: "Se vuelve la barra de arriba",
-  telon: "Se abre como telón",
+  telon: "Cierra un telón al bajar",
 };
 export const SALIDA_IDS = Object.keys(SALIDAS) as SalidaEncabezado[];
 
