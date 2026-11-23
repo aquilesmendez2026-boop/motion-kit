@@ -8,6 +8,7 @@ import {
 import { RUBRO_IDS, encabezadoPorRubro, semillaAzar, type EncabezadoDeRubro } from "../src/encabezados/rubros";
 import { RECETAS } from "../src/plantillas/recetas";
 import { ESTILO_IDS } from "../src/estilos/estilos";
+import { franjaDe } from "../src/receta/hora";
 
 const base = { version: 1, estilo: "pelicula", titulo: "Café de *especialidad*" };
 
@@ -30,7 +31,7 @@ test("una receta mínima pasa y toma los valores por defecto", () => {
   const r = validarReceta(base);
   assert.ok(r.ok);
   assert.deepEqual(r.receta, {
-    version: 1, estilo: "pelicula", composicion: "izquierda", entrada: "cascada", efectoTexto: "trailer", pack: r.receta.pack,
+    version: 2, estilo: "pelicula", composicion: "izquierda", entrada: "cascada", efectoTexto: "trailer", pack: r.receta.pack,
     titulo: "Café de *especialidad*", alto: "pantalla", profundidad: false, salida: "ninguna", ahorro: "auto",
   });
   assert.equal(r.avisos.length, 0);
@@ -46,7 +47,7 @@ test("la receta por defecto del editor pasa", () => {
   };
   const r = validarReceta(editor);
   assert.ok(r.ok, JSON.stringify(!r.ok && r.errores));
-  assert.deepEqual(r.receta, editor);
+  assert.deepEqual(r.receta, { ...editor, version: 2 });
 });
 
 test("las recetas de los 10 rubros pasan (40 semillas por rubro)", () => {
@@ -71,11 +72,11 @@ test("las portadas de las plantillas pasan", () => {
 
 test("una receta mala da sus errores en español, con el campo", () => {
   const e = errores({
-    version: 2, estilo: "barroco", titulo: "x".repeat(81), composicion: "rara", datos: ["a", "b", "c", "d", "e"],
-    botones: [{ texto: "Ir", href: "javascript:alert(1)" }], alto: 150, mover: ["puntero", "puntero"], shader: "aurora", color: "rojo",
+    version: 3, estilo: "barroco", titulo: "x".repeat(81), composicion: "rara", datos: ["a", "b", "c", "d", "e"],
+    botones: [{ texto: "Ir", href: "javascript:alert(1)" }], alto: 150, mover: ["puntero", "puntero"], color: "rojo",
   });
   const por = Object.fromEntries(e.map((x) => [x.campo, x.mensaje]));
-  assert.match(por.version, /tiene que ser 1/);
+  assert.match(por.version, /tiene que ser 1 o 2/);
   assert.match(por.estilo, /Elige un estilo/);
   assert.match(por.titulo, /no puede pasar de 80 letras \(tiene 81\)/);
   assert.match(por.composicion, /composición/);
@@ -83,7 +84,6 @@ test("una receta mala da sus errores en español, con el campo", () => {
   assert.match(por["botones[0].href"], /https:\/\//);
   assert.match(por.alto, /20 a 100/);
   assert.match(por.mover, /no puede repetir/);
-  assert.match(por.shader, /receta v2/);
   assert.match(por.color, /no va en la receta/);
 });
 
@@ -129,10 +129,10 @@ test("fotos: URL https o key de S3", () => {
 test("normalizar nunca lanza y quita lo desconocido", () => {
   for (const x of [null, undefined, 3, "x", [], { titulo: 5 }, { botones: "x", datos: {}, mover: 3, imagenes: null }]) {
     const r = normalizarReceta(x);
-    assert.equal(r.version, 1);
+    assert.equal(r.version, 2);
     assert.equal(typeof r.titulo, "string");
   }
-  const r = normalizarReceta({ ...base, shader: "aurora", objeto: { tipo: "3d" }, color: "rojo", composicion: "rara", variante: 2 });
+  const r = normalizarReceta({ ...base, shader: "nube", objeto: { forma: "esfera" }, color: "rojo", composicion: "rara", variante: 2 });
   assert.ok(!("shader" in r) && !("objeto" in r) && !("color" in r));
   assert.equal(r.composicion, "izquierda");
   assert.ok(!("variante" in r), "sin efecto no queda la variante");
@@ -202,8 +202,73 @@ test("el contrato está al día con el código", () => {
   const archivo = readFileSync("contrato/encabezado-motionkit.json", "utf8");
   assert.equal(archivo, textoContrato(), "Corre: npm run contrato");
   const c = JSON.parse(archivo);
-  assert.equal(c.version, 1);
+  assert.equal(c.version, 2);
+  assert.deepEqual(c.versiones, [1, 2]);
   assert.equal(c.listas.composicion.length, 12);
   assert.equal(c.listas.estilo.length, ESTILO_IDS.length);
-  assert.ok(!c.campos.includes("shader") && !c.campos.includes("objeto"));
+  for (const k of ["shader", "objeto", "apertura", "tomas", "fotoEnLetras", "tratamiento", "estado", "palabras", "horaDelDia", "logo", "nombre"]) assert.ok(c.campos.includes(k), k);
 });
+
+// --- Receta v2 ----------------------------------------------------------------------------------------------------
+
+test("una receta v1 pasa y se guarda como v2", () => {
+  const r = validarReceta(base);
+  assert.ok(r.ok && r.receta.version === 2);
+  assert.ok(validarReceta({ ...base, version: 2 }).ok);
+  assert.ok(!validarReceta({ ...base, version: 3 }).ok);
+});
+
+test("los campos v2 se validan", () => {
+  const e = errores({
+    ...base, palabras: ["a", "b", "c", "d", "e"], apertura: { presenta: "p".repeat(41) }, tratamiento: "sepia",
+    logo: "javascript:x", nombre: "n".repeat(41), objeto: { forma: "esfera" }, shader: "nube", horaDelDia: "si", estado: 1, tomas: "no",
+  });
+  const por = Object.fromEntries(e.map((x) => [x.campo, x.mensaje]));
+  for (const c of ["palabras", "apertura.presenta", "tratamiento", "logo", "nombre", "objeto.forma", "shader", "horaDelDia", "estado", "tomas"]) assert.ok(por[c], c);
+  assert.match(por.palabras, /hasta 4/);
+  assert.ok(errores({ ...base, palabras: ["x".repeat(25)] }).some((x) => x.campo === "palabras[0]"));
+  const ok = validarReceta({
+    ...base, version: 2, salida: "barra", logo: "negocio/logo.webp", nombre: "Café Vinilo", tratamiento: "duotono", horaDelDia: true, estado: true,
+    apertura: { presenta: "Café Vinilo presenta" }, objeto: { forma: "lata", texto: "Vinilo" }, imagenes: ["a.jpg", "b.jpg"], tomas: true,
+  });
+  assert.ok(ok.ok, JSON.stringify(!ok.ok && ok.errores));
+  assert.ok(validarReceta({ ...base, shader: "aurora" }).ok, "shader ya no es de otra versión");
+});
+
+test("palabras exige una palabra resaltada", () => {
+  const e = errores({ ...base, titulo: "Café de especialidad", palabras: ["barrio", "autor"] });
+  assert.match(e.find((x) => x.campo === "palabras")!.mensaje, /asteriscos/);
+});
+
+test("tomas y foto en letras necesitan fotos", () => {
+  const r = validarReceta({ ...base, tomas: true, fotoEnLetras: true, imagenes: ["a.jpg"] });
+  assert.ok(r.ok);
+  assert.ok(!("tomas" in r.receta), "con una sola foto no hay tomas");
+  assert.equal(r.receta.fotoEnLetras, true);
+  assert.ok(r.avisos.some((a) => /tomas/i.test(a)));
+  const sin = normalizarReceta({ ...base, fotoEnLetras: true });
+  assert.ok(!("fotoEnLetras" in sin));
+});
+
+test("protagonista v2: tomas gana, después efecto y palabras", () => {
+  const r = validarReceta({ ...base, imagenes: ["a.jpg", "b.jpg"], tomas: true, efecto: "rejilla", palabras: ["barrio", "autor"] });
+  assert.ok(r.ok);
+  assert.equal(r.receta.tomas, true);
+  assert.ok(!("efecto" in r.receta) && !("palabras" in r.receta));
+  assert.equal(r.avisos.length, 2);
+  assert.equal(protagonistaDe(r.receta), "tomas");
+  const f = normalizarReceta({ ...base, efecto: "rejilla", shader: "aurora" });
+  assert.equal(f.efecto, "rejilla");
+  assert.ok(!("shader" in f), "un solo fondo animado");
+  const p = normalizarReceta({ ...base, palabras: ["barrio", "autor"], efectoTexto: "onda" });
+  assert.deepEqual(p.palabras, ["barrio", "autor"]);
+  assert.equal(p.efectoTexto, "revelar");
+  assert.equal(protagonistaDe(p), "palabras");
+});
+
+test("franjaDe en los bordes (hora local)", () => {
+  const a = (h: number, m: number) => franjaDe(new Date(2026, 10, 23, h, m));
+  assert.deepEqual([a(5, 59), a(6, 0), a(11, 59), a(12, 0), a(18, 59), a(19, 0), a(23, 59), a(0, 0)],
+    ["noche", "manana", "manana", "tarde", "tarde", "noche", "noche", "noche"]);
+});
+

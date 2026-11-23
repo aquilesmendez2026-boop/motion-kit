@@ -124,7 +124,7 @@ for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, fa
   ok((await page.locator(`${VISTA} h1`).getAttribute("aria-label")) === "Pan de masa madre, todos los días", "el lector lee el título sin asteriscos");
   const json = JSON.parse(await page.locator('[data-prueba="json"]').textContent());
   ok(json.composicion && json.entrada && json.pack === "ticket" && json.titulo.includes("*masa madre*"), "el JSON guarda lo que el cliente eligió");
-  ok(json.version === 1 && json.estilo && (await page.locator('[data-prueba="json"][data-valida]').count()) === 1, "el JSON es una receta v1 válida");
+  ok(json.version === 2 && json.estilo && (await page.locator('[data-prueba="json"][data-valida]').count()) === 1, "el JSON es una receta válida (se guarda como v2)");
   // receta mala: título largo → error en español con el campo; al corregirlo, vuelve a ser válida
   await page.locator('[data-campo="titulo"]').fill("x".repeat(90));
   await page.locator('[data-campo="titulo"]').blur();

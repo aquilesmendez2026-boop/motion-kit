@@ -99,7 +99,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     version: 1, estilo, composicion, entrada, efectoTexto, pack, ...(efecto ? { efecto, variante } : {}),
     antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada, datos, botones, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
     profundidad, ...(luz ? { luz } : {}), ...((profundidad || luz === "puntero") && mover !== "puntero,scroll" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
-    salida, ahorro,
+    salida, ahorro, ...(shader ? { shader } : {}), ...(forma ? { objeto: { forma, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } } : {}),
   };
   const resultado = validarReceta(cruda);
   const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
@@ -320,7 +320,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <a href={enlace.url} target="_blank" rel="noreferrer" data-prueba="enlace-vista">Abrir la vista aquí</a>
         </fieldset>
         <label className="estudio-check"><input type="checkbox" checked={celular} onChange={(e) => setCelular(e.target.checked)} /> Ver como celular</label>
-        <details><summary>Lo que se guarda (receta v1, JSON)</summary>
+        <details><summary>Lo que se guarda (receta, JSON)</summary>
           {!resultado.ok && (
             <ul className="enc-errores" data-prueba="errores">
               {resultado.errores.map((e) => <li key={e.campo + e.mensaje}><b>{e.campo}</b>: {e.mensaje}</li>)}
@@ -329,7 +329,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
           {resultado.ok && resultado.avisos.length > 0 && (
             <ul className="enc-avisos" data-prueba="avisos">{resultado.avisos.map((a) => <li key={a}>{a}</li>)}</ul>
           )}
-          {(shader || forma) && <small>El fondo WebGL y el objeto 3D se ven aquí, pero entran en la receta v2: no se guardan.</small>}
+          {forma && foto && <small>Las caras del objeto con tu foto se ven aquí; en la receta va la forma y el texto.</small>}
           {foto && <small>La foto propia no va en la receta: en La Mente se sube y queda su key de S3.</small>}
           <pre data-prueba="json" data-valida={resultado.ok ? "" : undefined}>{JSON.stringify(resultado.ok ? resultado.receta : cruda, null, 2)}</pre>
         </details>

@@ -56,7 +56,7 @@ test("normalizar nunca lanza y es estable", () => {
   for (const x of [null, [], 3, { bloques: "x" }, { encabezado: 5, relato: "hilo", bloques: [{ id: "A" }, 7] }]) {
     const p = normalizarPagina(x);
     assert.equal(p.version, 1);
-    assert.equal(p.encabezado.version, 1);
+    assert.equal(p.encabezado.version, 2);
     assert.deepEqual(normalizarPagina(p), p);
   }
   const p = normalizarPagina({ version: 1, encabezado: enc, relato: "hilo", relatoPagina: "luz", bloques: [{ id: "x", relato: "luz" }, { id: "x" }] });

@@ -1,6 +1,10 @@
 {
-  "$comentario": "Receta del encabezado de motion-kit, v1 (niveles 1 y 2: base y CSS). Generado por scripts/generar-contrato.mjs desde src/receta: no editar a mano. Un campo fuera de «campos» es un error. Textos: el largo se cuenta en letras, sin los asteriscos del resaltado. href: https://, #seccion o ruta relativa sin esquema. Fotos y póster: URL https:// o key de S3 (letras, números, / _ . -, sin .. ni //). alto y altoCelular: un nombre de la lista o un número de altoMinimo a altoMaximo (% del alto de la pantalla). Un solo protagonista: gana el primero de protagonista.orden que se mueva sin parar; los demás se calman con protagonista.calmar. En la página de La Mente, un encabezado de motion-kit cuenta como el bloque protagonista.",
-  "version": 1,
+  "$comentario": "Receta del encabezado de motion-kit, v2 (acepta v1 y la guarda como v2). Generado por scripts/generar-contrato.mjs desde src/receta: no editar a mano. v2: apertura {presenta}, tomas (2+ fotos), fotoEnLetras (con foto o póster), tratamiento, estado (los datos los pone quien dibuja), palabras (2 a 4, en la palabra resaltada con *asteriscos*), horaDelDia, shader, objeto {forma, texto}, logo y nombre (para salida «barra»). Un campo fuera de «campos» es un error. Textos: el largo se cuenta en letras, sin los asteriscos del resaltado. href: https://, #seccion o ruta relativa sin esquema. Fotos y póster: URL https:// o key de S3 (letras, números, / _ . -, sin .. ni //). alto y altoCelular: un nombre de la lista o un número de altoMinimo a altoMaximo (% del alto de la pantalla). Un solo protagonista: gana el primero de protagonista.orden que se mueva sin parar; los demás se calman con protagonista.calmar. En la página de La Mente, un encabezado de motion-kit cuenta como el bloque protagonista.",
+  "version": 2,
+  "versiones": [
+    1,
+    2
+  ],
   "campos": [
     "version",
     "estilo",
@@ -24,7 +28,18 @@
     "luz",
     "mover",
     "salida",
-    "ahorro"
+    "ahorro",
+    "apertura",
+    "tomas",
+    "fotoEnLetras",
+    "tratamiento",
+    "estado",
+    "palabras",
+    "horaDelDia",
+    "shader",
+    "objeto",
+    "logo",
+    "nombre"
   ],
   "obligatorios": [
     "version",
@@ -133,12 +148,31 @@
       "ninguna",
       "achicar",
       "desvanecer",
-      "abrir"
+      "abrir",
+      "barra",
+      "telon"
     ],
     "ahorro": [
       "auto",
       "siempre",
       "nunca"
+    ],
+    "tratamiento": [
+      "duotono",
+      "grano",
+      "trama",
+      "bn"
+    ],
+    "shader": [
+      "aurora",
+      "liquido",
+      "humo",
+      "luz"
+    ],
+    "forma": [
+      "caja",
+      "lata",
+      "tarjeta"
     ]
   },
   "topes": {
@@ -154,7 +188,12 @@
     "imagen": 500,
     "alt": 120,
     "altoMinimo": 20,
-    "altoMaximo": 100
+    "altoMaximo": 100,
+    "palabras": 4,
+    "palabra": 24,
+    "presenta": 40,
+    "nombre": 40,
+    "textoObjeto": 24
   },
   "defectos": {
     "composicion": "izquierda",
@@ -169,8 +208,11 @@
   },
   "protagonista": {
     "orden": [
+      "tomas",
       "efecto",
+      "palabras",
       "efectoTexto",
+      "fotoEnLetras",
       "luz"
     ],
     "textosQueSeMueven": [

@@ -1,6 +1,8 @@
-// Receta del encabezado v1: lo que La Mente guarda y valida. Solo niveles 1 y 2 (base y CSS).
-// Shader, objeto 3D y video quedan para la v2. Este archivo no importa componentes ni React: corre igual en el
-// navegador, en Node (pruebas, contrato) y, copiado como contrato, en el backend.
+// Receta del encabezado: lo que La Mente guarda y valida. La v2 suma el encabezado de película (apertura, tomas,
+// foto en las letras, tratamiento, estado del negocio, palabras que rotan, barra y telón, hora del día), el fondo WebGL,
+// el objeto 3D, el logo y el nombre. Una v1 sigue valiendo y se guarda como v2. El video con transparencia queda fuera.
+// Este archivo no importa componentes ni React: corre igual en el navegador, en Node (pruebas, contrato) y, copiado
+// como contrato, en el backend.
 import { ESTILOS, ESTILO_IDS, type EstiloId, type TextoEfecto } from "../estilos/estilos";
 import { PACK_IDS, type PackBotonId } from "../piezas/packs";
 import {
@@ -11,9 +13,14 @@ import type { EfectoId, Variante } from "../efectos/tokens";
 import type { ModoLuz } from "../escena/LuzYReflejo";
 import type { FuenteMovimiento } from "../escena/movimiento";
 import type { ModoAhorro } from "../escena/nivel";
+import type { ShaderId } from "../escena/ShaderFondo";
+import type { FormaObjeto } from "../escena/Objeto3DCss";
 import type { EncabezadoProps } from "../encabezados/Encabezado";
 
-export const VERSION_RECETA = 1 as const;
+export const VERSION_RECETA = 2 as const;
+/** Las versiones que se aceptan al validar; lo que se guarda es siempre la última. */
+export const VERSIONES_RECETA = [1, 2] as const;
+export type Tratamiento = "duotono" | "grano" | "trama" | "bn";
 
 // Listas cerradas. Las que no tienen un catálogo de datos se escriben aquí como `Record<Tipo, true>`: si el tipo
 // suma o pierde un valor, el typecheck falla hasta que esta lista lo siga.
@@ -29,6 +36,9 @@ const EFECTOS: Record<EfectoId, true> = {
 const LUCES: Record<ModoLuz, true> = { puntero: true, barrido: true };
 const MOVIMIENTOS: Record<FuenteMovimiento, true> = { puntero: true, scroll: true, inclinacion: true };
 const AHORROS: Record<ModoAhorro, true> = { auto: true, siempre: true, nunca: true };
+const TRATAMIENTOS: Record<Tratamiento, true> = { duotono: true, grano: true, trama: true, bn: true };
+const SHADERS: Record<ShaderId, true> = { aurora: true, liquido: true, humo: true, luz: true };
+const FORMAS: Record<FormaObjeto, true> = { caja: true, lata: true, tarjeta: true };
 
 export const LISTAS_RECETA = {
   estilo: ESTILO_IDS,
@@ -43,6 +53,9 @@ export const LISTAS_RECETA = {
   mover: Object.keys(MOVIMIENTOS) as FuenteMovimiento[],
   salida: SALIDA_IDS,
   ahorro: Object.keys(AHORROS) as ModoAhorro[],
+  tratamiento: Object.keys(TRATAMIENTOS) as Tratamiento[],
+  shader: Object.keys(SHADERS) as ShaderId[],
+  forma: Object.keys(FORMAS) as FormaObjeto[],
 };
 
 /** Topes de largo (en letras; los asteriscos del resaltado no cuentan) y de cantidad. */
@@ -60,6 +73,11 @@ export const TOPES_RECETA = {
   alt: 120,
   altoMinimo: 20,
   altoMaximo: 100,
+  palabras: 4,
+  palabra: 24,
+  presenta: 40,
+  nombre: 40,
+  textoObjeto: 24,
 } as const;
 
 /** Lo que se pone cuando la receta no lo trae. `efectoTexto` y `pack` salen del estilo. */
@@ -79,17 +97,13 @@ export const DEFECTOS_RECETA = {
  * sigue al dedo. Las capas 2.5D y la luz que sigue al dedo no cuentan: solo se mueven si la persona las mueve.
  */
 export const PROTAGONISTA_RECETA = {
-  orden: ["efecto", "efectoTexto", "luz"] as const,
+  /** «efecto» es el fondo animado (efecto o fondo WebGL); «fotoEnLetras» solo se movería con video (no existe en v2). */
+  orden: ["tomas", "efecto", "palabras", "efectoTexto", "fotoEnLetras", "luz"] as const,
   textosQueSeMueven: ["onda", "temblor", "glitch"] as TextoEfecto[],
   lucesQueSeMueven: ["barrido"] as ModoLuz[],
   calmar: { efectoTexto: "revelar" as TextoEfecto, luz: "puntero" as ModoLuz },
 };
 
-/** Campos que solo existen desde la v2: dan un error que lo dice, en vez de «campo desconocido». */
-const DE_LA_V2: Record<string, string> = {
-  shader: "El fondo WebGL entra en la receta v2.",
-  objeto: "El objeto 3D y el video entran en la receta v2.",
-};
 
 export interface BotonReceta {
   texto: string;
@@ -125,13 +139,33 @@ export interface RecetaEncabezado {
   mover?: FuenteMovimiento[];
   salida: SalidaEncabezado;
   ahorro: ModoAhorro;
+  // --- v2 ---
+  /** Apertura de película la primera vez de la sesión: franjas, «X presenta…» y el título. */
+  apertura?: { presenta?: string };
+  /** Las fotos se suceden con un acercamiento lento (necesita dos o más). */
+  tomas?: boolean;
+  /** El título relleno con la primera foto (o el póster). */
+  fotoEnLetras?: boolean;
+  tratamiento?: Tratamiento;
+  /** Muestra «Abierto ahora…» con los datos que pasa quien dibuja. */
+  estado?: boolean;
+  /** Palabras que rotan en la palabra resaltada del título. */
+  palabras?: string[];
+  /** Tinte según la hora del teléfono (mañana, tarde, noche). */
+  horaDelDia?: boolean;
+  shader?: ShaderId;
+  objeto?: { forma: FormaObjeto; texto?: string };
+  /** Para la barra al bajar: URL https o key de S3. */
+  logo?: string;
+  nombre?: string;
 }
 
-/** Campos de la receta v1, en el orden en que se guardan. */
+/** Campos de la receta, en el orden en que se guardan. */
 export const CAMPOS_RECETA = [
   "version", "estilo", "composicion", "entrada", "efectoTexto", "pack", "antetitulo", "titulo", "bajada", "datos",
   "botones", "alto", "altoCelular", "imagenes", "alt", "poster", "efecto", "variante", "profundidad", "luz", "mover",
-  "salida", "ahorro",
+  "salida", "ahorro", "apertura", "tomas", "fotoEnLetras", "tratamiento", "estado", "palabras", "horaDelDia", "shader",
+  "objeto", "logo", "nombre",
 ] as const satisfies readonly (keyof RecetaEncabezado)[];
 
 /** Los que la receta tiene que traer; el resto toma su valor por defecto. */
@@ -163,6 +197,8 @@ const cortar = (s: string, tope: number) => {
   return out.trim();
 };
 const CONTROL = /[\u0000-\u001f\u007f]/;
+/** Una palabra resaltada con asteriscos en el título. */
+const RESALTADO = /\*[^*]+\*/;
 
 function esHttps(s: string): boolean {
   try {
@@ -206,9 +242,9 @@ export function validarReceta(x: unknown): ResultadoReceta {
   if (!esObjeto(x)) return { ok: false, errores: [{ campo: "receta", mensaje: "La receta no es válida: tiene que ser un objeto." }] };
 
   for (const k of Object.keys(x)) {
-    if (!(CAMPOS_RECETA as readonly string[]).includes(k)) mal(k, DE_LA_V2[k] ?? "Este campo no va en la receta del encabezado.");
+    if (!(CAMPOS_RECETA as readonly string[]).includes(k)) mal(k, "Este campo no va en la receta del encabezado.");
   }
-  if (x.version !== VERSION_RECETA) mal("version", "La versión de la receta tiene que ser 1.");
+  if (!(VERSIONES_RECETA as readonly unknown[]).includes(x.version)) mal("version", "La versión de la receta tiene que ser 1 o 2.");
   if (!en(ESTILO_IDS, x.estilo)) mal("estilo", "Elige un estilo de la lista.");
 
   const lista = (campo: keyof typeof LISTAS_RECETA, mensaje: string) => {
@@ -223,6 +259,8 @@ export function validarReceta(x: unknown): ResultadoReceta {
   lista("luz", "La luz es «puntero» (sigue al dedo) o «barrido» (brillo que cruza).");
   lista("salida", "Elige cómo se va el encabezado al bajar, de la lista.");
   lista("ahorro", "El ahorro es «auto», «siempre» o «nunca».");
+  lista("tratamiento", "El tratamiento de foto es duotono, grano, trama o bn.");
+  lista("shader", "Elige un fondo WebGL de la lista.");
 
   const texto = (campo: "antetitulo" | "titulo" | "bajada" | "alt", tope: number, nombre: string, obligatorio = false) => {
     const v = x[campo];
@@ -288,6 +326,50 @@ export function validarReceta(x: unknown): ResultadoReceta {
     }
   }
 
+  // --- v2 ---
+  for (const k of ["tomas", "fotoEnLetras", "estado", "horaDelDia"] as const) {
+    if (x[k] !== undefined && typeof x[k] !== "boolean") mal(k, `«${k}» va prendido (true) o apagado (false).`);
+  }
+  if (x.apertura !== undefined) {
+    if (!esObjeto(x.apertura)) mal("apertura", "La apertura es un objeto (con «presenta», si quieres).");
+    else {
+      for (const k of Object.keys(x.apertura)) if (k !== "presenta") mal(`apertura.${k}`, "La apertura solo lleva «presenta».");
+      const p = x.apertura.presenta;
+      if (p !== undefined && (typeof p !== "string" || CONTROL.test(p) || largo(p.trim()) > TOPES_RECETA.presenta)) {
+        mal("apertura.presenta", `«Presenta» es un texto de hasta ${TOPES_RECETA.presenta} letras.`);
+      }
+    }
+  }
+  if (x.palabras !== undefined) {
+    if (!Array.isArray(x.palabras)) mal("palabras", "Las palabras son una lista de textos cortos.");
+    else {
+      if (x.palabras.length > TOPES_RECETA.palabras) mal("palabras", `Van hasta ${TOPES_RECETA.palabras} palabras.`);
+      x.palabras.forEach((w, i) => {
+        if (typeof w !== "string" || !w.trim() || CONTROL.test(w) || largo(w.trim()) > TOPES_RECETA.palabra) {
+          mal(`palabras[${i}]`, `Cada palabra va hasta ${TOPES_RECETA.palabra} letras, sin quedar vacía.`);
+        }
+      });
+      if (typeof x.titulo === "string" && !RESALTADO.test(x.titulo)) {
+        mal("palabras", "Las palabras rotan en la palabra resaltada: marca una con *asteriscos* en el título.");
+      }
+    }
+  }
+  if (x.objeto !== undefined) {
+    if (!esObjeto(x.objeto)) mal("objeto", "El objeto 3D trae su forma (caja, lata o tarjeta).");
+    else {
+      for (const k of Object.keys(x.objeto)) if (k !== "forma" && k !== "texto") mal(`objeto.${k}`, "El objeto 3D solo lleva forma y texto.");
+      if (!en(LISTAS_RECETA.forma, x.objeto.forma)) mal("objeto.forma", "La forma del objeto es caja, lata o tarjeta.");
+      const t = x.objeto.texto;
+      if (t !== undefined && (typeof t !== "string" || CONTROL.test(t) || largo(t.trim()) > TOPES_RECETA.textoObjeto)) {
+        mal("objeto.texto", `El texto del objeto va hasta ${TOPES_RECETA.textoObjeto} letras.`);
+      }
+    }
+  }
+  if (x.logo !== undefined && !esImagenSegura(x.logo)) mal("logo", "El logo es una URL https:// o una key de S3.");
+  if (x.nombre !== undefined && (typeof x.nombre !== "string" || CONTROL.test(x.nombre) || largo(x.nombre.trim()) > TOPES_RECETA.nombre)) {
+    mal("nombre", `El nombre del negocio va hasta ${TOPES_RECETA.nombre} letras.`);
+  }
+
   if (errores.length) return { ok: false, errores };
   const { receta, avisos } = normalizar(x);
   return { ok: true, receta, avisos };
@@ -328,13 +410,44 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
       }).slice(0, TOPES_RECETA.botones)
     : [];
   const imagenes = Array.isArray(x.imagenes) ? x.imagenes.filter(esImagenSegura).slice(0, TOPES_RECETA.imagenes) : [];
-  const efecto = deLista("efecto");
+  let efecto = deLista("efecto");
+  let shader = deLista("shader");
   const profundidad = x.profundidad === true;
   let luz = deLista("luz");
   let efectoTexto = deLista("efectoTexto") ?? e.texto[0];
+  const titulo = texto(x.titulo, TOPES_RECETA.titulo) ?? "";
+  const poster = esImagenSegura(x.poster) ? x.poster : undefined;
 
-  // Un solo protagonista: gana el primero de PROTAGONISTA_RECETA.orden.
-  let hay = Boolean(efecto);
+  // v2: lo que necesita fotos o un título resaltado, y un solo fondo animado.
+  let tomas = x.tomas === true;
+  if (tomas && imagenes.length < 2) {
+    avisos.push("Las tomas necesitan dos o más fotos: queda una sola foto, quieta.");
+    tomas = false;
+  }
+  const fotoEnLetras = x.fotoEnLetras === true && (imagenes.length > 0 || Boolean(poster));
+  let palabras = Array.isArray(x.palabras) && RESALTADO.test(titulo)
+    ? x.palabras.map((w) => texto(w, TOPES_RECETA.palabra)).filter((w): w is string => Boolean(w)).slice(0, TOPES_RECETA.palabras)
+    : [];
+  if (efecto && shader) {
+    avisos.push("Un solo fondo animado: queda el efecto y se quita el fondo WebGL.");
+    shader = undefined;
+  }
+
+  // Un solo protagonista: gana el primero de PROTAGONISTA_RECETA.orden (tomas, fondo animado, palabras, título, luz).
+  let hay = tomas;
+  if (efecto || shader) {
+    if (hay) {
+      avisos.push("Con las tomas, el fondo animado se quita: ya hay fotos que se mueven.");
+      efecto = undefined;
+      shader = undefined;
+    } else hay = true;
+  }
+  if (palabras.length >= 2) {
+    if (hay) {
+      avisos.push("Las palabras dejan de rotar: queda la del título, porque ya hay otra cosa que se mueve.");
+      palabras = [];
+    } else hay = true;
+  }
   if (PROTAGONISTA_RECETA.textosQueSeMueven.includes(efectoTexto)) {
     if (hay) {
       avisos.push(`El título pasa de «${efectoTexto}» a «${PROTAGONISTA_RECETA.calmar.efectoTexto}»: ya hay un fondo que se mueve.`);
@@ -353,7 +466,10 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
   const moverValido = Array.isArray(x.mover) ? [...new Set(x.mover.filter((m): m is FuenteMovimiento => en(LISTAS_RECETA.mover, m)))] : [];
   const usaMover = profundidad || luz === "puntero";
   const alt = texto(x.alt, TOPES_RECETA.alt);
-  const poster = esImagenSegura(x.poster) ? x.poster : undefined;
+  const apertura = esObjeto(x.apertura) ? { presenta: texto(x.apertura.presenta, TOPES_RECETA.presenta) } : undefined;
+  const objeto = esObjeto(x.objeto) && en(LISTAS_RECETA.forma, x.objeto.forma)
+    ? { forma: x.objeto.forma, texto: texto(x.objeto.texto, TOPES_RECETA.textoObjeto) }
+    : undefined;
 
   const r: RecetaEncabezado = {
     version: VERSION_RECETA,
@@ -363,7 +479,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     efectoTexto,
     pack: deLista("pack") ?? e.pack,
     antetitulo: texto(x.antetitulo, TOPES_RECETA.antetitulo),
-    titulo: texto(x.titulo, TOPES_RECETA.titulo) ?? "",
+    titulo,
     bajada: texto(x.bajada, TOPES_RECETA.bajada),
     datos: datos.length ? datos : undefined,
     botones: botones.length ? botones : undefined,
@@ -379,6 +495,17 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     mover: usaMover && moverValido.length ? moverValido : undefined,
     salida: deLista("salida") ?? DEFECTOS_RECETA.salida,
     ahorro: deLista("ahorro") ?? DEFECTOS_RECETA.ahorro,
+    apertura: apertura && (apertura.presenta ? apertura : {}),
+    tomas: tomas || undefined,
+    fotoEnLetras: fotoEnLetras || undefined,
+    tratamiento: deLista("tratamiento"),
+    estado: x.estado === true || undefined,
+    palabras: palabras.length >= 2 ? palabras : undefined,
+    horaDelDia: x.horaDelDia === true || undefined,
+    shader,
+    objeto: objeto && (objeto.texto ? objeto : { forma: objeto.forma }),
+    logo: esImagenSegura(x.logo) ? x.logo : undefined,
+    nombre: texto(x.nombre, TOPES_RECETA.nombre),
   };
   return { receta: sinVacios(r), avisos };
 }
@@ -392,7 +519,9 @@ function sinVacios(r: RecetaEncabezado): RecetaEncabezado {
 
 /** Qué hace de protagonista en la receta (lo que se mueve sin parar), o `null` si todo es sobrio. */
 export function protagonistaDe(r: RecetaEncabezado): (typeof PROTAGONISTA_RECETA.orden)[number] | null {
-  if (r.efecto) return "efecto";
+  if (r.tomas) return "tomas";
+  if (r.efecto || r.shader) return "efecto";
+  if (r.palabras && r.palabras.length >= 2) return "palabras";
   if (PROTAGONISTA_RECETA.textosQueSeMueven.includes(r.efectoTexto)) return "efectoTexto";
   if (r.luz && PROTAGONISTA_RECETA.lucesQueSeMueven.includes(r.luz)) return "luz";
   return null;
@@ -431,6 +560,8 @@ export function recetaAProps(r: RecetaEncabezado, { urlImagen }: OpcionesProps =
     mover: r.mover,
     salida: r.salida,
     ahorro: r.ahorro,
+    shader: r.shader,
+    objeto: r.objeto && { tipo: "3d", forma: r.objeto.forma, texto: r.objeto.texto },
   };
   for (const k of Object.keys(p) as (keyof EncabezadoProps)[]) if (p[k] === undefined) delete p[k];
   return p;

@@ -299,7 +299,7 @@ async function aMitad(pagina, tel, modo) {
   await pagina.locator('[data-prueba="relato-pagina"]').selectOption("hilo");
   await pagina.waitForTimeout(200);
   const json = JSON.parse(await pagina.locator('[data-prueba="json-pagina"]').textContent());
-  revisar(json.version === 1 && json.encabezado?.version === 1 && (await pagina.locator('[data-prueba="json-pagina"][data-valida]').count()) === 1,
+  revisar(json.version === 1 && json.encabezado?.version === 2 && (await pagina.locator('[data-prueba="json-pagina"][data-valida]').count()) === 1,
     "#pagina: el JSON es una receta de página válida");
   revisar(json.relatoPagina === "hilo" && json.bloques?.some((b) => b.id === "galeria" && b.relato === "carrete"), "#pagina: la receta guarda los relatos elegidos");
   const ids = ["historia", "carta", "galeria", "resenas", "contacto"];

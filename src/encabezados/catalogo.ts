@@ -35,12 +35,14 @@ export const COMPOSICION_IDS = Object.keys(COMPOSICIONES) as ComposicionId[];
 export const ENTRADA_IDS = Object.keys(ENTRADAS) as EntradaId[];
 
 /** Cómo se va el encabezado al bajar (animación de scroll nativa; donde el navegador no la tiene, no se anima). */
-export type SalidaEncabezado = "ninguna" | "achicar" | "desvanecer" | "abrir";
+export type SalidaEncabezado = "ninguna" | "achicar" | "desvanecer" | "abrir" | "barra" | "telon";
 export const SALIDAS: Record<SalidaEncabezado, string> = {
   ninguna: "Sin salida",
   achicar: "Se achica al bajar",
   desvanecer: "Sube y se desvanece",
   abrir: "Se abre (texto arriba, foto abajo)",
+  barra: "Se vuelve la barra de arriba",
+  telon: "Se abre como telón",
 };
 export const SALIDA_IDS = Object.keys(SALIDAS) as SalidaEncabezado[];
 
