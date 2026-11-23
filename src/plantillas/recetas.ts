@@ -1,0 +1,128 @@
+import type { Receta } from "./receta";
+
+const menu = [
+  { texto: "Carta", href: "#destacados" },
+  { texto: "Nosotros", href: "#historia" },
+  { texto: "Contacto", href: "#contacto" },
+];
+
+/** Cinco plantillas completas de ejemplo, una por estilo. Negocios inventados. */
+export const RECETAS: Receta[] = [
+  {
+    id: "hamburgueseria-neon",
+    nombre: "Hamburguesería neón",
+    estilo: "neon",
+    rubro: "comida",
+    efecto: "rejilla",
+    variante: 1,
+    negocio: { nombre: "Voltaje Burger", lema: "Hamburguesas de noche", direccion: "Av. Matta 1240, Santiago", horario: "Mar a dom, 19:00 a 02:00", telefono: "+56 9 5555 0101", instagram: "@voltajeburger" },
+    menu,
+    secciones: [
+      { tipo: "portada", titulo: "Abierto hasta *tarde*", bajada: "Smash burgers a la plancha, papas de corte grueso y salsas de la casa.", boton: { texto: "Pedir ahora", href: "#llamado" }, botonSecundario: { texto: "Ver la carta", href: "#destacados" }, efectoTexto: "encender", composicion: "letrero", entrada: "foco", datos: ["Mar a dom", "19:00 a 02:00"] },
+      { tipo: "destacados", id: "destacados", titulo: "Las que más salen", items: [
+        { titulo: "Doble voltaje", texto: "Doble carne smash, cheddar, cebolla caramelizada.", precio: "$9.900", tono: 310 },
+        { titulo: "Cortocircuito", texto: "Pollo crujiente, jalapeño y mayo picante.", precio: "$8.500", tono: 190 },
+        { titulo: "Apagón veggie", texto: "Hamburguesa de porotos negros con palta.", precio: "$8.200", tono: 140 },
+      ] },
+      { tipo: "galeria", titulo: "Así se ve la noche", items: [
+        { titulo: "La barra", tono: 300 }, { titulo: "La plancha", tono: 20 }, { titulo: "El letrero", tono: 190 }, { titulo: "La terraza", tono: 260 }, { titulo: "Los batidos", tono: 330 },
+      ] },
+      { tipo: "historia", id: "historia", titulo: "Nacimos en un carro", parrafos: ["Partimos con una plancha y un generador en ferias nocturnas.", "Hoy tenemos local propio, pero seguimos cocinando igual: a la vista y al momento."], cifras: [{ valor: "2019", texto: "primer carro" }, { valor: "38 mil", texto: "burgers al año" }, { valor: "4,8", texto: "nota en reseñas" }] },
+      { tipo: "testimonios", titulo: "Dicen por ahí", items: [{ texto: "La mejor smash de Santiago, y abierta cuando todo cierra.", autor: "Cata R." }, { texto: "Las papas con salsa de ajo no tienen perdón.", autor: "Nico M." }] },
+      { tipo: "llamado", id: "llamado", titulo: "¿Hambre a medianoche?", texto: "Pide por WhatsApp y retira sin hacer fila.", boton: { texto: "Pedir por WhatsApp", href: "https://wa.me/56955550101" } },
+      { tipo: "contacto", id: "contacto", titulo: "Dónde estamos" },
+    ],
+  },
+  {
+    id: "barberia-retro",
+    nombre: "Barbería retro",
+    estilo: "retro",
+    rubro: "belleza",
+    efecto: "tubo",
+    variante: 1,
+    negocio: { nombre: "Barbería Pixel", lema: "Nivel 1: el corte", direccion: "Calle Lira 88, Concepción", horario: "Lun a sáb, 10:00 a 20:00", telefono: "+56 9 5555 0202", instagram: "@barberiapixel" },
+    menu: [{ texto: "Servicios", href: "#destacados" }, { texto: "La barbería", href: "#historia" }, { texto: "Contacto", href: "#contacto" }],
+    secciones: [
+      { tipo: "portada", titulo: "Insert coin. Sal con estilo.", bajada: "Cortes clásicos, fade y barba con toalla caliente. Con música de los 80.", boton: { texto: "Reservar hora", href: "#llamado" }, botonSecundario: { texto: "Servicios", href: "#destacados" }, efectoTexto: "maquina", composicion: "pantalla", entrada: "cascada" },
+      { tipo: "destacados", id: "destacados", titulo: "Elige tu jugada", items: [
+        { titulo: "Corte clásico", texto: "Tijera y máquina, lavado incluido. 40 min.", precio: "$12.000", tono: 45 },
+        { titulo: "Fade + barba", texto: "Degradado y perfilado de barba. 60 min.", precio: "$18.000", tono: 340 },
+        { titulo: "Combo jefe final", texto: "Corte, barba y toalla caliente. 75 min.", precio: "$22.000", tono: 280 },
+      ] },
+      { tipo: "galeria", titulo: "Récords del día", items: [{ titulo: "Fade bajo", tono: 50 }, { titulo: "Pompadour", tono: 320 }, { titulo: "Barba", tono: 200 }, { titulo: "Buzz cut", tono: 10 }] },
+      { tipo: "historia", id: "historia", titulo: "Desde 1987 en tu barrio", parrafos: ["El abuelo abrió con dos sillas y una máquina de arcade en la entrada.", "Los sillones son los mismos; los cortes, de ahora."], cifras: [{ valor: "1987", texto: "inicio de partida" }, { valor: "3", texto: "barberos" }, { valor: "99", texto: "vidas" }] },
+      { tipo: "testimonios", titulo: "Puntajes", items: [{ texto: "Me fui con el mejor fade de mi vida y una partida de Pac-Man ganada.", autor: "Seba L." }, { texto: "Puntuales y detallistas. Vuelvo cada mes.", autor: "Jorge P." }] },
+      { tipo: "llamado", id: "llamado", titulo: "¿Listo, jugador 1?", texto: "Reserva en un minuto y llega directo a la silla.", boton: { texto: "Reservar hora", href: "#contacto" } },
+      { tipo: "contacto", id: "contacto", titulo: "Continúa aquí" },
+    ],
+  },
+  {
+    id: "sala-ensayo-rock",
+    nombre: "Sala de ensayo rock",
+    estilo: "rock",
+    rubro: "barrio",
+    efecto: "ecualizador",
+    variante: 1,
+    negocio: { nombre: "El Amplificador", lema: "Sala de ensayo y grabación", direccion: "Pasaje Los Músicos 12, Valparaíso", horario: "Todos los días, 12:00 a 00:00", telefono: "+56 9 5555 0303", instagram: "@salaelamplificador" },
+    menu: [{ texto: "Salas", href: "#destacados" }, { texto: "Historia", href: "#historia" }, { texto: "Contacto", href: "#contacto" }],
+    secciones: [
+      { tipo: "portada", titulo: "Sube el volumen", bajada: "Salas insonorizadas con backline completo. Llegas, enchufas y tocas.", boton: { texto: "Arrendar sala", href: "#llamado" }, botonSecundario: { texto: "Ver salas", href: "#destacados" }, efectoTexto: "temblor", composicion: "poster", entrada: "golpe", datos: ["Todos los días", "12:00 a 00:00", "Valparaíso"] },
+      { tipo: "destacados", id: "destacados", titulo: "Las salas", items: [
+        { titulo: "Sala garage", texto: "Batería, 2 amplis de guitarra y bajo. Hasta 4 personas.", precio: "$8.000 / hora", tono: 5 },
+        { titulo: "Sala estadio", texto: "Escenario chico, PA de 2.000 W y luces.", precio: "$14.000 / hora", tono: 45 },
+        { titulo: "Grabación en vivo", texto: "Multipista y mezcla básica para tu demo.", precio: "$45.000 / sesión", tono: 0 },
+      ] },
+      { tipo: "galeria", titulo: "Pasaron por aquí", items: [{ titulo: "Noche punk", tono: 0 }, { titulo: "Tributo", tono: 40 }, { titulo: "Ensayo abierto", tono: 10 }, { titulo: "Grabación", tono: 50 }] },
+      { tipo: "historia", id: "historia", titulo: "Hecho a pulso", parrafos: ["Empezó como el garage de una banda que no tenía dónde ensayar.", "Hoy por aquí pasan más de cien bandas al año."], cifras: [{ valor: "120", texto: "bandas al año" }, { valor: "3", texto: "salas" }, { valor: "0", texto: "vecinos enojados" }] },
+      { tipo: "testimonios", titulo: "Lo que dicen las bandas", items: [{ texto: "Suena brutal y el equipo está impecable.", autor: "Los Ruidosos" }, { texto: "Grabamos nuestro primer EP aquí.", autor: "Marea Negra" }] },
+      { tipo: "llamado", id: "llamado", titulo: "Tu banda, más fuerte", texto: "Arrienda por hora o por mes. Pide disponibilidad por WhatsApp.", boton: { texto: "Pedir disponibilidad", href: "https://wa.me/56955550303" } },
+      { tipo: "contacto", id: "contacto", titulo: "Ven a tocar" },
+    ],
+  },
+  {
+    id: "academia-anime",
+    nombre: "Academia de dibujo anime",
+    estilo: "anime",
+    rubro: "clases",
+    efecto: "velocidad",
+    variante: 1,
+    negocio: { nombre: "Trazo Veloz", lema: "Academia de dibujo y manga", direccion: "Av. Providencia 2010, Santiago", horario: "Lun a vie, 15:00 a 21:00 · Sáb 10:00 a 14:00", telefono: "+56 9 5555 0404", instagram: "@trazoveloz" },
+    menu: [{ texto: "Cursos", href: "#destacados" }, { texto: "La academia", href: "#historia" }, { texto: "Contacto", href: "#contacto" }],
+    secciones: [
+      { tipo: "portada", titulo: "¡Dibuja tu propia historia!", bajada: "Cursos de dibujo, color digital y narrativa en viñetas, para todas las edades.", boton: { texto: "Inscríbete", href: "#llamado" }, botonSecundario: { texto: "Ver cursos", href: "#destacados" }, efectoTexto: "impacto", composicion: "vinetas", entrada: "deslizar" },
+      { tipo: "destacados", id: "destacados", titulo: "Cursos", items: [
+        { titulo: "Desde cero", texto: "Formas, proporciones y expresiones. 8 clases.", precio: "$48.000", tono: 340 },
+        { titulo: "Color digital", texto: "Pintura en tableta, luces y sombras. 8 clases.", precio: "$56.000", tono: 200 },
+        { titulo: "Tu primer cómic", texto: "Guion, viñetas y portada. 10 clases.", precio: "$62.000", tono: 30 },
+      ] },
+      { tipo: "galeria", titulo: "Trabajos de alumnos", items: [{ titulo: "Expresiones", tono: 340 }, { titulo: "Escena de acción", tono: 200 }, { titulo: "Portada", tono: 50 }, { titulo: "Personaje propio", tono: 280 }, { titulo: "Fondo urbano", tono: 160 }] },
+      { tipo: "historia", id: "historia", titulo: "Profes que publican", parrafos: ["Nuestros profes dibujan para editoriales y estudios de animación.", "Grupos chicos, para que cada uno tenga su corrección."], cifras: [{ valor: "8", texto: "alumnos por curso" }, { valor: "600+", texto: "egresados" }, { valor: "12", texto: "cómics publicados" }] },
+      { tipo: "testimonios", titulo: "Alumnos", items: [{ texto: "En dos meses terminé mi primer cómic de 12 páginas.", autor: "Fernanda, 16" }, { texto: "Volví a dibujar después de diez años. Lo disfruto un montón.", autor: "Rodrigo, 34" }] },
+      { tipo: "llamado", id: "llamado", titulo: "¡Quedan pocos cupos!", texto: "Clase de prueba gratis el primer sábado de cada mes.", boton: { texto: "Reservar clase de prueba", href: "#contacto" } },
+      { tipo: "contacto", id: "contacto", titulo: "Encuéntranos" },
+    ],
+  },
+  {
+    id: "cineclub-pelicula",
+    nombre: "Cineclub",
+    estilo: "pelicula",
+    rubro: "otro",
+    efecto: "grano",
+    variante: 1,
+    negocio: { nombre: "Cineclub La Butaca", lema: "Cine de culto, cada viernes", direccion: "Barrio Italia, Santiago", horario: "Viernes y sábado, 20:30", telefono: "+56 9 5555 0505", instagram: "@labutaca" },
+    menu: [{ texto: "Cartelera", href: "#destacados" }, { texto: "El club", href: "#historia" }, { texto: "Contacto", href: "#contacto" }],
+    secciones: [
+      { tipo: "portada", titulo: "Esta noche, en pantalla grande", bajada: "Ciclos de cine clásico y de autor, con conversación después de la función.", boton: { texto: "Comprar entrada", href: "#llamado" }, botonSecundario: { texto: "Cartelera", href: "#destacados" }, efectoTexto: "trailer", composicion: "boleto", entrada: "telon", datos: ["Viernes", "20:30", "Sala 1"] },
+      { tipo: "destacados", id: "destacados", titulo: "Cartelera del mes", items: [
+        { titulo: "Ciclo cine negro", texto: "Cuatro viernes de detectives, sombras y lluvia.", precio: "$4.500", tono: 40 },
+        { titulo: "Noche de terror", texto: "Doble función de medianoche.", precio: "$6.000", tono: 0 },
+        { titulo: "Cine chileno", texto: "Clásicos restaurados y conversación con invitados.", precio: "$3.500", tono: 200 },
+      ] },
+      { tipo: "galeria", titulo: "Detrás de la pantalla", items: [{ titulo: "La sala", tono: 30 }, { titulo: "El proyector", tono: 50 }, { titulo: "La boletería", tono: 10 }, { titulo: "El foro", tono: 220 }] },
+      { tipo: "historia", id: "historia", titulo: "Una sala de barrio", parrafos: ["Rescatamos una antigua sala de 60 butacas y su proyector de 35 mm.", "Cada función termina con un café y una buena discusión."], cifras: [{ valor: "60", texto: "butacas" }, { valor: "35 mm", texto: "proyector original" }, { valor: "300+", texto: "funciones" }] },
+      { tipo: "testimonios", titulo: "La crítica (nuestro público)", items: [{ texto: "Ver cine así, con gente que lo quiere, no tiene precio.", autor: "Ana V." }, { texto: "El foro después de la película es lo mejor.", autor: "Matías C." }] },
+      { tipo: "llamado", id: "llamado", titulo: "Las butacas se acaban", texto: "Compra tu entrada y elige tu asiento.", boton: { texto: "Comprar entrada", href: "#contacto" } },
+      { tipo: "contacto", id: "contacto", titulo: "Créditos finales" },
+    ],
+  },
+];

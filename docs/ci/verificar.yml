@@ -1,0 +1,43 @@
+# Corre las verificaciones de motion-kit en cada push y pull request a dev y main.
+# Gratis en repos públicos; en privados usa los minutos gratis del plan de GitHub.
+name: Verificar
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Dependencias
+        run: npm ci
+      - name: Tipos
+        run: npm run typecheck
+      - name: Build de la librería
+        run: npm run build
+      # Playwright (Apache 2.0) solo existe en esta máquina de pruebas: no entra al package.json ni a la librería.
+      - name: Playwright
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+      - name: Servidor de la demo
+        run: |
+          npx vite --port 5173 --strictPort > vite.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:5173 > /dev/null && exit 0; sleep 1; done
+          cat vite.log; exit 1
+      - name: Verificaciones
+        run: |
+          for s in efectos piezas estilos encabezados escena; do
+            echo "::group::verificar-$s"
+            node scripts/verificar-$s.mjs http://localhost:5173 || exit 1
+            echo "::endgroup::"
+          done

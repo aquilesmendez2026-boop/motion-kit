@@ -45,6 +45,110 @@ kit: `npm run dev` y abrir `/#landing` (código en `demo/plantillas/`).
 
 Lo que viene y de dónde salen las ideas está en `docs/CATALOGO.md`.
 
+## Efectos protagonistas (uno por página)
+
+12 efectos de fondo para que cada página tenga el suyo. Se cargan solo cuando se usan (un archivo por efecto) y toman
+los colores de la página: `--mk-acento`, `--mk-fondo`, `--mk-superficie` o, si no existen, `--lm-acento`, `--lm-fondo`
+y `--lm-superficie` de La Mente.
+
+| Rubro | Escena | Fondo vivo |
+|---|---|---|
+| comida | `cafe` | `niebla` |
+| belleza | `petalos` | `burbujas` |
+| salud | `pulso` | `olas` |
+| clases | `abecedario` | `puntos` |
+| barrio | `letrero` (prop `texto`, por defecto «Abierto») | `lluvia` |
+| otro | `cometas` | `estrellas` |
+
+Cada uno tiene `variante={1|2|3}` (densidad, velocidad o forma): 36 combinaciones.
+
+```tsx
+import { EfectoPagina, EFECTOS } from "motion-kit";
+
+<section style={{ position: "relative", isolation: "isolate" }}>
+  <EfectoPagina id={pagina.efecto} variante={2} />
+  <div style={{ position: "relative" }}>…contenido…</div>
+</section>
+```
+
+- `EFECTOS` lista id, nombre, familia (`escena`/`fondo`), rubros y ánimo (`sobrio`/`vistoso`) para armar un selector.
+- Un id desconocido o un archivo que no carga no dibuja nada; la página sigue.
+- La capa es `aria-hidden`, no recibe toques, se pausa fuera de pantalla y con «reducir movimiento» queda una
+  composición quieta.
+- Galería para probarlos: `npm run dev` y abrir `#efectos` (variante y paleta se cambian arriba).
+- Verificación en navegador: `node scripts/verificar-efectos.mjs http://localhost:5173` (necesita Playwright).
+
+## Estilos completos y plantillas
+
+Cinco estilos que visten todo de una vez: `neon`, `retro`, `rock`, `anime` y `pelicula`. Cada uno trae colores,
+letras, botones, tarjetas, textura, cursor, sonido opcional, efecto de fondo, texto animado y transición de página.
+Además hay 5 plantillas de página completas guardadas como datos (recetas), un estudio para probar combinaciones
+(`#estudio`) y el generador `sorprendeme()`. Guía completa en `docs/ESTILOS-Y-PLANTILLAS.md`.
+
+```tsx
+import { Estilo, TextoCinetico, EfectoPagina, Boton, PaginaReceta, RECETAS } from "motion-kit";
+
+<Estilo nombre="neon" cursor fuentes>
+  <section style={{ position: "relative" }}>
+    <EfectoPagina id="rejilla" />
+    <TextoCinetico como="h1" efecto="encender" texto="Abierto hasta tarde" />
+    <Boton>Pedir ahora</Boton>
+  </section>
+</Estilo>
+
+<PaginaReceta receta={RECETAS[0]} />
+```
+
+**Encabezados:** `<Encabezado composicion="boleto" entrada="telon" titulo="Esta noche, en *pantalla grande*" />`
+(12 composiciones, 7 entradas, ajuste automático del título). **Packs de botones:** `<BotonesPack pack="ticket" />`
+(12 packs, 8 formas). Editor tipo cliente en `#encabezados`.
+
+## Botones, tarjetas, movimientos y transiciones
+
+Galería: `npm run dev` y abrir `#piezas`. Verificación: `node scripts/verificar-piezas.mjs http://localhost:5173`.
+Todo toma el color de `--mk-acento` / `--lm-acento`; el texto sobre el acento usa `--mk-sobre-acento` /
+`--lm-sobre-acento` (blanco por defecto; en paletas oscuras con acento claro conviene oscuro).
+
+**`Boton`**: `variante` = solido, contorno, suave, fantasma, degradado, vidrio. `efecto` = elevar, relleno, brillo,
+flecha, deslizar, latido, borde. También `tamano` (sm, md, lg; todos miden al menos 44 px), `cargando`, `icono`,
+`iconoFinal`, `completo` y `href` (se dibuja como enlace). Los efectos de mouse no se activan en pantallas táctiles.
+
+```tsx
+<Boton variante="degradado" efecto="brillo" completo>Reservar hora</Boton>
+<Boton href="/carta" variante="contorno" efecto="flecha">Ver la carta</Boton>
+```
+
+**`Tarjeta`**: `variante` = plana, elevada, borde, vidrio, acento. `efecto` (combinables) = elevar, zoom, brillo,
+resplandor, revelar. `imagen`, `href` (toda la tarjeta es enlace) y `revelar` (contenido que sube al pasar el mouse;
+en celular se ve siempre). Partes: `TarjetaMedia` y `TarjetaCuerpo`. **`TarjetaVolteable`**: `frente`, `dorso`,
+`disparador` (toque u hover), `eje` (x o y); trae un botón accesible para voltear.
+
+```tsx
+<Tarjeta imagen={foto} efecto={["elevar", "zoom"]} revelar={<Boton tamano="sm">Agregar</Boton>}>
+  <TarjetaCuerpo><h3>Corte y barba</h3><p>45 min · $15.000</p></TarjetaCuerpo>
+</Tarjeta>
+```
+
+**`Movimiento`**: 23 movimientos del catálogo `MOVIMIENTOS`. Entradas: aparecer, subir, bajar, desde-izquierda,
+desde-derecha, crecer, zoom, girar-entrar, voltear-x, voltear-y, rebote-entrar, elastico. Para llamar la atención:
+latir, flotar, sacudir, balancear, tambalear, gelatina, rebotar, girar, parpadear, respirar, temblar.
+`cuando` = entrar (al aparecer en pantalla), siempre, hover o toque; además `duracion`, `retraso` y `repetir`.
+
+```tsx
+<Movimiento tipo="subir" retraso={120}><h2>Bienvenidos</h2></Movimiento>
+<Movimiento tipo="latir" cuando="hover"><Boton>Pedir ahora</Boton></Movimiento>
+```
+
+**Transiciones** (11 en `TRANSICIONES`: fundido, subir, bajar, izquierda, derecha, escalar, zoom, voltear, hoja,
+cortina, pasar):
+- `Presencia visible={abierto} tipo="hoja"`: entra y sale animado antes de quitarse del DOM (como AnimatePresence).
+- `CambioContenido clave={paso} tipo="pasar" sentido={1}`: el contenido viejo sale y entra el nuevo (pasos, pestañas).
+- `animarEntrada` / `animarSalida`: las mismas animaciones para usar a mano sobre un elemento.
+
+Con «reducir movimiento»: los botones y tarjetas no se desplazan, las entradas quedan en un fundido corto, los
+movimientos de atención se quedan quietos y las transiciones son un fundido de 200 ms. Si el JS no carga, todo
+el contenido se ve.
+
 ## Empezar a desarrollar
 
 ```bash

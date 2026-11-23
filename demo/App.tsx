@@ -87,6 +87,10 @@ export function App() {
         <div className="nav">
           <strong>motion-kit</strong>
           <a href="#landing">Plantilla</a>
+          <a href="#efectos">Efectos</a>
+          <a href="#piezas">Piezas</a>
+          <a href="#estudio">Estudio</a>
+          <a href="#encabezados">Encabezados</a>
         </div>
       </Navbar>
 

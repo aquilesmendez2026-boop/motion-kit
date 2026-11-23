@@ -1,0 +1,23 @@
+import type { EfectoDef, EfectoId } from "./tokens";
+
+export const EFECTOS: Record<EfectoId, EfectoDef> = {
+  cafe: { id: "cafe", nombre: "Café", familia: "escena", rubros: ["comida"], animo: "sobrio", cargar: () => import("./escenas/Cafe") },
+  petalos: { id: "petalos", nombre: "Pétalos", familia: "escena", rubros: ["belleza"], animo: "sobrio", cargar: () => import("./escenas/Petalos") },
+  pulso: { id: "pulso", nombre: "Pulso", familia: "escena", rubros: ["salud"], animo: "sobrio", cargar: () => import("./escenas/Pulso") },
+  abecedario: { id: "abecedario", nombre: "Abecedario", familia: "escena", rubros: ["clases"], animo: "vistoso", cargar: () => import("./escenas/Abecedario") },
+  letrero: { id: "letrero", nombre: "Letrero de neón", familia: "escena", rubros: ["barrio"], animo: "vistoso", cargar: () => import("./escenas/Letrero") },
+  cometas: { id: "cometas", nombre: "Cometas", familia: "escena", rubros: ["otro"], animo: "vistoso", cargar: () => import("./escenas/Cometas") },
+  niebla: { id: "niebla", nombre: "Niebla", familia: "fondo", rubros: ["comida"], animo: "sobrio", cargar: () => import("./fondos/Niebla") },
+  burbujas: { id: "burbujas", nombre: "Burbujas", familia: "fondo", rubros: ["belleza"], animo: "vistoso", cargar: () => import("./fondos/Burbujas") },
+  olas: { id: "olas", nombre: "Olas", familia: "fondo", rubros: ["salud"], animo: "sobrio", cargar: () => import("./fondos/Olas") },
+  puntos: { id: "puntos", nombre: "Puntos que respiran", familia: "fondo", rubros: ["clases"], animo: "sobrio", cargar: () => import("./fondos/Puntos") },
+  lluvia: { id: "lluvia", nombre: "Lluvia de luz", familia: "fondo", rubros: ["barrio"], animo: "vistoso", cargar: () => import("./fondos/Lluvia") },
+  rejilla: { id: "rejilla", nombre: "Rejilla neón", familia: "estilo", rubros: ["barrio", "otro"], animo: "vistoso", cargar: () => import("./estilos/Rejilla") },
+  tubo: { id: "tubo", nombre: "Pantalla de tubo", familia: "estilo", rubros: ["clases", "otro"], animo: "sobrio", cargar: () => import("./estilos/Tubo") },
+  ecualizador: { id: "ecualizador", nombre: "Ecualizador", familia: "estilo", rubros: ["barrio", "otro"], animo: "vistoso", cargar: () => import("./estilos/Ecualizador") },
+  velocidad: { id: "velocidad", nombre: "Líneas de velocidad", familia: "estilo", rubros: ["clases", "otro"], animo: "vistoso", cargar: () => import("./estilos/Velocidad") },
+  grano: { id: "grano", nombre: "Grano de película", familia: "estilo", rubros: ["comida", "otro"], animo: "sobrio", cargar: () => import("./estilos/Grano") },
+  estrellas: { id: "estrellas", nombre: "Estrellas", familia: "fondo", rubros: ["otro"], animo: "sobrio", cargar: () => import("./fondos/Estrellas") },
+};
+
+export const ids = Object.keys(EFECTOS) as EfectoId[];

@@ -1,0 +1,265 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
+  PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
+  SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
+  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR,
+  type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
+  type AltoEncabezado, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
+} from "../src";
+
+import { enlaceVista, type ConfigVista } from "./compartir";
+
+const TEXTOS: TextoEfecto[] = ["revelar", "voltear", "rebote", "encender", "glitch", "maquina", "impacto", "temblor", "caer", "trailer", "onda"];
+const EJEMPLO = { antetitulo: "Barrio Italia · desde 2019", titulo: "Café de *especialidad*, tostado aquí", bajada: "Granos de origen, pan de masa madre y un rincón tranquilo para quedarse.", boton: "Ver la carta", secundario: "Cómo llegar", datos: "Lun a sáb, 8:00 a 20:00, Santiago" };
+
+export function Encabezados() {
+  const [estilo, setEstilo] = useState<EstiloId>("neon");
+  const [composicion, setComposicion] = useState<ComposicionId>("letrero");
+  const [entrada, setEntrada] = useState<EntradaId>("foco");
+  const [efectoTexto, setEfectoTexto] = useState<TextoEfecto>("encender");
+  const [efecto, setEfecto] = useState<EfectoId | "">("rejilla");
+  const [variante, setVariante] = useState<Variante>(1);
+  const [pack, setPack] = useState<PackBotonId>("neon-tubo");
+  const [t, setT] = useState(EJEMPLO);
+  const [celular, setCelular] = useState(false);
+  const [n, setN] = useState(0);
+  const [alto, setAlto] = useState<AltoEncabezado>("pantalla");
+  const [altoCelular, setAltoCelular] = useState<AltoEncabezado | "">("");
+  const [profundidad, setProfundidad] = useState(false);
+  const [luz, setLuz] = useState<ModoLuz | "">("");
+  const [mover, setMover] = useState("puntero,scroll");
+  const [foto, setFoto] = useState<string>("");
+  const [comprimir, setComprimir] = useState(true);
+  const [infoFoto, setInfoFoto] = useState("");
+  const [shader, setShader] = useState<ShaderId | "">("");
+  const [forma, setForma] = useState<FormaObjeto | "">("");
+  const [salida, setSalida] = useState<SalidaEncabezado>("ninguna");
+  const [ahorro, setAhorro] = useState<ModoAhorro>("auto");
+  const [nivel, setNivel] = useState<NivelEscena>("completo");
+  const [rubro, setRubro] = useState<RubroId>("cafeteria");
+  const [semilla, setSemilla] = useState<number | null>(null);
+  const vista = useRef<HTMLDivElement>(null);
+  useEffect(() => () => { if (foto) URL.revokeObjectURL(foto); }, [foto]);
+  const subirFoto = async (f: File | undefined) => {
+    if (!f) { setFoto(""); setInfoFoto(""); return; }
+    if (!comprimir) { setFoto(URL.createObjectURL(f)); setInfoFoto(`${Math.round(f.size / 1000)} KB, sin comprimir`); return; }
+    setInfoFoto("Comprimiendo…");
+    try {
+      const c = await comprimirFoto(f, { maximo: celular ? 100_000 : 200_000 });
+      setFoto(c.url);
+      setInfoFoto(`${Math.round(c.bytesAntes / 1000)} KB → ${Math.round(c.bytes / 1000)} KB (${c.tipo.replace("image/", "").toUpperCase()}, ${c.ancho}×${c.alto})${c.dentro ? "" : " · no alcanzó el máximo"}`);
+    } catch (e) {
+      setInfoFoto(`No se pudo comprimir: ${(e as Error).message}`);
+    }
+  };
+  const porRubro = (s0?: number) => {
+    const sem = s0 ?? Math.floor(Math.random() * 1e9);
+    const a = encabezadoPorRubro(rubro, semillaAzar(sem));
+    transicionVista(() => {
+      setSemilla(sem);
+      setEstilo(a.estilo); setComposicion(a.composicion); setEntrada(a.entrada); setEfecto(a.conEfecto ? a.efecto : ""); setVariante(a.variante);
+      setEfectoTexto(a.efectoTexto); setPack(a.pack); setShader(a.shader ?? ""); setProfundidad(a.profundidad); setLuz(a.luz ?? "");
+      setT({ ...a.textos, datos: a.textos.datos.join(", ") }); otra();
+    }, ESTILOS[a.estilo].vista);
+  };
+  const elegirAlto = (v: string, poner: (a: AltoEncabezado) => void) => poner(v === "numero" ? 70 : (v as AltoEncabezado));
+  const otra = () => setN((x) => x + 1);
+
+  const usarEstilo = (e: EstiloId) => transicionVista(() => {
+    const d = ESTILOS[e];
+    setEstilo(e); setEfecto(d.efectos[0]); setEfectoTexto(d.texto[0]); setPack(d.pack);
+    if (!COMPOSICIONES[composicion].estilos.includes(e)) setComposicion(COMPOSICION_IDS.find((c) => COMPOSICIONES[c].estilos.includes(e))!);
+    otra();
+  }, ESTILOS[e].vista);
+  const azar = () => {
+    const e = ESTILO_IDS[Math.floor(Math.random() * ESTILO_IDS.length)];
+    const a = encabezadoAlAzar(e);
+    transicionVista(() => {
+      setEstilo(e); setComposicion(a.composicion); setEntrada(a.entrada); setEfecto(a.efecto); setVariante(a.variante); setEfectoTexto(a.efectoTexto); setPack(a.pack); otra();
+    }, ESTILOS[e].vista);
+  };
+  const datos = t.datos.split(",").map((d) => d.trim()).filter(Boolean);
+  const portada = {
+    tipo: "portada", composicion, entrada, efectoTexto, pack, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
+    ...(profundidad ? { profundidad: true, mover: mover.split(",") as FuenteMovimiento[] } : {}), ...(luz ? { luz } : {}),
+    ...(shader ? { shader } : {}), ...(salida !== "ninguna" ? { salida } : {}), ...(ahorro !== "auto" ? { ahorro } : {}),
+    antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada,
+    boton: { texto: t.boton, href: "#carta" }, botonSecundario: t.secundario ? { texto: t.secundario, href: "#contacto" } : undefined, datos,
+  };
+  const objeto: ObjetoEncabezado | undefined = forma ? { tipo: "3d", forma, caras: foto ? [foto, foto] : undefined, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } : undefined;
+  const config: ConfigVista = { estilo, efecto: efecto || undefined, variante, ...portada, objeto: objeto && { ...objeto, caras: undefined } };
+  const enlace = enlaceVista(config);
+  const campo = (k: keyof typeof EJEMPLO, etiqueta: string, ayuda?: string) => (
+    <label>{etiqueta}
+      <input value={t[k]} onChange={(e) => setT({ ...t, [k]: e.target.value })} onBlur={otra} data-campo={k} />
+      {ayuda && <small>{ayuda}</small>}
+    </label>
+  );
+
+  return (
+    <div className="enc-editor">
+      <aside className="estudio-panel">
+        <a href="#">← Demo</a>
+        <h1>Editor de encabezado</h1>
+        <p className="enc-nota">Así lo vería un cliente: cambia textos, composición, entrada y botones sin tocar código.</p>
+        <div className="enc-acciones">
+          <button className="enc-azar" onClick={azar} data-prueba="azar">🎲 Sorpréndeme</button>
+          <button className="enc-repetir" onClick={otra} data-prueba="repetir">↻ Repetir entrada</button>
+        </div>
+        <fieldset><legend>Plantilla por rubro</legend>
+          <label>Rubro
+            <select value={rubro} onChange={(e) => setRubro(e.target.value as RubroId)} data-prueba="rubro">
+              {RUBRO_IDS.map((r) => <option key={r} value={r}>{RUBROS[r].nombre}</option>)}
+            </select>
+          </label>
+          <button className="enc-azar" onClick={() => porRubro()} data-prueba="por-rubro">🎲 Sorpréndeme con este rubro</button>
+          {semilla !== null && <small data-prueba="semilla">Semilla {semilla}: la misma semilla repite este encabezado.</small>}
+        </fieldset>
+        <fieldset><legend>Estilo</legend>
+          <div className="estudio-chips">{ESTILO_IDS.map((e) => <button key={e} aria-pressed={estilo === e} onClick={() => usarEstilo(e)}>{ESTILOS[e].nombre}</button>)}</div>
+        </fieldset>
+        <label>Composición
+          <select value={composicion} onChange={(e) => { setComposicion(e.target.value as ComposicionId); otra(); }} data-prueba="composicion">
+            {COMPOSICION_IDS.map((c) => <option key={c} value={c}>{COMPOSICIONES[c].nombre}{COMPOSICIONES[c].estilos.includes(estilo) ? " ★" : ""}</option>)}
+          </select>
+          <small>{COMPOSICIONES[composicion].descripcion}</small>
+        </label>
+        <label>Entrada
+          <select value={entrada} onChange={(e) => { setEntrada(e.target.value as EntradaId); otra(); }} data-prueba="entrada">{ENTRADA_IDS.map((x) => <option key={x} value={x}>{ENTRADAS[x]}</option>)}</select>
+        </label>
+        <label>Texto animado
+          <select value={efectoTexto} onChange={(e) => { setEfectoTexto(e.target.value as TextoEfecto); otra(); }}>{TEXTOS.map((x) => <option key={x}>{x}</option>)}</select>
+        </label>
+        <label>Fondo animado
+          <select value={efecto} onChange={(e) => setEfecto(e.target.value as EfectoId | "")}>
+            <option value="">Ninguno</option>
+            {(Object.keys(EFECTOS) as EfectoId[]).map((id) => <option key={id} value={id}>{EFECTOS[id].nombre}{ESTILOS[estilo].efectos.includes(id) ? " ★" : ""}</option>)}
+          </select>
+        </label>
+        <label>Variante del fondo
+          <select value={variante} onChange={(e) => setVariante(Number(e.target.value) as Variante)}>{[1, 2, 3].map((v) => <option key={v}>{v}</option>)}</select>
+        </label>
+        <label>Pack de botones
+          <select value={pack} onChange={(e) => setPack(e.target.value as PackBotonId)} data-prueba="pack">{PACK_IDS.map((p) => <option key={p} value={p}>{PACKS_BOTONES[p].nombre}{ESTILOS[estilo].pack === p ? " ★" : ""}</option>)}</select>
+        </label>
+        {campo("antetitulo", "Antetítulo")}
+        {campo("titulo", "Título", "Pon una palabra entre *asteriscos* para resaltarla.")}
+        {campo("bajada", "Bajada")}
+        {campo("boton", "Botón principal")}
+        {campo("secundario", "Botón secundario")}
+        {campo("datos", "Datos (separados por coma)")}
+        <fieldset><legend>Tamaño</legend>
+          <label>Alto
+            <select value={typeof alto === "number" ? "numero" : alto} onChange={(e) => elegirAlto(e.target.value, setAlto)} data-prueba="alto">
+              {ALTO_IDS.map((a) => <option key={a} value={a}>{ALTOS[a].nombre}</option>)}
+              <option value="numero">A medida</option>
+            </select>
+          </label>
+          {typeof alto === "number" && (
+            <label>{alto} % del alto de la pantalla
+              <input type="range" min={20} max={100} value={alto} onChange={(e) => setAlto(Number(e.target.value))} data-prueba="alto-numero" />
+            </label>
+          )}
+          <label>Alto en celular
+            <select value={altoCelular === "" ? "" : typeof altoCelular === "number" ? "numero" : altoCelular} onChange={(e) => (e.target.value === "" ? setAltoCelular("") : elegirAlto(e.target.value, setAltoCelular))} data-prueba="alto-celular">
+              <option value="">Igual que en escritorio</option>
+              {ALTO_IDS.map((a) => <option key={a} value={a}>{ALTOS[a].nombre}</option>)}
+              <option value="numero">A medida</option>
+            </select>
+          </label>
+          {typeof altoCelular === "number" && (
+            <label>{altoCelular} % en celular
+              <input type="range" min={20} max={100} value={altoCelular} onChange={(e) => setAltoCelular(Number(e.target.value))} />
+            </label>
+          )}
+        </fieldset>
+        <fieldset><legend>Escena</legend>
+          <label className="estudio-check"><input type="checkbox" checked={profundidad} onChange={(e) => setProfundidad(e.target.checked)} data-prueba="profundidad" /> Capas en profundidad (2.5D)</label>
+          <label>Luz
+            <select value={luz} onChange={(e) => setLuz(e.target.value as ModoLuz | "")} data-prueba="luz">
+              <option value="">Sin luz</option>
+              <option value="puntero">Sigue al dedo</option>
+              <option value="barrido">Brillo que cruza</option>
+            </select>
+          </label>
+          <label>Se mueve con
+            <select value={mover} onChange={(e) => setMover(e.target.value)}>
+              <option value="puntero,scroll">Dedo o cursor y scroll</option>
+              <option value="puntero">Solo dedo o cursor</option>
+              <option value="scroll">Solo scroll</option>
+              <option value="puntero,scroll,inclinacion">También inclinar el teléfono</option>
+            </select>
+          </label>
+          <label>Fondo WebGL
+            <select value={shader} onChange={(e) => setShader(e.target.value as ShaderId | "")} data-prueba="shader">
+              <option value="">Ninguno</option>
+              {SHADER_IDS.map((x) => <option key={x} value={x}>{SHADERS[x].nombre}</option>)}
+            </select>
+            {shader && <small>{SHADERS[shader].descripcion} Pesa menos de 10 KB. Mejor sin «Fondo animado» al mismo tiempo.</small>}
+          </label>
+          <label>Objeto 3D
+            <select value={forma} onChange={(e) => setForma(e.target.value as FormaObjeto | "")} data-prueba="objeto">
+              <option value="">Ninguno</option>
+              {(Object.keys(FORMAS_OBJETO) as FormaObjeto[]).map((x) => <option key={x} value={x}>{FORMAS_OBJETO[x]}</option>)}
+            </select>
+            <small>Usa la foto propia como etiqueta o cara. En «Dividido» va en el lugar de la foto. Se gira arrastrando.</small>
+          </label>
+          <label>Al bajar
+            <select value={salida} onChange={(e) => setSalida(e.target.value as SalidaEncabezado)} data-prueba="salida">
+              {SALIDA_IDS.map((x) => <option key={x} value={x}>{SALIDAS[x]}</option>)}
+            </select>
+          </label>
+          <label>Ahorro de datos
+            <select value={ahorro} onChange={(e) => setAhorro(e.target.value as ModoAhorro)} data-prueba="ahorro">
+              <option value="auto">Automático (según el teléfono)</option>
+              <option value="siempre">Siempre quieto (probar cómo se ve)</option>
+              <option value="nunca">Nunca (todo animado)</option>
+            </select>
+          </label>
+          <label>Foto propia (para ver cuánto pesa)
+            <input type="file" accept="image/*" onChange={(e) => subirFoto(e.target.files?.[0])} data-prueba="foto" />
+            <small>Se usa en las composiciones con foto (dividido, tarjeta, foto completa, viñetas) y en el objeto 3D.</small>
+          </label>
+          <label className="estudio-check"><input type="checkbox" checked={comprimir} onChange={(e) => setComprimir(e.target.checked)} data-prueba="comprimir" /> Comprimir al subir (WebP bajo 200 KB; 100 KB en celular)</label>
+          {infoFoto && <small data-prueba="info-foto">{infoFoto}</small>}
+        </fieldset>
+        <MedidorPeso objetivo={vista} data-prueba="peso" />
+        <MedidorFluidez nivel={nivel} data-prueba="fluidez" />
+        <MedidorCarga data-prueba="carga" />
+        <SemaforoContraste objetivo={vista} data-prueba="contraste" />
+        <fieldset className="enc-qr"><legend>Probar en tu teléfono</legend>
+          <CodigoQR texto={enlace.url} tam={168} data-prueba="qr" />
+          <small>{enlace.nota}</small>
+          <a href={enlace.url} target="_blank" rel="noreferrer" data-prueba="enlace-vista">Abrir la vista aquí</a>
+        </fieldset>
+        <label className="estudio-check"><input type="checkbox" checked={celular} onChange={(e) => setCelular(e.target.checked)} /> Ver como celular</label>
+        <details><summary>Lo que se guarda (JSON)</summary><pre data-prueba="json">{JSON.stringify(portada, null, 2)}</pre></details>
+      </aside>
+      <main className="enc-vista">
+        <div className={celular ? "enc-celular" : "enc-ancho"} ref={vista}>
+          <Estilo nombre={estilo} fuentes cursor data-prueba="vista">
+            <Encabezado key={n} composicion={composicion} entrada={entrada} efectoTexto={efectoTexto} efecto={efecto || undefined} variante={variante} pack={pack}
+              antetitulo={t.antetitulo} titulo={t.titulo} bajada={t.bajada} boton={{ texto: t.boton, href: "#" }} botonSecundario={t.secundario ? { texto: t.secundario, href: "#" } : undefined}
+              datos={datos} alto={alto} altoCelular={altoCelular === "" ? undefined : altoCelular}
+              profundidad={profundidad} luz={luz || undefined} mover={mover.split(",") as FuenteMovimiento[]} imagenes={foto ? [foto, foto, foto] : undefined}
+              shader={shader || undefined} objeto={objeto} salida={salida} ahorro={ahorro} alCambiarNivel={setNivel} />
+          </Estilo>
+        </div>
+        <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>
+        {COMPOSICION_IDS.map((c) => {
+          const e = COMPOSICIONES[c].estilos[0];
+          return (
+            <section key={c} className="enc-muestra" data-muestra={c}>
+              <div className="enc-etiqueta">{COMPOSICIONES[c].nombre} · {ESTILOS[e].nombre}</div>
+              <Estilo nombre={e}>
+                <Encabezado composicion={c} entrada="ninguna" alto="medio" efecto={ESTILOS[e].efectos[0]} antetitulo={EJEMPLO.antetitulo}
+                  titulo={EJEMPLO.titulo} bajada={EJEMPLO.bajada} boton={{ texto: EJEMPLO.boton, href: "#" }} botonSecundario={{ texto: EJEMPLO.secundario, href: "#" }} datos={datos} />
+              </Estilo>
+            </section>
+          );
+        })}
+      </main>
+    </div>
+  );
+}
