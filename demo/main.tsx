@@ -12,7 +12,8 @@ import { ToastProvider } from "../src";
 import "./demo.css";
 
 // Navegación mínima por hash: "#landing" muestra la plantilla de ejemplo.
-const RUTAS = /^#(landing|efectos|piezas|estudio|encabezados|vista\?d=[\w-]*|plantilla\/[\w-]+)?$/;
+// Sin hash o con «#» solo es la portada (los enlaces «← Demo» y el botón atrás del navegador llegan así).
+const RUTAS = /^(#(landing|efectos|piezas|estudio|encabezados|vista\?d=[\w-]*|plantilla\/[\w-]+)?)?$/;
 
 // Navegación mínima por hash. Los enlaces internos de una página (#carta, #contacto) solo desplazan.
 function Root() {

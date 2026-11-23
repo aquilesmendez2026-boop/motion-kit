@@ -175,3 +175,9 @@ export {
   validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, contratoEncabezado, textoContrato,
 } from "./receta";
 export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps } from "./receta";
+export {
+  estiloDesdeLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA,
+} from "./receta";
+export type { TemaLaMente, PaletaLaMente, PuenteLaMente } from "./receta";
+export { EstiloLaMente } from "./receta/EstiloLaMente";
+export type { EstiloLaMenteProps } from "./receta/EstiloLaMente";

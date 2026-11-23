@@ -4,3 +4,7 @@ export {
 } from "./receta";
 export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps } from "./receta";
 export { contratoEncabezado, textoContrato } from "./contrato";
+export {
+  estiloDesdeLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, contraste, luminancia, mezclar,
+} from "./lamente";
+export type { TemaLaMente, PaletaLaMente, ColorLaMente, FormaTemaLaMente, PuenteLaMente } from "./lamente";

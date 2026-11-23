@@ -8,6 +8,9 @@ export type ConfigVista = Partial<Omit<EncabezadoProps, "boton" | "botonSecundar
   boton?: { texto: string; href: string };
   botonSecundario?: { texto: string; href: string };
   titulo: string;
+  /** Tema y paleta de La Mente, si el editor los tenía puestos. */
+  lmTema?: string;
+  lmPaleta?: string;
 };
 
 const aBase64Url = (s: string) => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

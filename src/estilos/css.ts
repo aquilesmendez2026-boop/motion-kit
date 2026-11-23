@@ -60,5 +60,12 @@ export const CSS_ESTILOS = `
 .mk-estilo[data-mk-estilo=pelicula] .mk-card{border-color:color-mix(in srgb,var(--mk-acento) 45%,transparent)}
 .mk-estilo[data-mk-estilo=pelicula] .mk-estilo-textura{background:${RUIDO},radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.6));opacity:.5;mix-blend-mode:overlay}
 
+/* Puente con La Mente (EstiloLaMente): los títulos siguen al tema y usan el texto de la paleta, como TemaPagina.
+   Va al final para ganarle al estilo base; las composiciones sobre foto (más específicas) siguen mandando. */
+.mk-estilo[data-lm-tema] :is(h1,h2){color:var(--mk-texto);font-family:var(--mk-fuente-titulo);text-transform:var(--lm-titulo-mayusculas,none);letter-spacing:var(--lm-titulo-espaciado,normal);font-weight:var(--lm-titulo-peso,800)}
+.mk-estilo[data-lm-tema] h2{color:var(--mk-acento-texto)}
+.mk-estilo[data-lm-claro][data-mk-estilo=neon]:not([data-lm-brillo]) :is(h1,h2){text-shadow:none}
+.mk-estilo[data-lm-tema][data-lm-brillo] :is(h1,h2){text-shadow:0 0 .35em color-mix(in srgb,var(--mk-acento) 75%,transparent),0 0 1.2em color-mix(in srgb,var(--mk-acento) 45%,transparent)}
+
 @media (prefers-reduced-motion:reduce){.mk-estilo .mk-btn:hover{transform:none!important}}
 `;

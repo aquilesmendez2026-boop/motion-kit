@@ -145,6 +145,24 @@ El editor `#encabezados` guarda su estado como receta: la vista se dibuja desde 
 se guarda» muestra la receta, sus errores y lo que se calmó. Pruebas: `npm test` (`node --test`, empaquetado con el
 esbuild que ya trae Vite; también revisa que el contrato esté al día).
 
+## Puente con La Mente (23-11-2026)
+
+`src/receta/lamente.ts` y `EstiloLaMente`: el encabezado toma los colores de la paleta y la letra, las mayúsculas, el
+espaciado, el peso, el brillo y las esquinas del tema, igual que `TemaPagina` del front de La Mente. El estilo de
+motion-kit queda de base (formas de botones, efectos y movimiento): el de la receta o el que se propone para el tema
+(`BASE_DE_TEMA`, propuesta para revisar).
+
+| Pieza | Qué hace |
+|---|---|
+| `estiloDesdeLaMente({ tema, paleta, base })` | `{ estilo, colores, googleFonts, brillo, claro }`: las variables `--mk-*` que pisa. El antetítulo usa el acento solo si se lee sobre el fondo |
+| `EstiloLaMente` | `<Estilo>` con ese puente, sin textura y con la letra del tema |
+| `TEMAS_LAMENTE`, `PALETAS_LAMENTE` | Copia de `lamente-front/packages/ui/src/{temas,paletas}.ts`; una prueba la compara con el original y con `diseno.json` cuando los repos están al lado |
+
+Con tema, el título usa el color de texto de la paleta. El resplandor del estilo neón se apaga sobre paletas claras,
+salvo en el tema neón, que tiene brillo propio. Los 12 temas con su paleta y hamburguesería con las 12 paletas pasan el
+semáforo de contraste (`scripts/verificar-lamente.mjs`). En el editor: «Tema y paleta de La Mente». El tema y la paleta
+son de la página: no van en la receta.
+
 ## Mejoras a lo que ya existe
 
 - `Toast`: sumar cierre por deslizamiento y variantes (éxito, error).

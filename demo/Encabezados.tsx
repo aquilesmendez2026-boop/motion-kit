@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
   PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
   SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
   MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps,
+  EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   type AltoEncabezado, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
 } from "../src";
@@ -39,6 +40,8 @@ export function Encabezados() {
   const [nivel, setNivel] = useState<NivelEscena>("completo");
   const [rubro, setRubro] = useState<RubroId>("cafeteria");
   const [semilla, setSemilla] = useState<number | null>(null);
+  const [lmTema, setLmTema] = useState<TemaLaMente | "">("");
+  const [lmPaleta, setLmPaleta] = useState<PaletaLaMente>("clasica");
   const vista = useRef<HTMLDivElement>(null);
   useEffect(() => () => { if (foto) URL.revokeObjectURL(foto); }, [foto]);
   const subirFoto = async (f: File | undefined) => {
@@ -66,12 +69,13 @@ export function Encabezados() {
   const elegirAlto = (v: string, poner: (a: AltoEncabezado) => void) => poner(v === "numero" ? 70 : (v as AltoEncabezado));
   const otra = () => setN((x) => x + 1);
 
-  const usarEstilo = (e: EstiloId) => transicionVista(() => {
+  const aplicarEstilo = (e: EstiloId) => {
     const d = ESTILOS[e];
     setEstilo(e); setEfecto(d.efectos[0]); setEfectoTexto(d.texto[0]); setPack(d.pack);
     if (!COMPOSICIONES[composicion].estilos.includes(e)) setComposicion(COMPOSICION_IDS.find((c) => COMPOSICIONES[c].estilos.includes(e))!);
     otra();
-  }, ESTILOS[e].vista);
+  };
+  const usarEstilo = (e: EstiloId, conTransicion = true) => (conTransicion ? transicionVista(() => aplicarEstilo(e), ESTILOS[e].vista) : aplicarEstilo(e));
   const azar = () => {
     const e = ESTILO_IDS[Math.floor(Math.random() * ESTILO_IDS.length)];
     const a = encabezadoAlAzar(e);
@@ -92,7 +96,7 @@ export function Encabezados() {
   const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
   const props = recetaAProps(receta);
   const objeto: ObjetoEncabezado | undefined = forma ? { tipo: "3d", forma, caras: foto ? [foto, foto] : undefined, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } : undefined;
-  const config: ConfigVista = { estilo, ...props, ...(shader ? { shader } : {}), objeto: objeto && { ...objeto, caras: undefined } };
+  const config: ConfigVista = { estilo, ...(lmTema ? { lmTema, lmPaleta } : {}), ...props, ...(shader ? { shader } : {}), objeto: objeto && { ...objeto, caras: undefined } };
   const enlace = enlaceVista(config);
   const campo = (k: keyof typeof EJEMPLO, etiqueta: string, ayuda?: string) => (
     <label>{etiqueta}
@@ -119,6 +123,30 @@ export function Encabezados() {
           </label>
           <button className="enc-azar" onClick={() => porRubro()} data-prueba="por-rubro">🎲 Sorpréndeme con este rubro</button>
           {semilla !== null && <small data-prueba="semilla">Semilla {semilla}: la misma semilla repite este encabezado.</small>}
+        </fieldset>
+        <fieldset><legend>Tema y paleta de La Mente</legend>
+          <label>Tema
+            <select value={lmTema} data-prueba="lm-tema" onChange={(e) => {
+              const v = e.target.value as TemaLaMente | "";
+              transicionVista(() => {
+                setLmTema(v);
+                if (v) { setLmPaleta(TEMAS_LAMENTE[v].paleta); usarEstilo(BASE_DE_TEMA[v], false); }
+              });
+            }}>
+              <option value="">Sin La Mente (colores del estilo)</option>
+              {TEMA_LAMENTE_IDS.map((x) => <option key={x} value={x}>{TEMAS_LAMENTE[x].nombre}</option>)}
+            </select>
+          </label>
+          {lmTema && (
+            <label>Paleta
+              <select value={lmPaleta} onChange={(e) => setLmPaleta(e.target.value as PaletaLaMente)} data-prueba="lm-paleta">
+                {PALETA_LAMENTE_IDS.map((x) => <option key={x} value={x}>{PALETAS_LAMENTE[x].nombre}{TEMAS_LAMENTE[lmTema].paleta === x ? " ★" : ""}</option>)}
+              </select>
+            </label>
+          )}
+          <small>{lmTema
+            ? `Colores de la paleta y letra del tema, como la página de La Mente. El estilo de abajo pone las formas y los efectos (para este tema se propone ${ESTILOS[BASE_DE_TEMA[lmTema]].nombre}). El tema y la paleta son de la página: no van en la receta.`
+            : "Elige un tema para ver el encabezado como parte de una página de La Mente."}</small>
         </fieldset>
         <fieldset><legend>Estilo</legend>
           <div className="estudio-chips">{ESTILO_IDS.map((e) => <button key={e} aria-pressed={estilo === e} onClick={() => usarEstilo(e)}>{ESTILOS[e].nombre}</button>)}</div>
@@ -254,11 +282,11 @@ export function Encabezados() {
       </aside>
       <main className="enc-vista">
         <div className={celular ? "enc-celular" : "enc-ancho"} ref={vista}>
-          <Estilo nombre={estilo} fuentes cursor data-prueba="vista">
+          <Marco key={`${lmTema}-${lmPaleta}`} tema={lmTema} paleta={lmPaleta} estilo={estilo}>
             {/* La vista sale de la receta validada: lo que se ve es lo que se guarda (más shader, objeto y foto local). */}
-            <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#" }}
+            <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#encabezados" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#encabezados" }}
               imagenes={foto ? [foto, foto, foto] : undefined} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel} />
-          </Estilo>
+          </Marco>
         </div>
         <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>
         {COMPOSICION_IDS.map((c) => {
@@ -276,4 +304,11 @@ export function Encabezados() {
       </main>
     </div>
   );
+}
+
+/** Con tema de La Mente, el encabezado se viste con su paleta y su letra; si no, con los colores del estilo. */
+function Marco({ tema, paleta, estilo, children }: { tema: TemaLaMente | ""; paleta: PaletaLaMente; estilo: EstiloId; children: ReactNode }) {
+  return tema
+    ? <EstiloLaMente tema={tema} paleta={paleta} base={estilo} fuentes cursor data-prueba="vista" data-lm-paleta={paleta}>{children}</EstiloLaMente>
+    : <Estilo nombre={estilo} fuentes cursor data-prueba="vista">{children}</Estilo>;
 }

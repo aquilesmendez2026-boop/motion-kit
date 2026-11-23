@@ -136,6 +136,13 @@ for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, fa
   for (let i = 0; i < 5; i++) { await page.locator('[data-prueba="azar"]').click(); await page.waitForTimeout(900); }
   ok(errs.length === 0, "entradas y sorpréndeme sin errores" + (errs.length ? ": " + errs[0] : ""));
   ok((await page.locator("[data-muestra] .mk-enc-titulo").count()) === 12, "la galería muestra las 12 composiciones");
+  // Volver: «← Demo» lleva a la portada sin recargar, y el botón atrás del navegador trae de vuelta el editor.
+  await page.locator('.estudio-panel a[href="#"]').first().click();
+  await page.waitForTimeout(300);
+  ok((await page.locator('a[href="#encabezados"]').count()) > 0 && (await page.locator(".enc-editor").count()) === 0, "«← Demo» vuelve a la portada sin recargar");
+  await page.goBack();
+  await page.waitForTimeout(300);
+  ok((await page.locator(".enc-editor").count()) === 1, "atrás del navegador vuelve al editor");
   const malos = await page.evaluate(() => {
     const r = [];
     for (const s of document.querySelectorAll('style[id^="motion-kit-"]'))
