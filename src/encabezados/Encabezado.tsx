@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { useStyles } from "../utils/styles";
 import { useEstilo } from "../estilos/Estilo";
 import { TextoCinetico } from "../estilos/TextoCinetico";
@@ -13,9 +13,13 @@ import { ALTOS, type AltoEncabezado, type ComposicionId, type EntradaId, type Sa
 import { CapasEscena, CAPAS_POR_DEFECTO, type Capa } from "../escena/CapasProfundidad";
 import { LuzEscena, type ModoLuz } from "../escena/LuzYReflejo";
 import { useMovimientoEscena, type FuenteMovimiento } from "../escena/movimiento";
-import { ShaderFondo, type ShaderId } from "../escena/ShaderFondo";
-import { Objeto3DCss, type FormaObjeto } from "../escena/Objeto3DCss";
-import { EscenaVideo } from "../escena/EscenaVideo";
+import type { ShaderId } from "../escena/ShaderFondo";
+import type { FormaObjeto } from "../escena/Objeto3DCss";
+
+// Lo pesado y opcional se carga aparte, solo si el encabezado lo usa (peso de motion-kit/encabezado).
+const ShaderFondo = lazy(() => import("../escena/ShaderFondo").then((m) => ({ default: m.ShaderFondo })));
+const Objeto3DCss = lazy(() => import("../escena/Objeto3DCss").then((m) => ({ default: m.Objeto3DCss })));
+const EscenaVideo = lazy(() => import("../escena/EscenaVideo").then((m) => ({ default: m.EscenaVideo })));
 import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/nivel";
 import { Apertura, aperturaYaVista } from "./Apertura";
 import { Tomas } from "./Tomas";
@@ -129,9 +133,13 @@ export function Encabezado({
   const protagonista = objeto && (
     <div className="mk-enc-objeto">
       {objeto.tipo === "video" ? (
-        <EscenaVideo webm={objeto.webm} hevc={objeto.hevc} mp4={objeto.mp4} poster={objeto.poster} alt={objeto.alt ?? alt} quieto={liviano} />
+        <Suspense fallback={<img src={objeto.poster} alt={objeto.alt ?? alt} decoding="async" />}>
+          <EscenaVideo webm={objeto.webm} hevc={objeto.hevc} mp4={objeto.mp4} poster={objeto.poster} alt={objeto.alt ?? alt} quieto={liviano} />
+        </Suspense>
       ) : (
-        <Objeto3DCss forma={objeto.forma} caras={objeto.caras} texto={objeto.texto} etiqueta={objeto.etiqueta} girar={!quieto} tam={objeto.forma === "tarjeta" ? 300 : 220} />
+        <Suspense fallback={null}>
+          <Objeto3DCss forma={objeto.forma} caras={objeto.caras} texto={objeto.texto} etiqueta={objeto.etiqueta} girar={!quieto} tam={objeto.forma === "tarjeta" ? 300 : 220} />
+        </Suspense>
       )}
     </div>
   );
@@ -248,7 +256,9 @@ export function Encabezado({
       style={{ ...style, ...(fotoLetrasOk ? { "--mk-foto-letras": `url("${fotoLetras}")` } : {}), "--mk-enc-alto": altoCss(alto), ...(altoCelular !== undefined ? { "--mk-enc-alto-celular": altoCss(altoCelular) } : {}) } as CSSProperties}
     >
       {poster && <img className="mk-enc-poster" src={poster} alt="" decoding="async" fetchPriority="high" />}
-      {shader && (liviano ? <div className="mk-shader" data-tipo={shader} aria-hidden="true" /> : <ShaderFondo tipo={shader} />)}
+      {shader && (liviano ? <div className="mk-shader" data-tipo={shader} aria-hidden="true" /> : (
+        <Suspense fallback={<div className="mk-shader" data-tipo={shader} aria-hidden="true" />}><ShaderFondo tipo={shader} /></Suspense>
+      ))}
       {fondoFoto && media(0)}
       {efecto && !quieto && <EfectoPagina id={efecto} variante={variante} />}
       {capas && <CapasEscena capas={capas} />}

@@ -153,8 +153,10 @@ export {
   validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, contratoEncabezado, textoContrato,
 } from "./receta/index";
 export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps, Tratamiento, FranjaHora } from "./receta/index";
-export { franjaDe, VERSIONES_RECETA, paletaDeFoto, paletaDesdePixeles } from "./receta/index";
-export type { PaletaPropuesta } from "./receta/index";
+export { franjaDe, VERSIONES_RECETA } from "./receta/index";
+// Herramienta del editor (no de la página): solo en motion-kit.
+export { paletaDeFoto, paletaDesdePixeles } from "./receta/paletaDeFoto";
+export type { PaletaPropuesta } from "./receta/paletaDeFoto";
 export {
   estiloDesdeLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA,
 } from "./receta/index";

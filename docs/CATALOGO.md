@@ -178,6 +178,25 @@ Medido minificado y con react afuera (`npm run peso`, que falla si una entrada p
 `CHANGELOG.md`. Mejora posible: cargar aparte el shader, el objeto 3D y el video (son de la receta v2), unos 3 KB
 menos al cargar.
 
+## Encabezado de película (23-11-2026)
+
+Receta v2 y las nueve ideas aprobadas (spec `2026-11-23-relatos-y-encabezado-pelicula-design.md`, plan
+`2026-11-23-encabezado-pelicula.md`).
+
+| Idea | Prop / campo | Nota |
+|---|---|---|
+| Apertura | `apertura: { presenta }` | Una vez por sesión, se salta tocando; aunque `sessionStorage` falle |
+| Varias tomas | `tomas` (2+ fotos) | Protagonista; quietas en liviano y quieto |
+| Foto dentro de las letras | `fotoEnLetras` | Título entero (no letra por letra) y con contorno |
+| Tratamiento de foto | `tratamiento` | duotono, grano, trama, bn |
+| Colores desde la foto | `paletaDeFoto(archivo)` | Del editor; propone paleta y tema de La Mente |
+| Estado del negocio | `estado` + `estadoNegocio` | Abierto, cerrado y próxima hora libre |
+| Palabras que rotan | `palabras` (2 a 4) | En la palabra resaltada; ancho reservado |
+| Salida que entrega la posta | `salida: "barra" \| "telon"`, `barraPropia`, `logo`, `nombre` | Barra `inert` mientras se ve el encabezado |
+| Hora del día | `horaDelDia` (`ahora` para fijarla) | Mañana 6–12, tarde 12–19, noche |
+
+Pruebas: `npm test` (receta v2, colores desde la foto) y `scripts/verificar-pelicula.mjs`.
+
 ## Relatos (23-11-2026)
 
 Cómo se cuenta la página al bajar. Todo en `src/relatos/`, entrada `motion-kit/pagina`. Diseño:

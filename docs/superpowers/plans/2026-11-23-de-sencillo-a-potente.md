@@ -54,6 +54,9 @@ Aquiles.
 **Relatos listos (23-11):** los nueve relatos, el movimiento base por estilo y la receta de página v1 en
 `motion-kit/pagina` (plan `docs/superpowers/plans/2026-11-23-relatos.md`). Sigue el encabezado de película (receta v2).
 
+**Encabezado de película listo (23-11):** receta v2 con las nueve ideas aprobadas (plan
+`docs/superpowers/plans/2026-11-23-encabezado-pelicula.md`).
+
 ## Por diseñar (pedidos de Aquiles, 23-11)
 
 - **Página de presentación, sin tope de peso:** para mostrar lo mejor (todos los relatos, shader, objeto 3D, video con

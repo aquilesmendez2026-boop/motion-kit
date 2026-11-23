@@ -2,7 +2,22 @@
 
 ## Sin publicar
 
-### Nuevo
+### Encabezado de película (receta v2)
+
+- **Receta v2** (acepta la v1 y la guarda como v2; contrato con `versiones: [1, 2]`): apertura, tomas, foto en las
+  letras, tratamiento, estado, palabras que rotan, hora del día, `shader`, `objeto`, `logo` y `nombre`; salidas
+  `barra` y `telon`. Protagonista: tomas, fondo animado (efecto o shader, uno solo), palabras, título y luz.
+- **Apertura** de película una vez por sesión; **varias tomas** con acercamiento lento; **palabras que rotan** en la
+  palabra resaltada, con el ancho reservado.
+- **Barra al bajar** (logo o nombre y el mismo botón principal, `inert` mientras se ve el encabezado; `barraPropia`
+  para La Mente) y **telón** al bajar.
+- **Estado del negocio** (abierto, cerrado, próxima hora libre) con los datos que pasa quien dibuja.
+- **Foto dentro de las letras** (con contorno; sin foto o si no carga, el título queda con su color), **tratamiento de
+  foto** (duotono, grano, trama, blanco y negro) y **hora del día**.
+- **Colores desde la foto**: `paletaDeFoto` propone paleta y tema de La Mente (solo en `motion-kit`, es del editor).
+- Shader, objeto 3D y video se cargan aparte con `import()`: `motion-kit/encabezado` queda en 33,7 KB gzip.
+
+### Relatos
 
 - **Relatos** (`motion-kit/pagina`): nueve maneras de contar la página al bajar. De bloque: Escenas que aparecen,
   Película continua, Cuento por capítulos, Profundidad, Iris, Carrete y Subtítulos; de página: Hilo y Luz que cambia.
