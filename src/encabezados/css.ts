@@ -197,14 +197,15 @@ export const CSS_ENCABEZADO = `
    no las alcanza y el título desaparece. Se anima el título entero, no letra por letra. */
 .mk-enc[data-foto-letras] .mk-enc-titulo *{animation:none!important;opacity:1!important;transform:none!important;translate:none!important;scale:none!important;rotate:none!important;display:inline!important;position:static!important;z-index:auto!important}
 .mk-enc[data-foto-letras] .mk-enc-titulo .mk-tc-dest::before{display:none!important}
+.mk-enc[data-foto-letras] .mk-rot>span:not([data-activa]){display:none!important}
 .mk-enc[data-foto-letras][data-entrada]:not([data-entrada=ninguna]) .mk-enc-titulo{animation:mk-p-letras-entra .9s ease both}
 @keyframes mk-p-letras-entra{from{opacity:0;scale:.96}to{opacity:1;scale:1}}
-.mk-enc[data-tratamiento] .mk-enc-media{position:relative}
-.mk-enc[data-tratamiento] .mk-enc-media::after{position:absolute;inset:0;pointer-events:none}
+/* La capa del tratamiento va en ::before: ::after es el degradado que hace legible el texto sobre la foto. */
+.mk-enc[data-tratamiento] .mk-enc-media::before{position:absolute;inset:0;z-index:1;pointer-events:none}
 .mk-enc[data-tratamiento=duotono] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.1)}
-.mk-enc[data-tratamiento=duotono] .mk-enc-media::after{content:"";background:var(--mk-acento,#7c5cff);mix-blend-mode:color}
-.mk-enc[data-tratamiento=grano] .mk-enc-media::after{content:"";background-image:${RUIDO};opacity:.35;mix-blend-mode:overlay}
-.mk-enc[data-tratamiento=trama] .mk-enc-media::after{content:"";background:radial-gradient(circle,rgba(0,0,0,.4) 1px,transparent 1.7px) 0 0/6px 6px;mix-blend-mode:multiply}
+.mk-enc[data-tratamiento=duotono] .mk-enc-media::before{content:"";background:var(--mk-acento,#7c5cff);mix-blend-mode:color}
+.mk-enc[data-tratamiento=grano] .mk-enc-media::before{content:"";background-image:${RUIDO};opacity:.35;mix-blend-mode:overlay}
+.mk-enc[data-tratamiento=trama] .mk-enc-media::before{content:"";background:radial-gradient(circle,rgba(0,0,0,.4) 1px,transparent 1.7px) 0 0/6px 6px;mix-blend-mode:multiply}
 .mk-enc[data-tratamiento=bn] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.15)}
 .mk-enc-hora{position:absolute;inset:0;z-index:1;pointer-events:none}
 .mk-enc[data-hora=manana] .mk-enc-hora{background:linear-gradient(to bottom,rgba(255,214,150,.22),transparent 60%)}

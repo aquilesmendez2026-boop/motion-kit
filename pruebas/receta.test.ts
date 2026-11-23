@@ -2,13 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, textoContrato,
+  validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura,
   TOPES_RECETA, type RecetaEncabezado,
 } from "../src/receta";
 import { RUBRO_IDS, encabezadoPorRubro, semillaAzar, type EncabezadoDeRubro } from "../src/encabezados/rubros";
 import { RECETAS } from "../src/plantillas/recetas";
 import { ESTILO_IDS } from "../src/estilos/estilos";
 import { franjaDe } from "../src/receta/hora";
+import { textoContrato } from "../src/receta/contrato";
 
 const base = { version: 1, estilo: "pelicula", titulo: "Café de *especialidad*" };
 
@@ -225,11 +226,11 @@ test("los campos v2 se validan", () => {
   });
   const por = Object.fromEntries(e.map((x) => [x.campo, x.mensaje]));
   for (const c of ["palabras", "apertura.presenta", "tratamiento", "logo", "nombre", "objeto.forma", "shader", "horaDelDia", "estado", "tomas"]) assert.ok(por[c], c);
-  assert.match(por.palabras, /hasta 4/);
+  assert.match(por.palabras, /hasta 3/);
   assert.ok(errores({ ...base, palabras: ["x".repeat(25)] }).some((x) => x.campo === "palabras[0]"));
   const ok = validarReceta({
     ...base, version: 2, salida: "barra", logo: "negocio/logo.webp", nombre: "Café Vinilo", tratamiento: "duotono", horaDelDia: true, estado: true,
-    apertura: { presenta: "Café Vinilo presenta" }, objeto: { forma: "lata", texto: "Vinilo" }, imagenes: ["a.jpg", "b.jpg"], tomas: true,
+    apertura: { presenta: "Café Vinilo presenta" }, objeto: { forma: "lata", texto: "Vinilo" }, imagenes: ["a.jpg", "b.jpg"], tomas: true, composicion: "imagen",
   });
   assert.ok(ok.ok, JSON.stringify(!ok.ok && ok.errores));
   assert.ok(validarReceta({ ...base, shader: "aurora" }).ok, "shader ya no es de otra versión");
@@ -241,7 +242,7 @@ test("palabras exige una palabra resaltada", () => {
 });
 
 test("tomas y foto en letras necesitan fotos", () => {
-  const r = validarReceta({ ...base, tomas: true, fotoEnLetras: true, imagenes: ["a.jpg"] });
+  const r = validarReceta({ ...base, composicion: "imagen", tomas: true, fotoEnLetras: true, imagenes: ["a.jpg"] });
   assert.ok(r.ok);
   assert.ok(!("tomas" in r.receta), "con una sola foto no hay tomas");
   assert.equal(r.receta.fotoEnLetras, true);
@@ -251,7 +252,7 @@ test("tomas y foto en letras necesitan fotos", () => {
 });
 
 test("protagonista v2: tomas gana, después efecto y palabras", () => {
-  const r = validarReceta({ ...base, imagenes: ["a.jpg", "b.jpg"], tomas: true, efecto: "rejilla", palabras: ["barrio", "autor"] });
+  const r = validarReceta({ ...base, composicion: "imagen", imagenes: ["a.jpg", "b.jpg"], tomas: true, efecto: "rejilla", palabras: ["barrio", "autor"] });
   assert.ok(r.ok);
   assert.equal(r.receta.tomas, true);
   assert.ok(!("efecto" in r.receta) && !("palabras" in r.receta));
@@ -272,3 +273,36 @@ test("franjaDe en los bordes (hora local)", () => {
     ["noche", "manana", "manana", "tarde", "tarde", "noche", "noche", "noche"]);
 });
 
+
+// --- Hallazgos de la revisión final del encabezado de película ---
+
+test("tomas solo donde la composición muestra la foto", () => {
+  const r = validarReceta({ ...base, composicion: "izquierda", imagenes: ["a.jpg", "b.jpg"], tomas: true, efecto: "rejilla" });
+  assert.ok(r.ok);
+  assert.ok(!("tomas" in r.receta), "en «izquierda» no hay foto donde pasar las tomas");
+  assert.equal(r.receta.efecto, "rejilla", "el dueño no pierde su fondo animado");
+  assert.ok(r.avisos.some((a) => /tomas/i.test(a)));
+  for (const composicion of ["imagen", "tarjeta", "vinetas", "dividido"]) {
+    assert.equal(normalizarReceta({ ...base, composicion, imagenes: ["a.jpg", "b.jpg"], tomas: true }).tomas, true, composicion);
+  }
+  assert.ok(!("tomas" in normalizarReceta({ ...base, composicion: "dividido", imagenes: ["a.jpg", "b.jpg"], tomas: true, objeto: { forma: "lata" } })), "en dividido el objeto ocupa el lugar de la foto");
+});
+
+test("palabras: son alternativas a la del título, de 1 a 3 (en total rotan 2 a 4)", () => {
+  const una = validarReceta({ ...base, titulo: "Café de *barrio*", palabras: ["autor"] });
+  assert.ok(una.ok);
+  assert.deepEqual(una.receta.palabras, ["autor"], "con una alternativa ya rotan dos");
+  assert.ok(errores({ ...base, palabras: ["a", "b", "c", "d"] }).some((e) => e.campo === "palabras" && /hasta 3/.test(e.mensaje)));
+  const repetidas = validarReceta({ ...base, titulo: "Café de *barrio*", palabras: ["barrio", "barrio"] });
+  assert.ok(repetidas.ok);
+  assert.ok(!("palabras" in repetidas.receta), "repetir la del título no hace rotar nada");
+  assert.ok(repetidas.avisos.some((a) => /palabras/i.test(a)));
+  assert.equal(protagonistaDe(repetidas.receta), null);
+});
+
+test("el aviso de calmar el título no dice «fondo» cuando lo que se mueve son tomas o palabras", () => {
+  const r = validarReceta({ ...base, composicion: "imagen", imagenes: ["a.jpg", "b.jpg"], tomas: true, efectoTexto: "onda" });
+  assert.ok(r.ok);
+  const aviso = r.avisos.find((a) => /título/.test(a))!;
+  assert.ok(aviso && !/fondo/.test(aviso), aviso);
+});

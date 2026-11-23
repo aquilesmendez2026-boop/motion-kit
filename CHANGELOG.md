@@ -17,6 +17,15 @@
 - **Colores desde la foto**: `paletaDeFoto` propone paleta y tema de La Mente (solo en `motion-kit`, es del editor).
 - Shader, objeto 3D y video se cargan aparte con `import()`: `motion-kit/encabezado` queda en 33,7 KB gzip.
 
+### Cambios que pueden romper
+
+- `contratoEncabezado`/`textoContrato` ya no salen de `motion-kit/receta` ni de `motion-kit/encabezado`, y
+  `contratoPagina`/`textoContratoPagina` no salen de `motion-kit/pagina`: son herramientas de desarrollo y quedan solo en
+  `motion-kit`. Lo que usa La Mente son los archivos `contrato/*.json`.
+- `paletaDeFoto` está solo en `motion-kit` (es del editor).
+- Receta: `palabras` son de 1 a 3 alternativas a la palabra resaltada (antes se pedían 2 o más); `tomas` solo se guardan
+  en composiciones con foto.
+
 ### Relatos
 
 - **Relatos** (`motion-kit/pagina`): nueve maneras de contar la página al bajar. De bloque: Escenas que aparecen,

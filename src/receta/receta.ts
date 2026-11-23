@@ -73,7 +73,8 @@ export const TOPES_RECETA = {
   alt: 120,
   altoMinimo: 20,
   altoMaximo: 100,
-  palabras: 4,
+  /** Alternativas a la palabra resaltada del título: con ella, rotan de 2 a 4. */
+  palabras: 3,
   palabra: 24,
   presenta: 40,
   nombre: 40,
@@ -197,6 +198,8 @@ const cortar = (s: string, tope: number) => {
   return out.trim();
 };
 const CONTROL = /[\u0000-\u001f\u007f]/;
+/** Composiciones donde se ve una foto (y por lo tanto, las tomas). */
+const COMPOSICIONES_CON_FOTO: ComposicionId[] = ["imagen", "tarjeta", "vinetas", "dividido"];
 /** Una palabra resaltada con asteriscos en el título. */
 const RESALTADO = /\*[^*]+\*/;
 
@@ -343,7 +346,7 @@ export function validarReceta(x: unknown): ResultadoReceta {
   if (x.palabras !== undefined) {
     if (!Array.isArray(x.palabras)) mal("palabras", "Las palabras son una lista de textos cortos.");
     else {
-      if (x.palabras.length > TOPES_RECETA.palabras) mal("palabras", `Van hasta ${TOPES_RECETA.palabras} palabras.`);
+      if (x.palabras.length > TOPES_RECETA.palabras) mal("palabras", `Van hasta ${TOPES_RECETA.palabras} palabras, más la del título.`);
       x.palabras.forEach((w, i) => {
         if (typeof w !== "string" || !w.trim() || CONTROL.test(w) || largo(w.trim()) > TOPES_RECETA.palabra) {
           mal(`palabras[${i}]`, `Cada palabra va hasta ${TOPES_RECETA.palabra} letras, sin quedar vacía.`);
@@ -419,15 +422,28 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
   const poster = esImagenSegura(x.poster) ? x.poster : undefined;
 
   // v2: lo que necesita fotos o un título resaltado, y un solo fondo animado.
+  const composicion = deLista("composicion") ?? DEFECTOS_RECETA.composicion;
+  const conObjeto = esObjeto(x.objeto) && en(LISTAS_RECETA.forma, x.objeto.forma);
   let tomas = x.tomas === true;
   if (tomas && imagenes.length < 2) {
     avisos.push("Las tomas necesitan dos o más fotos: queda una sola foto, quieta.");
     tomas = false;
   }
+  // Las tomas pasan en la foto de la composición: sin foto a la vista (o con el objeto 3D en su lugar), no se verían.
+  if (tomas && !(COMPOSICIONES_CON_FOTO.includes(composicion) && !(composicion === "dividido" && conObjeto))) {
+    avisos.push("Las tomas solo se ven en las composiciones con foto (imagen, tarjeta, viñetas o dividido sin objeto): quedan apagadas.");
+    tomas = false;
+  }
   const fotoEnLetras = x.fotoEnLetras === true && (imagenes.length > 0 || Boolean(poster));
-  let palabras = Array.isArray(x.palabras) && RESALTADO.test(titulo)
-    ? x.palabras.map((w) => texto(w, TOPES_RECETA.palabra)).filter((w): w is string => Boolean(w)).slice(0, TOPES_RECETA.palabras)
+  // Las palabras son alternativas a la resaltada del título: sin repetirla ni repetirse.
+  const destacada = titulo.match(RESALTADO)?.[0].replace(/\*/g, "").trim().toLowerCase();
+  let palabras = Array.isArray(x.palabras) && destacada
+    ? [...new Set(x.palabras.map((w) => texto(w, TOPES_RECETA.palabra)).filter((w): w is string => Boolean(w)))]
+        .filter((w) => w.toLowerCase() !== destacada).slice(0, TOPES_RECETA.palabras)
     : [];
+  if (Array.isArray(x.palabras) && x.palabras.length && !palabras.length && destacada) {
+    avisos.push("Las palabras no rotan: repiten la del título.");
+  }
   if (efecto && shader) {
     avisos.push("Un solo fondo animado: queda el efecto y se quita el fondo WebGL.");
     shader = undefined;
@@ -442,7 +458,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
       shader = undefined;
     } else hay = true;
   }
-  if (palabras.length >= 2) {
+  if (palabras.length >= 1) {
     if (hay) {
       avisos.push("Las palabras dejan de rotar: queda la del título, porque ya hay otra cosa que se mueve.");
       palabras = [];
@@ -450,7 +466,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
   }
   if (PROTAGONISTA_RECETA.textosQueSeMueven.includes(efectoTexto)) {
     if (hay) {
-      avisos.push(`El título pasa de «${efectoTexto}» a «${PROTAGONISTA_RECETA.calmar.efectoTexto}»: ya hay un fondo que se mueve.`);
+      avisos.push(`El título pasa de «${efectoTexto}» a «${PROTAGONISTA_RECETA.calmar.efectoTexto}»: ya hay otra cosa que se mueve sola.`);
       efectoTexto = PROTAGONISTA_RECETA.calmar.efectoTexto;
     }
     hay = true;
@@ -474,7 +490,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
   const r: RecetaEncabezado = {
     version: VERSION_RECETA,
     estilo,
-    composicion: deLista("composicion") ?? DEFECTOS_RECETA.composicion,
+    composicion,
     entrada: deLista("entrada") ?? DEFECTOS_RECETA.entrada,
     efectoTexto,
     pack: deLista("pack") ?? e.pack,
@@ -500,7 +516,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     fotoEnLetras: fotoEnLetras || undefined,
     tratamiento: deLista("tratamiento"),
     estado: x.estado === true || undefined,
-    palabras: palabras.length >= 2 ? palabras : undefined,
+    palabras: palabras.length ? palabras : undefined,
     horaDelDia: x.horaDelDia === true || undefined,
     shader,
     objeto: objeto && (objeto.texto ? objeto : { forma: objeto.forma }),
@@ -521,7 +537,7 @@ function sinVacios(r: RecetaEncabezado): RecetaEncabezado {
 export function protagonistaDe(r: RecetaEncabezado): (typeof PROTAGONISTA_RECETA.orden)[number] | null {
   if (r.tomas) return "tomas";
   if (r.efecto || r.shader) return "efecto";
-  if (r.palabras && r.palabras.length >= 2) return "palabras";
+  if (r.palabras && r.palabras.length >= 1) return "palabras";
   if (PROTAGONISTA_RECETA.textosQueSeMueven.includes(r.efectoTexto)) return "efectoTexto";
   if (r.luz && PROTAGONISTA_RECETA.lucesQueSeMueven.includes(r.luz)) return "luz";
   return null;

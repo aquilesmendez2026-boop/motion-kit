@@ -199,7 +199,7 @@ const titulo = (pagina) => pagina.evaluate((v) => {
   const capa = () => pagina.evaluate((v) => {
     const m = document.querySelector(`${v} .mk-enc-media`);
     const img = m.querySelector("img");
-    return { filtro: getComputedStyle(img).filter, capa: getComputedStyle(m, "::after").content };
+    return { filtro: getComputedStyle(img).filter, capa: getComputedStyle(m, "::before").content };
   }, VISTA);
   const sin = await capa();
   const cambios = [];
@@ -263,6 +263,60 @@ const titulo = (pagina) => pagina.evaluate((v) => {
   const json = JSON.parse(await pagina.locator('[data-prueba="json"]').textContent());
   revisar(json.version === 2 && (await pagina.locator('[data-prueba="json"][data-valida]').count()) === 1, "el JSON del editor es una receta v2 válida");
   revisar(errores.length === 0, "colores desde la foto: sin errores" + (errores.length ? ": " + errores[0] : ""));
+  await ctx.close();
+}
+
+// --- Hallazgos de la revisión final ---
+{
+  const { ctx, pagina, errores } = await abrir();
+  await pagina.locator('[data-prueba="efecto"]').selectOption("");
+  await pagina.locator('[data-prueba="fotos-ejemplo"]').check();
+  // 1. Un tratamiento no puede cambiar el alto ni quitar el degradado que hace legible el texto
+  for (const comp of ["imagen", "tarjeta"]) {
+    await pagina.locator('[data-prueba="composicion"]').selectOption(comp);
+    await pagina.locator('[data-prueba="tratamiento"]').selectOption("");
+    await pagina.waitForTimeout(300);
+    const medir = () => pagina.evaluate((v) => {
+      const h = document.querySelector(`${v} .mk-enc`);
+      const m = h.querySelector(".mk-enc-media");
+      return { alto: Math.round(h.getBoundingClientRect().height), degradado: getComputedStyle(m, "::after").backgroundImage };
+    }, VISTA);
+    const sin = await medir();
+    await pagina.locator('[data-prueba="tratamiento"]').selectOption("duotono");
+    await pagina.waitForTimeout(300);
+    const con = await medir();
+    revisar(Math.abs(con.alto - sin.alto) <= 2 && con.degradado === sin.degradado, `tratamiento en ${comp}: mismo alto y mismo degradado (${sin.alto} → ${con.alto})`);
+  }
+  await pagina.locator('[data-prueba="tratamiento"]').selectOption("");
+  // 2. Foto en las letras + palabras que rotan: se ve una sola palabra
+  await pagina.locator('[data-prueba="composicion"]').selectOption("gigante");
+  await pagina.locator('[data-prueba="palabras"]').fill("barrio, autor");
+  await pagina.locator('[data-prueba="foto-letras"]').check();
+  await pagina.waitForTimeout(800);
+  const visibles = await pagina.evaluate((v) => {
+    const t = document.querySelector(`${v} .mk-enc-titulo`).innerText;
+    return ["especialidad", "barrio", "autor"].filter((w) => t.includes(w)).length;
+  }, VISTA);
+  revisar(visibles === 1, `foto en letras con palabras que rotan: se ve una sola palabra (${visibles})`);
+  revisar(errores.length === 0, "hallazgos: sin errores" + (errores.length ? ": " + errores[0] : ""));
+  await ctx.close();
+}
+{
+  // 3. Una palabra larga que rota no se sale del título en un celular
+  const ctx = await navegador.newContext({ viewport: { width: 360, height: 740 } });
+  const pagina = await ctx.newPage();
+  for (const comp of ["poster", "izquierda"]) {
+    const d = Buffer.from(JSON.stringify({ estilo: "pelicula", titulo: "Café de *barrio*", composicion: comp, palabras: ["especialidad", "extraordinariamente"] })).toString("base64url");
+    await pagina.goto(base + "/#vista?d=" + d);
+    await pagina.waitForSelector(".mk-enc-titulo .mk-rot");
+    await pagina.waitForTimeout(1200);
+    const r = await pagina.evaluate(() => {
+      const h = document.querySelector(".mk-enc").getBoundingClientRect();
+      const t = document.querySelector(".mk-enc-titulo .mk-rot").getBoundingClientRect();
+      return { derecha: Math.round(t.right), borde: Math.round(h.right) };
+    });
+    revisar(r.derecha <= r.borde, `palabra larga en ${comp} a 360 px: no se sale (${r.derecha} ≤ ${r.borde})`);
+  }
   await ctx.close();
 }
 

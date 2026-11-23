@@ -10,5 +10,4 @@ export { RELATOS, RELATO_IDS, RELATOS_DE_BLOQUE, RELATOS_DE_PAGINA, RELATO_DE_ES
 export type { RelatoId, RelatoBloqueId, RelatoPaginaId, ParteRelato, FichaRelato } from "../relatos/catalogo";
 export { validarPagina, normalizarPagina, relatoDeBloque, TOPES_PAGINA, CAMPOS_PAGINA } from "../relatos/receta-pagina";
 export type { RecetaPagina, BloqueRelato } from "../relatos/receta-pagina";
-export { contratoPagina, textoContratoPagina } from "../relatos/contrato-pagina";
 export { sinInyectarEstilos } from "../utils/styles";

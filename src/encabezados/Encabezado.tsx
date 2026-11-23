@@ -152,7 +152,8 @@ export function Encabezado({
       h.style.fontSize = "";
       const ancho = h.clientWidth;
       let max = 0;
-      h.querySelectorAll<HTMLElement>(".mk-tc-palabra").forEach((p) => { max = Math.max(max, p.offsetWidth); });
+      // También la palabra que rota (su celda tiene el ancho de la más larga).
+      h.querySelectorAll<HTMLElement>(".mk-tc-palabra, .mk-rot").forEach((p) => { max = Math.max(max, p.offsetWidth); });
       if (max > ancho && ancho > 0) h.style.fontSize = `${parseFloat(getComputedStyle(h).fontSize) * (ancho / max) * 0.97}px`;
     };
     ajustar();
@@ -162,7 +163,7 @@ export function Encabezado({
     const o = new ResizeObserver(ajustar);
     o.observe(ref.current!);
     return () => o.disconnect();
-  }, [titulo, composicion, efectoTexto]);
+  }, [titulo, composicion, efectoTexto, palabras?.join("|")]);
 
   // Apertura: solo en el navegador, una vez por sesión, nunca en quieto.
   const [abriendo, setAbriendo] = useState(false);

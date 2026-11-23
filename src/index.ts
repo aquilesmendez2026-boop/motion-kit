@@ -150,8 +150,11 @@ export { generarQR, caminoQR } from "./utils/qr";
 // Receta del encabezado v1: lo que La Mente guarda y valida (contrato en contrato/encabezado-motionkit.json)
 export {
   VERSION_RECETA, LISTAS_RECETA, TOPES_RECETA, DEFECTOS_RECETA, PROTAGONISTA_RECETA, CAMPOS_RECETA, OBLIGATORIOS_RECETA,
-  validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, contratoEncabezado, textoContrato,
+  validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura,
 } from "./receta/index";
+// Herramientas de desarrollo (generar y revisar los contratos): solo en motion-kit, no en las entradas de la página.
+export { contratoEncabezado, textoContrato } from "./receta/contrato";
+export { contratoPagina, textoContratoPagina } from "./relatos/contrato-pagina";
 export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps, Tratamiento, FranjaHora } from "./receta/index";
 export { franjaDe, VERSIONES_RECETA } from "./receta/index";
 // Herramienta del editor (no de la página): solo en motion-kit.
