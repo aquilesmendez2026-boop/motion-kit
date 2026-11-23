@@ -1,0 +1,75 @@
+{
+  "$comentario": "Receta de página de motion-kit, v1. Generado por scripts/generar-contrato.mjs desde src/relatos: no editar a mano. El encabezado sigue contrato/encabezado-motionkit.json. relato: el de la página (de bloque); sin él, se usa relatoDeEstilo del estilo del encabezado. relatoPagina: relato de fondo para toda la página. bloques[].id: minúsculas, números y guiones; en La Mente, el tipo del bloque. Marcas: cada bloque marca sus partes con data-mk-parte (partes); un relato que requiere marcas que el bloque no trae se dibuja como «escenas». carrete necesita una tira: un contenedor (no el bloque entero) con dos o más fotos o tarjetas; si la tira cabe entera, se cuenta como «escenas». subtitulos necesita la frase con cada palabra en <span data-mk-palabra> (FraseRelato lo hace); el relato no toca el HTML del bloque. Los relatos no cuentan como protagonista: solo se mueven con el scroll de la persona.",
+  "version": 1,
+  "campos": [
+    "version",
+    "encabezado",
+    "relato",
+    "relatoPagina",
+    "bloques"
+  ],
+  "obligatorios": [
+    "version",
+    "encabezado"
+  ],
+  "listas": {
+    "relato": [
+      "escenas",
+      "pelicula",
+      "cuento",
+      "profundidad",
+      "iris",
+      "carrete",
+      "subtitulos"
+    ],
+    "relatoPagina": [
+      "hilo",
+      "luz"
+    ],
+    "relatoBloque": [
+      "escenas",
+      "pelicula",
+      "cuento",
+      "profundidad",
+      "iris",
+      "carrete",
+      "subtitulos",
+      "ninguno"
+    ]
+  },
+  "topes": {
+    "bloques": 30,
+    "idBloque": 40
+  },
+  "relatoDeEstilo": {
+    "neon": "pelicula",
+    "retro": "carrete",
+    "rock": "escenas",
+    "anime": "profundidad",
+    "pelicula": "cuento"
+  },
+  "partes": [
+    "linea",
+    "foto",
+    "tarjeta",
+    "frase"
+  ],
+  "requiere": {
+    "escenas": [],
+    "pelicula": [],
+    "cuento": [
+      "linea"
+    ],
+    "profundidad": [
+      "tarjeta"
+    ],
+    "iris": [],
+    "carrete": [
+      "foto",
+      "tarjeta"
+    ],
+    "subtitulos": [
+      "frase"
+    ]
+  }
+}

@@ -178,6 +178,44 @@ Medido minificado y con react afuera (`npm run peso`, que falla si una entrada p
 `CHANGELOG.md`. Mejora posible: cargar aparte el shader, el objeto 3D y el video (son de la receta v2), unos 3 KB
 menos al cargar.
 
+## Relatos (23-11-2026)
+
+Cómo se cuenta la página al bajar. Todo en `src/relatos/`, entrada `motion-kit/pagina`. Diseño:
+`docs/superpowers/specs/2026-11-23-relatos-y-encabezado-pelicula-design.md`.
+
+| Relato | Alcance | Qué pasa al bajar | Necesita marcas |
+|---|---|---|---|
+| Escenas que aparecen | bloque | Entra con el sabor del estilo (neón se enciende, retro en pasos, rock golpea, anime de lado, película se funde) | — |
+| Película continua | bloque | Telón del acento; el encabezado se aleja; cinta de avance | — |
+| Cuento por capítulos | bloque | Se queda quieto y cuenta línea por línea; la foto se acerca | `linea` |
+| Profundidad | bloque | Capas a distinta velocidad; tarjetas en cascada | `tarjeta` |
+| Iris | bloque | Se revela desde un círculo que crece | — |
+| Carrete | bloque | La tira pasa de lado | una tira: 2+ `foto` o `tarjeta` |
+| Subtítulos | bloque | La frase se enciende palabra por palabra (`FraseRelato`) | `frase` |
+| Hilo | página | Una línea se dibuja y una luz viaja | — |
+| Luz que cambia | página | El cielo pasa de la tarde a la noche, con tintes de la paleta | — |
+
+CSS nativo con scroll dentro de `@supports`; sin soporte, respaldo con `data-visto`. En liviano los pesados caen a
+Escenas; en quieto (movimiento reducido, ahorro) todo queda visible. Con foco de teclado, el bloque se ve entero. Si un
+capítulo no cabe en la pantalla, se cuenta como Escenas. Sumar un relato: su CSS en `src/relatos/css.ts`, su ficha en
+`src/relatos/catalogo.ts` y un teléfono en `#relatos`. Pruebas: `npm test` y `scripts/verificar-relatos.mjs`.
+
+## Biblioteca de diseños (23-11-2026)
+
+Paso 4 del plan. `src/biblioteca/biblioteca.ts`, sin React. Misma forma que la tabla que tendrá La Mente
+(`lamente-<amb>-paginas-biblioteca`): en el paso 5 se cambia el almacén, no los datos.
+
+| Pieza | Qué hace |
+|---|---|
+| `DisenoBiblioteca` | `id`, `nombre`, `rubro`, `etiquetas`, `estado` (borrador, aprobado, archivado), `autor`, `receta` (v1), `vista` (tema y paleta de La Mente), `creado`, `actualizado` |
+| `validarDiseno` | Errores en español con el campo, también los de la receta (`receta.titulo`) |
+| `crearDiseno`, `editarDiseno`, `duplicarDiseno` | Nuevo en borrador; editar pone la fecha; la copia vuelve a borrador |
+| `filtrarDisenos`, `etiquetasDe` | Por texto (sin tildes), rubro, estado y etiqueta; los archivados quedan fuera si no se piden |
+| `exportarBiblioteca`, `importarBiblioteca` | Archivo `motion-kit/biblioteca` v1; gana la edición más nueva; lo que no sirve se informa |
+| `almacenLocal()` / `AlmacenBiblioteca` | `localStorage` con respaldo en memoria (`persistente: false`); tope de 500 diseños |
+
+Demo `#biblioteca` y editor `#encabezados?id=…`. Pruebas: `pruebas/biblioteca.test.ts` y `scripts/verificar-biblioteca.mjs`.
+
 ## Mejoras a lo que ya existe
 
 - `Toast`: sumar cierre por deslizamiento y variantes (éxito, error).

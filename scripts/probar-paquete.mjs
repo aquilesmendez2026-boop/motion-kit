@@ -28,13 +28,21 @@ writeFileSync(join(P, "package.json"), JSON.stringify({ name: "proyecto-prueba",
 writeFileSync(join(P, "pagina.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEstilos, type RecetaEncabezado } from "motion-kit/encabezado";
+import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
 import "motion-kit/estilos-encabezado.css";
+import "motion-kit/estilos-pagina.css";
 
 sinInyectarEstilos();
 const r = validarReceta({ version: 1, estilo: "neon", titulo: "Smash *burgers*", botones: [{ texto: "Pedir", href: "#pedir" }] });
 const receta: RecetaEncabezado | null = r.ok ? r.receta : null;
-if (receta) createRoot(document.getElementById("raiz")!).render(
-  <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}><Encabezado {...recetaAProps(receta)} /></EstiloLaMente>
+const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete" });
+if (receta && p.ok) createRoot(document.getElementById("raiz")!).render(
+  <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
+    <PaginaRelato relato={p.pagina.relato}>
+      <Encabezado {...recetaAProps(receta)} />
+      <Relato modo="cuento"><p data-mk-parte="linea">Había una vez…</p></Relato>
+    </PaginaRelato>
+  </EstiloLaMente>
 );
 `);
 writeFileSync(join(P, "tsconfig.json"), JSON.stringify({
@@ -48,9 +56,9 @@ const ok = (c, m) => { console.log((c ? "ok   " : "FALLA") + " " + m); if (!c) f
 // 3. Tipos: el proyecto compila contra los .d.ts publicados.
 try {
   execFileSync(resolve("node_modules/.bin/tsc"), ["-p", P], { encoding: "utf8", stdio: "pipe" });
-  ok(true, "los tipos de motion-kit/encabezado resuelven");
+  ok(true, "los tipos de motion-kit/encabezado y motion-kit/pagina resuelven");
 } catch (e) {
-  ok(false, "los tipos de motion-kit/encabezado resuelven:\n" + (e.stdout || e.message));
+  ok(false, "los tipos de motion-kit/encabezado y motion-kit/pagina resuelven:\n" + (e.stdout || e.message));
 }
 
 // 4. Empaquetar como lo haría la app (react afuera) y revisar qué entró.
@@ -67,6 +75,7 @@ ok(delKit.length > 0 && fuera.length === 0, "solo entra motion-kit/encabezado (n
 console.log("     archivos del kit que entran: " + delKit.map((f) => f.split("/").pop()).join(", "));
 const css = Object.keys(r.metafile.outputs).find((f) => f.endsWith(".css"));
 ok(Boolean(css) && r.metafile.outputs[css].bytes > 10_000, "el CSS del encabezado viaja como archivo");
+ok(Boolean(css) && readFileSync(join(P, css), "utf8").includes(".mk-relato"), "el CSS de la página viaja como archivo");
 const js = Object.entries(r.metafile.outputs).filter(([f]) => f.endsWith(".js")).map(([f]) => f);
 const todo = js.map((f) => readFileSync(join(P, f), "utf8")).join("");
 for (const pieza of ["mk-peso-barra", "mk-pag-precio"]) ok(!todo.includes(pieza), `no se cuela «${pieza}»`);

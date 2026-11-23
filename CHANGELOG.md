@@ -1,5 +1,37 @@
 # Cambios
 
+## Sin publicar
+
+### Nuevo
+
+- **Relatos** (`motion-kit/pagina`): nueve maneras de contar la página al bajar. De bloque: Escenas que aparecen,
+  Película continua, Cuento por capítulos, Profundidad, Iris, Carrete y Subtítulos; de página: Hilo y Luz que cambia.
+  CSS con animaciones ligadas al scroll (`animation-timeline`), respaldo propio con un solo `IntersectionObserver`, niveles
+  completo, liviano y quieto, y movimiento base con el sabor de cada estilo (entrada y cursor sobre las tarjetas).
+- `<PaginaRelato>`, `<Relato>` y `<FraseRelato>`. Los bloques marcan sus partes con `data-mk-parte` (`linea`, `foto`,
+  `tarjeta`, `frase`); sin las marcas que pide su relato, un bloque se cuenta como Escenas.
+- **Receta de página v1**: `validarPagina`, `normalizarPagina`, `relatoDeBloque` y el contrato
+  `contrato/pagina-motionkit.json`.
+- `motion-kit/estilos-pagina.css` (2,5 KB gzip) para usar con `sinInyectarEstilos()`.
+- Demos `#relatos` y `#pagina` (con QR); `scripts/verificar-relatos.mjs`.
+
+- **Biblioteca de diseños** (paso 4): `DisenoBiblioteca` con nombre, rubro, etiquetas, estado (borrador, aprobado,
+  archivado), autor, receta y tema/paleta de La Mente para verlo igual; `validarDiseno`, `crearDiseno`, `editarDiseno`,
+  `duplicarDiseno`, `filtrarDisenos`, `exportarBiblioteca` e `importarBiblioteca` (gana la edición más nueva; lo que no
+  sirve se informa en español) y `almacenLocal()` detrás de la interfaz `AlmacenBiblioteca`, que en el paso 5 se cambia
+  por la API de La Mente. Misma forma que la tabla que tendrá La Mente.
+- Demo `#biblioteca`: miniaturas con el encabezado de verdad (quieto), filtros, aprobar, archivar, duplicar, borrar con
+  confirmación, exportar e importar `.json`, y 10 ejemplos por rubro. El editor guarda en la biblioteca, abre un diseño
+  con `#encabezados?id=…` y, si se cambia uno aprobado, vuelve a borrador. `scripts/verificar-biblioteca.mjs`.
+- El editor conserva los `href` de los botones de una receta abierta y solo guarda `mover` si no es el de siempre.
+
+### Peso
+
+La biblioteca está solo en `motion-kit` (no en `encabezado` ni `receta`): suma unos 2 KB gzip.
+
+`motion-kit/pagina`: 15,8 KB gzip sola; sobre el encabezado suma unos 7,5 KB. Topes (con «hace todo» de Aquiles):
+`pagina` 17 KB y `motion-kit` 80 KB (era 70; con los relatos y la biblioteca mide 72,7).
+
 ## 0.2.0 (23-11-2026)
 
 Lo que hace falta para que La Mente guarde y dibuje encabezados de motion-kit.

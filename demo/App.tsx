@@ -91,6 +91,9 @@ export function App() {
           <a href="#piezas">Piezas</a>
           <a href="#estudio">Estudio</a>
           <a href="#encabezados">Encabezados</a>
+          <a href="#biblioteca">Biblioteca</a>
+          <a href="#relatos">Relatos</a>
+          <a href="#pagina">Página</a>
         </div>
       </Navbar>
 

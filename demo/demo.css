@@ -484,3 +484,81 @@ h2 {
 .enc-qr svg{border-radius:8px}
 .vista-telefono{min-height:100svh;background:#f4f3f8}
 .vista-medidores{display:grid;gap:.75rem;padding:1rem;max-width:520px;margin:0 auto}
+
+/* #relatos: teléfonos con scroll propio, como los bocetos */
+.rel-demo{padding:24px 16px 64px;max-width:1500px;margin:0 auto}
+.rel-demo h1{margin:.4rem 0}
+.rel-fila{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+.rel-fila figure{margin:0;width:300px}
+.rel-fila figcaption{font-weight:600;margin-bottom:6px}
+.rel-tel{height:540px;border-radius:30px;border:9px solid #23262b;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;background:#111}
+.rel-tel::-webkit-scrollbar{display:none}
+.rel-tel>.mk-estilo{min-height:100%}
+.rel-enc{min-height:420px;display:grid;place-content:center;text-align:center;padding:24px;gap:8px}
+.rel-enc small{color:var(--mk-acento-texto,var(--mk-acento));letter-spacing:.18em;font-size:11px}
+.rel-enc b{font:400 36px/1 var(--mk-fuente-titulo);display:block}
+.rel-blq{padding:30px 20px}
+.rel-blq h3{font-family:var(--mk-fuente-titulo);font-size:24px;margin:0 0 10px}
+.rel-blq p{margin:0 0 6px;color:color-mix(in srgb,var(--mk-texto) 85%,transparent);font-size:14px}
+.rel-foto{height:110px;border-radius:14px;margin-top:10px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-superficie))}
+.rel-cartas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rel-carta{background:var(--mk-superficie);border:1px solid color-mix(in srgb,var(--mk-texto) 15%,transparent);border-radius:var(--mk-radio-tarjeta,14px);padding:12px;font-size:12px;margin:0}
+.rel-carta i{display:block;height:50px;border-radius:10px;margin-bottom:8px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-acento-2,var(--mk-acento)))}
+.rel-fin{text-align:center;padding-bottom:60px}
+.rel-btn{display:inline-block;padding:10px 20px;border-radius:var(--mk-radio-boton,999px);background:var(--mk-acento);color:var(--mk-sobre-acento);font-weight:600;text-decoration:none}
+.rel-galeria{display:flex;gap:10px;flex-wrap:wrap}
+.rel-cuadro{width:150px;height:170px;border-radius:8px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-superficie));display:flex;align-items:flex-end;padding:10px;font-weight:600;color:var(--mk-sobre-acento)}
+.rel-frase{font-family:var(--mk-fuente-titulo);font-size:30px;line-height:1.15;margin:0}
+
+/* #pagina: editor a la izquierda, la página con scroll propio a la derecha */
+.pag-editor{display:grid;grid-template-columns:340px 1fr;height:100vh}
+.pag-editor .estudio-panel{overflow-y:auto}
+.pag-vista{height:100vh;overflow-y:auto}
+.pag-sola{min-height:100vh}
+@media (max-width:820px){.pag-editor{grid-template-columns:1fr;height:auto}.pag-vista{height:80vh}}
+.pag-blq{padding:56px clamp(16px,5vw,64px);max-width:1100px;margin:0 auto}
+.pag-blq h2{font-family:var(--mk-fuente-titulo);font-size:clamp(28px,5vw,44px);margin:0 0 16px}
+.pag-blq p{margin:0 0 8px;font-size:17px;color:color-mix(in srgb,var(--mk-texto) 85%,transparent)}
+.pag-frase{font-family:var(--mk-fuente-titulo);font-size:clamp(28px,5vw,48px)!important;line-height:1.15;margin:24px 0!important;color:var(--mk-texto)!important}
+.pag-foto{height:220px;border-radius:var(--mk-radio-tarjeta,16px);margin-top:16px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-superficie))}
+.pag-cartas{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.pag-carta{background:var(--mk-superficie);border:1px solid color-mix(in srgb,var(--mk-texto) 15%,transparent);border-radius:var(--mk-radio-tarjeta,14px);padding:14px;margin:0}
+.pag-carta i{display:block;height:90px;border-radius:10px;margin-bottom:10px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-acento-2,var(--mk-acento)))}
+.pag-galeria{display:flex;flex-wrap:wrap;gap:14px}
+.pag-cuadro{width:220px;height:260px;border-radius:10px;background:linear-gradient(135deg,var(--mk-acento),var(--mk-superficie));display:flex;align-items:flex-end;padding:12px;font-weight:700;color:var(--mk-sobre-acento)}
+.pag-btn{display:inline-block;margin-top:12px;padding:12px 24px;border-radius:var(--mk-radio-boton,999px);background:var(--mk-acento);color:var(--mk-sobre-acento);font-weight:700;text-decoration:none}
+.rel-pie{padding:8px 20px 12px;font-size:12px;text-align:center}
+.rel-mini{width:60px;min-width:60px!important;height:60px;border-radius:8px;background:var(--mk-acento)}
+
+/* Biblioteca de diseños (#biblioteca) */
+.bib{max-width:1240px;margin:0 auto;padding:1.5rem clamp(1rem,4vw,2.5rem) 4rem;font:15px/1.5 system-ui,sans-serif;color:#1d1b26;background:#f6f5fa;min-height:100svh}
+.bib-cabeza h1{margin:.4rem 0 .2rem;font-size:clamp(1.6rem,4vw,2.2rem)}
+.bib-cabeza p{margin:.2rem 0;color:#4d4a5c}
+.bib-acciones{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0 .5rem}
+.bib-boton,.bib-botones button,.bib-botones a{display:inline-flex;align-items:center;min-height:44px;padding:0 1rem;border-radius:10px;border:1px solid #cfcbe0;background:#fff;color:inherit;font:inherit;text-decoration:none;cursor:pointer}
+.bib-boton:hover,.bib-botones button:hover,.bib-botones a:hover{border-color:#6b5bd6}
+.bib-boton:disabled{opacity:.5;cursor:not-allowed}
+.bib-aviso{padding:.6rem .9rem;border-radius:10px;background:#ebe8fb}
+.bib-alerta{padding:.6rem .9rem;border-radius:10px;background:#fde0de;color:#7d1a13}
+.bib-filtros{display:flex;flex-wrap:wrap;gap:.75rem 1rem;align-items:end;margin:1rem 0 1.5rem}
+.bib-filtros label{display:grid;gap:.2rem;font-size:13px;color:#4d4a5c}
+.bib-filtros input,.bib-filtros select{min-height:44px;padding:0 .7rem;border-radius:10px;border:1px solid #cfcbe0;background:#fff;font:inherit;color:#1d1b26}
+.bib-filtros small{margin-left:auto;color:#6b6880}
+.bib-lista{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:1.25rem}
+.bib-tarjeta{display:grid;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 0 #e3e0ee,0 8px 24px -16px rgba(30,20,80,.35)}
+.bib-tarjeta[data-estado=archivado]{opacity:.65}
+.bib-mini{position:relative;aspect-ratio:16/9;overflow:hidden;background:#111}
+.bib-mini-lienzo{position:absolute;top:0;left:0;width:1280px;transform-origin:0 0;transform:scale(var(--escala,.27));pointer-events:none}
+.bib-datos{padding:.9rem 1rem 1rem;display:grid;gap:.5rem}
+.bib-datos h2{margin:0;font-size:1.05rem}
+.bib-datos p{margin:0;display:flex;flex-wrap:wrap;gap:.35rem .75rem;font-size:13px;color:#5d5a6b}
+.bib-estado{padding:.05rem .55rem;border-radius:999px;background:#eeecf3;color:#3a3750;font-weight:600}
+.bib-tarjeta[data-estado=aprobado] .bib-estado{background:#dff3e6;color:#16613a}
+.bib-tarjeta[data-estado=archivado] .bib-estado{background:#e6e4ec;color:#55526a}
+.bib-etiquetas button{border:0;background:none;padding:0;color:#5141c2;font:inherit;cursor:pointer;min-height:24px}
+.bib-botones{display:flex;flex-wrap:wrap;gap:.4rem}
+.bib-botones button,.bib-botones a{min-height:40px;padding:0 .75rem;font-size:14px}
+.bib-confirmar{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:14px;color:#7d1a13}
+.bib-vacia{padding:2rem;border-radius:14px;background:#fff;text-align:center;color:#5d5a6b}
+.bib-cargando{padding:2rem;font:15px system-ui,sans-serif}
+.enc-bib{display:grid;gap:.5rem}

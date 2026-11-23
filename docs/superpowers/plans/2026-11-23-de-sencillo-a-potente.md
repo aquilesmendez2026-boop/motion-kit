@@ -45,3 +45,20 @@ se equivocó en la cuenta). Selector en el editor y en la vista del QR; `scripts
 **Paso 3 listo (23-11):** entradas `encabezado`, `escena` y `receta`; peso medido con tope; `estilos.css` y
 `estilos-encabezado.css` con `sinInyectarEstilos()`; versión 0.2.0 y `CHANGELOG.md`. Falta la etiqueta `v0.2.0` y el push
 (con OK de Aquiles).
+
+**Paso 4 listo (23-11):** biblioteca en `src/biblioteca/` (`DisenoBiblioteca`, validar, crear, editar, duplicar,
+filtrar, exportar, importar, `almacenLocal` detrás de `AlmacenBiblioteca`) y demo `#biblioteca` unida al editor
+(`#encabezados?id=…`). `npm test` (48) y `verificar-biblioteca` (25) en verde. Sigue el paso 5 (La Mente), con orden de
+Aquiles.
+
+**Relatos listos (23-11):** los nueve relatos, el movimiento base por estilo y la receta de página v1 en
+`motion-kit/pagina` (plan `docs/superpowers/plans/2026-11-23-relatos.md`). Sigue el encabezado de película (receta v2).
+
+## Por diseñar (pedidos de Aquiles, 23-11)
+
+- **Página de presentación, sin tope de peso:** para mostrar lo mejor (todos los relatos, shader, objeto 3D, video con
+  transparencia, secuencias, fotos grandes). **Primero web**; las páginas de los negocios mantienen su presupuesto.
+  **En el teléfono (web móvil) carga en baja:** parte en nivel liviano y sin los recursos pesados (video, secuencias,
+  fotos grandes); la versión completa es para computador.
+- **Después, la app móvil:** `lamente-app` es Kotlin Multiplatform, no React. Decidir entre mostrar la página web
+  dentro de la app (rápido, igual que la web) o rehacer en Compose los efectos más usados (más fluido, más trabajo).

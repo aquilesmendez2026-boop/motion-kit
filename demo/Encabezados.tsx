@@ -6,15 +6,18 @@ import {
   MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps,
   EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
+  crearDiseno, editarDiseno, type DisenoBiblioteca, type RecetaEncabezado,
   type AltoEncabezado, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
 } from "../src";
 
 import { enlaceVista, type ConfigVista } from "./compartir";
+import { almacen } from "./Biblioteca";
 
 const TEXTOS: TextoEfecto[] = ["revelar", "voltear", "rebote", "encender", "glitch", "maquina", "impacto", "temblor", "caer", "trailer", "onda"];
 const EJEMPLO = { antetitulo: "Barrio Italia · desde 2019", titulo: "Café de *especialidad*, tostado aquí", bajada: "Granos de origen, pan de masa madre y un rincón tranquilo para quedarse.", boton: "Ver la carta", secundario: "Cómo llegar", datos: "Lun a sáb, 8:00 a 20:00, Santiago" };
 
-export function Encabezados() {
+/** El editor. Con `id`, abre ese diseño de la biblioteca. */
+export function Encabezados({ id }: { id?: string } = {}) {
   const [estilo, setEstilo] = useState<EstiloId>("neon");
   const [composicion, setComposicion] = useState<ComposicionId>("letrero");
   const [entrada, setEntrada] = useState<EntradaId>("foco");
@@ -42,6 +45,12 @@ export function Encabezados() {
   const [semilla, setSemilla] = useState<number | null>(null);
   const [lmTema, setLmTema] = useState<TemaLaMente | "">("");
   const [lmPaleta, setLmPaleta] = useState<PaletaLaMente>("clasica");
+  const [hrefs, setHrefs] = useState<[string, string]>(["#carta", "#contacto"]);
+  // Biblioteca: el diseño abierto (si vino de ahí), su nombre y etiquetas, y el último aviso.
+  const [abierto, setAbierto] = useState<DisenoBiblioteca | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [etiquetas, setEtiquetas] = useState("");
+  const [avisoBib, setAvisoBib] = useState("");
   const vista = useRef<HTMLDivElement>(null);
   useEffect(() => () => { if (foto) URL.revokeObjectURL(foto); }, [foto]);
   const subirFoto = async (f: File | undefined) => {
@@ -85,11 +94,11 @@ export function Encabezados() {
   };
   const datos = t.datos.split(",").map((d) => d.trim()).filter(Boolean);
   // Lo que se guarda: la receta v1 (ver src/receta). Shader, objeto 3D y la foto local se ven aquí, pero no viajan en ella.
-  const botones = [{ texto: t.boton, href: "#carta" }, { texto: t.secundario, href: "#contacto" }].filter((b) => b.texto.trim());
+  const botones = [{ texto: t.boton, href: hrefs[0] }, { texto: t.secundario, href: hrefs[1] }].filter((b) => b.texto.trim());
   const cruda = {
     version: 1, estilo, composicion, entrada, efectoTexto, pack, ...(efecto ? { efecto, variante } : {}),
     antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada, datos, botones, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
-    profundidad, ...(luz ? { luz } : {}), ...(profundidad || luz === "puntero" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
+    profundidad, ...(luz ? { luz } : {}), ...((profundidad || luz === "puntero") && mover !== "puntero,scroll" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
     salida, ahorro,
   };
   const resultado = validarReceta(cruda);
@@ -98,6 +107,51 @@ export function Encabezados() {
   const objeto: ObjetoEncabezado | undefined = forma ? { tipo: "3d", forma, caras: foto ? [foto, foto] : undefined, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } : undefined;
   const config: ConfigVista = { estilo, ...(lmTema ? { lmTema, lmPaleta } : {}), ...props, ...(shader ? { shader } : {}), objeto: objeto && { ...objeto, caras: undefined } };
   const enlace = enlaceVista(config);
+  // Pone en el editor una receta guardada (lo inverso de `cruda`).
+  const aplicarReceta = (r: RecetaEncabezado) => {
+    setEstilo(r.estilo); setComposicion(r.composicion); setEntrada(r.entrada); setEfectoTexto(r.efectoTexto); setPack(r.pack);
+    setEfecto(r.efecto ?? ""); setVariante(r.variante ?? 1);
+    setT({
+      antetitulo: r.antetitulo ?? "", titulo: r.titulo, bajada: r.bajada ?? "", datos: (r.datos ?? []).join(", "),
+      boton: r.botones?.[0]?.texto ?? "", secundario: r.botones?.[1]?.texto ?? "",
+    });
+    setHrefs([r.botones?.[0]?.href ?? "#carta", r.botones?.[1]?.href ?? "#contacto"]);
+    setAlto(r.alto); setAltoCelular(r.altoCelular ?? ""); setProfundidad(r.profundidad); setLuz(r.luz ?? "");
+    setMover((r.mover ?? ["puntero", "scroll"]).join(",")); setSalida(r.salida); setAhorro(r.ahorro);
+    setShader(""); setForma(""); otra();
+  };
+  useEffect(() => {
+    if (!id) return;
+    let vivo = true;
+    almacen.listar().then((lista) => {
+      const d = lista.find((x) => x.id === id);
+      if (!vivo) return;
+      if (!d) return setAvisoBib("Ese diseño ya no está en la biblioteca.");
+      aplicarReceta(d.receta);
+      setAbierto(d); setNombre(d.nombre); setEtiquetas(d.etiquetas.join(", "));
+      if (d.rubro) setRubro(d.rubro);
+      setLmTema(d.vista?.tema ?? ""); if (d.vista) setLmPaleta(d.vista.paleta);
+      setAvisoBib(`Abierto «${d.nombre}» (${d.estado}).`);
+    });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  const guardarEnBiblioteca = async (comoNuevo: boolean) => {
+    if (!resultado.ok) return setAvisoBib("Arregla los errores de la receta antes de guardar.");
+    const datosVista = lmTema ? { vista: { tema: lmTema, paleta: lmPaleta } } : {};
+    try {
+      // Un diseño aprobado que se cambia vuelve a borrador: hay que aprobarlo de nuevo.
+      const d = abierto && !comoNuevo
+        ? editarDiseno(abierto, { nombre, etiquetas: etiquetas.split(","), rubro, receta: resultado.receta, vista: lmTema ? { tema: lmTema, paleta: lmPaleta } : undefined, estado: abierto.estado === "archivado" ? "archivado" : "borrador" })
+        : crearDiseno({ nombre, receta: resultado.receta, rubro, etiquetas, ...datosVista });
+      await almacen.guardar(d);
+      setAbierto(d);
+      setAvisoBib(`Guardado «${d.nombre}» en la biblioteca${abierto && !comoNuevo && abierto.estado === "aprobado" ? " (vuelve a borrador: hay que aprobarlo de nuevo)" : ""}.`);
+      if (location.hash !== `#encabezados?id=${d.id}`) history.replaceState(null, "", `#encabezados?id=${d.id}`);
+    } catch (e) {
+      setAvisoBib((e as Error).message);
+    }
+  };
   const campo = (k: keyof typeof EJEMPLO, etiqueta: string, ayuda?: string) => (
     <label>{etiqueta}
       <input value={t[k]} onChange={(e) => setT({ ...t, [k]: e.target.value })} onBlur={otra} data-campo={k} />
@@ -279,6 +333,17 @@ export function Encabezados() {
           {foto && <small>La foto propia no va en la receta: en La Mente se sube y queda su key de S3.</small>}
           <pre data-prueba="json" data-valida={resultado.ok ? "" : undefined}>{JSON.stringify(resultado.ok ? resultado.receta : cruda, null, 2)}</pre>
         </details>
+        <fieldset className="enc-bib"><legend>Biblioteca</legend>
+          <label>Nombre del diseño<input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={60} placeholder="Ej.: Café Italia, versión noche" data-prueba="bib-nombre" /></label>
+          <label>Etiquetas (separadas por coma)<input value={etiquetas} onChange={(e) => setEtiquetas(e.target.value)} placeholder="oscuro, navidad" data-prueba="bib-etiquetas" /></label>
+          <small>Se guarda con el rubro de arriba ({RUBROS[rubro].nombre}){lmTema ? " y el tema y la paleta de La Mente elegidos" : ""}.</small>
+          <div className="enc-acciones">
+            <button onClick={() => guardarEnBiblioteca(false)} disabled={!resultado.ok || !nombre.trim()} data-prueba="bib-guardar">{abierto ? "Guardar cambios" : "Guardar en la biblioteca"}</button>
+            {abierto && <button onClick={() => guardarEnBiblioteca(true)} disabled={!resultado.ok || !nombre.trim()} data-prueba="bib-guardar-nuevo">Guardar como nuevo</button>}
+          </div>
+          {avisoBib && <small role="status" data-prueba="bib-aviso">{avisoBib}</small>}
+          <a href="#biblioteca">Ver la biblioteca →</a>
+        </fieldset>
       </aside>
       <main className="enc-vista">
         <div className={celular ? "enc-celular" : "enc-ancho"} ref={vista}>

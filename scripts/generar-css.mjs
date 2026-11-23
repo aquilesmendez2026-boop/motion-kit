@@ -1,8 +1,8 @@
 // Escribe dist/estilos.css con todo el CSS que motion-kit inserta como <style> (para usar con sinInyectarEstilos()).
 // Busca en src/ cada `useStyles("id", CONSTANTE)` y cada efecto `<CapaEfecto nombre="x" css={CONSTANTE}>`, y saca el
 // valor real de la constante empaquetando el módulo con esbuild (así las partes armadas con ${…} quedan resueltas).
-// También escribe estilos-encabezado.css: solo lo que alcanza motion-kit/encabezado (con todos los efectos de fondo,
-// porque la receta puede elegir cualquiera).
+// También escribe estilos-encabezado.css y estilos-pagina.css: solo lo que alcanza cada entrada (el del encabezado,
+// con todos los efectos de fondo, porque la receta puede elegir cualquiera).
 // Uso: node scripts/generar-css.mjs [--salida ruta]   (por defecto dist/estilos.css)
 import { build } from "esbuild";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -60,13 +60,18 @@ await build({
 });
 const { tabla: filas } = await import(pathToFileURL(salidaJs).href + `?t=${Date.now()}`);
 
-// Los archivos que alcanza la entrada del encabezado (los import() de los efectos se empaquetan adentro).
-const { metafile } = await build({
-  entryPoints: ["src/entradas/encabezado.ts"], bundle: true, write: false, metafile: true, format: "esm",
-  platform: "browser", packages: "external", jsx: "automatic", logLevel: "error",
-});
-const delEncabezado = new Set(Object.keys(metafile.inputs).map((f) => resolve(f)));
-const idsEncabezado = new Set([...usos.entries()].filter(([a]) => delEncabezado.has(a)).flatMap(([, l]) => l.map((u) => u.id)));
+/** Los ids de CSS que alcanza una entrada (los import() de los efectos se empaquetan adentro). */
+async function idsDe(entrada) {
+  const { metafile } = await build({
+    entryPoints: [entrada], bundle: true, write: false, metafile: true, format: "esm",
+    platform: "browser", packages: "external", jsx: "automatic", logLevel: "error",
+  });
+  const archivos = new Set(Object.keys(metafile.inputs).map((f) => resolve(f)));
+  return new Set([...usos.entries()].filter(([a]) => archivos.has(a)).flatMap(([, l]) => l.map((u) => u.id)));
+}
+const idsEncabezado = await idsDe("src/entradas/encabezado.ts");
+// La página va siempre con el encabezado: su CSS no repite lo que ya trae estilos-encabezado.css.
+const idsPagina = new Set([...(await idsDe("src/entradas/pagina.ts"))].filter((id) => !idsEncabezado.has(id)));
 
 // Un bloque por id (el mismo CSS se pide desde varios componentes). Primero la base de estilos, como en la página.
 const bloques = new Map();
@@ -86,3 +91,4 @@ function escribir(ruta, ids, que) {
 }
 escribir(SALIDA, ordenar([...bloques.keys()]), "todo el CSS que la librería inserta como <style>");
 escribir(join(dirname(SALIDA), "estilos-encabezado.css"), ordenar([...idsEncabezado]), "el CSS de motion-kit/encabezado");
+escribir(join(dirname(SALIDA), "estilos-pagina.css"), ordenar([...idsPagina]), "el CSS de motion-kit/pagina");

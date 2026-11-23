@@ -31,7 +31,11 @@ export function decodificar(d: string): ConfigVista | null {
 
 /** La URL de la vista para el teléfono. En local usa la IP de la red (la pone `vite.config.ts`), no «localhost». */
 export function enlaceVista(c: ConfigVista): { url: string; nota: string } {
-  const hash = `#vista?d=${codificar(c)}`;
+  return enlaceDe(`#vista?d=${codificar(c)}`);
+}
+
+/** Lo mismo para cualquier ruta de la demo (por ejemplo `#pagina?d=…`). */
+export function enlaceDe(hash: string): { url: string; nota: string } {
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
   const red = typeof __MK_RED__ === "string" && __MK_RED__ ? __MK_RED__ : "";
   if (local && red) {

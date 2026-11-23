@@ -161,3 +161,16 @@ export type { EstiloLaMenteProps } from "./receta/EstiloLaMente";
 
 // CSS: apagar la inserción de <style> cuando se carga motion-kit/estilos.css
 export { sinInyectarEstilos } from "./utils/styles";
+
+// Relatos: cómo se cuenta la página al bajar, y la receta de página (también en motion-kit/pagina)
+export * from "./entradas/pagina";
+
+// Biblioteca de diseños (paso 4): misma forma que la tabla que tendrá La Mente
+export {
+  VERSION_BIBLIOTECA, FORMATO_BIBLIOTECA, ESTADOS_DISENO, ESTADO_IDS, TOPES_BIBLIOTECA,
+  validarDiseno, crearDiseno, editarDiseno, duplicarDiseno, filtrarDisenos, etiquetasDe, limpiarEtiquetas, nuevoId,
+  exportarBiblioteca, importarBiblioteca, almacenLocal,
+} from "./biblioteca/biblioteca";
+export type {
+  DisenoBiblioteca, EstadoDiseno, ArchivoBiblioteca, ResultadoDiseno, DatosDiseno, FiltroBiblioteca, ResultadoImportar, AlmacenBiblioteca,
+} from "./biblioteca/biblioteca";

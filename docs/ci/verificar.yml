@@ -42,7 +42,7 @@ jobs:
           cat vite.log; exit 1
       - name: Verificaciones
         run: |
-          for s in efectos piezas estilos encabezados escena lamente; do
+          for s in efectos piezas estilos encabezados escena lamente relatos biblioteca; do
             echo "::group::verificar-$s"
             node scripts/verificar-$s.mjs http://localhost:5173 || exit 1
             echo "::endgroup::"

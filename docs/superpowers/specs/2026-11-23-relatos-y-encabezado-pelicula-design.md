@@ -1,6 +1,6 @@
 # Relatos y encabezado de película
 
-Fecha: 23-11-2026. Estado: **diseño para aprobar** (revisado por un constructor; sus preguntas quedaron respondidas abajo como «decisión mía»). Repo: `motion-kit`, rama `dev`. Bocetos que Aquiles vio y aprobó:
+Fecha: 23-11-2026. Estado: **aprobado por Aquiles el 23-11-2026** («comienza»). Revisado por un constructor; sus preguntas quedaron respondidas abajo como «decisión mía». Repo: `motion-kit`, rama `dev`. Bocetos que Aquiles vio y aprobó:
 `.superpowers/brainstorm/48334-1795457228/content/pagina-pelicula.html` (A, B, C) y `pagina-pelicula-mas.html` (D a I).
 
 ## Para qué
