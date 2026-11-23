@@ -7,7 +7,7 @@ import {
   EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   crearDiseno, editarDiseno, type DisenoBiblioteca, type RecetaEncabezado,
-  type AltoEncabezado, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
+  type AltoEncabezado, type Tratamiento, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
 } from "../src";
 
 import { enlaceVista, type ConfigVista } from "./compartir";
@@ -24,6 +24,9 @@ const ESTADOS_DEMO = {
   cerrado: { abierto: false, abreA: { dia: "lunes", hora: "9:00" } },
   proxima: { abierto: true, cierraA: "22:00", proximaHora: hoyA(17, 30) },
 };
+
+/** Horas fijas para ver la hora del día sin esperar. */
+const HORAS_DEMO = { manana: new Date(2026, 10, 23, 9, 0), tarde: new Date(2026, 10, 23, 15, 0), noche: new Date(2026, 10, 23, 22, 0) };
 
 export function Encabezados({ id }: { id?: string } = {}) {
   const [estilo, setEstilo] = useState<EstiloId>("neon");
@@ -63,6 +66,9 @@ export function Encabezados({ id }: { id?: string } = {}) {
   const [nombreNegocio, setNombreNegocio] = useState("");
   const [barraPropia, setBarraPropia] = useState(false);
   const [estadoDemo, setEstadoDemo] = useState<keyof typeof ESTADOS_DEMO | "">("");
+  const [fotoLetras, setFotoLetras] = useState(false);
+  const [tratamiento, setTratamiento] = useState<Tratamiento | "">("");
+  const [horaDemo, setHoraDemo] = useState<"" | "auto" | "manana" | "tarde" | "noche">("");
   // Biblioteca: el diseño abierto (si vino de ahí), su nombre y etiquetas, y el último aviso.
   const [abierto, setAbierto] = useState<DisenoBiblioteca | null>(null);
   const [nombre, setNombre] = useState("");
@@ -122,6 +128,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     ...(apertura ? { apertura: presenta.trim() ? { presenta } : {} } : {}), ...(tomas ? { tomas: true } : {}),
     ...(palabras.trim() ? { palabras: palabras.split(",").map((w) => w.trim()).filter(Boolean) } : {}),
     ...(nombreNegocio.trim() ? { nombre: nombreNegocio } : {}), ...(estadoDemo ? { estado: true } : {}),
+    ...(fotoLetras ? { fotoEnLetras: true } : {}), ...(tratamiento ? { tratamiento } : {}), ...(horaDemo ? { horaDelDia: true } : {}),
   };
   const resultado = validarReceta(cruda);
   const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
@@ -144,6 +151,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     setApertura(Boolean(r.apertura)); setPresenta(r.apertura?.presenta ?? ""); setTomas(Boolean(r.tomas));
     setFotosEjemplo(Boolean(r.imagenes?.length && r.imagenes.every((k) => k.startsWith("ejemplo/")))); setPalabras((r.palabras ?? []).join(", "));
     setNombreNegocio(r.nombre ?? ""); setEstadoDemo(r.estado ? "abierto" : "");
+    setFotoLetras(Boolean(r.fotoEnLetras)); setTratamiento(r.tratamiento ?? ""); setHoraDemo(r.horaDelDia ? "auto" : "");
     otra();
   };
   useEffect(() => {
@@ -306,6 +314,25 @@ export function Encabezados({ id }: { id?: string } = {}) {
               <option value="proxima">Abierto y próxima hora libre</option>
             </select>
           </label>
+          <label className="estudio-check"><input type="checkbox" checked={fotoLetras} onChange={(e) => setFotoLetras(e.target.checked)} data-prueba="foto-letras" /> La foto dentro de las letras del título</label>
+          <label>Tratamiento de la foto
+            <select value={tratamiento} onChange={(e) => setTratamiento(e.target.value as Tratamiento | "")} data-prueba="tratamiento">
+              <option value="">Sin tratamiento</option>
+              <option value="duotono">Duotono con el acento</option>
+              <option value="grano">Grano de película</option>
+              <option value="trama">Trama de puntos</option>
+              <option value="bn">Blanco y negro</option>
+            </select>
+          </label>
+          <label>Hora del día
+            <select value={horaDemo} onChange={(e) => setHoraDemo(e.target.value as typeof horaDemo)} data-prueba="hora">
+              <option value="">Apagada</option>
+              <option value="auto">Según la hora del teléfono</option>
+              <option value="manana">Ver como mañana</option>
+              <option value="tarde">Ver como tarde</option>
+              <option value="noche">Ver como noche</option>
+            </select>
+          </label>
           <label>Palabras que rotan (en la palabra resaltada, separadas por coma)
             <input value={palabras} onChange={(e) => setPalabras(e.target.value)} placeholder="barrio, autor" data-prueba="palabras" />
           </label>
@@ -401,7 +428,8 @@ export function Encabezados({ id }: { id?: string } = {}) {
             {/* La vista sale de la receta validada: lo que se ve es lo que se guarda (más shader, objeto y foto local). */}
             <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#encabezados" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#encabezados" }}
               imagenes={foto ? [foto, foto, foto] : props.imagenes} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel}
-              barraPropia={barraPropia} estadoNegocio={estadoDemo ? ESTADOS_DEMO[estadoDemo] : undefined} />
+              barraPropia={barraPropia} estadoNegocio={estadoDemo ? ESTADOS_DEMO[estadoDemo] : undefined}
+              ahora={horaDemo && horaDemo !== "auto" ? HORAS_DEMO[horaDemo] : undefined} />
           </Marco>
         </div>
         <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>

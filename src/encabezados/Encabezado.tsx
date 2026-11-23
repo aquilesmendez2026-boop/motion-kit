@@ -22,6 +22,8 @@ import { Tomas } from "./Tomas";
 import { PalabrasRotan } from "./PalabrasRotan";
 import { BarraEncabezado } from "./BarraEncabezado";
 import { EstadoNegocio, type DatosEstado } from "./EstadoNegocio";
+import { franjaDe } from "../receta/hora";
+import type { Tratamiento } from "../receta/receta";
 
 export { ALTOS, ALTO_IDS, SALIDAS, SALIDA_IDS } from "./catalogo";
 export type { AltoEncabezado, SalidaEncabezado } from "./catalogo";
@@ -93,6 +95,14 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   /** Muestra el estado del negocio (abierto, cerrado, próxima hora) con `estadoNegocio`. */
   estado?: boolean;
   estadoNegocio?: DatosEstado;
+  /** El título relleno con la primera foto (o el póster). Sin foto o si no carga, el título queda con su color. */
+  fotoEnLetras?: boolean;
+  /** Tratamiento de las fotos: duotono con el acento, grano, trama de puntos o blanco y negro. */
+  tratamiento?: Tratamiento;
+  /** Tinte según la hora (mañana, tarde, noche). */
+  horaDelDia?: boolean;
+  /** La hora a usar (por defecto, la del teléfono). Para el editor y las pruebas. */
+  ahora?: Date;
 }
 
 /**
@@ -103,7 +113,7 @@ export function Encabezado({
   composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
   shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, palabras,
-  barraPropia, logo, nombre, estado, estadoNegocio, className, style, ...resto
+  barraPropia, logo, nombre, estado, estadoNegocio, fotoEnLetras, tratamiento, horaDelDia, ahora, className, style, ...resto
 }: EncabezadoProps) {
   useStyles("encabezado", CSS_ENCABEZADO);
   const estilo = useEstilo();
@@ -154,6 +164,21 @@ export function Encabezado({
   const terminarApertura = useCallback(() => setAbriendo(false), []);
   const destacada = titulo.match(/\*([^*]+)\*/)?.[1];
   const rotacion = destacada && palabras && palabras.length ? [...new Set([destacada, ...palabras])] : undefined;
+
+  // Foto en las letras: solo si la foto existe y carga; si no, el título queda con su color.
+  const fotoLetras = fotoEnLetras ? imagenes?.[0] ?? poster : undefined;
+  const [fotoLetrasOk, setFotoLetrasOk] = useState(false);
+  useEffect(() => {
+    setFotoLetrasOk(false);
+    if (!fotoLetras || typeof Image === "undefined") return;
+    const img = new Image();
+    img.onload = () => setFotoLetrasOk(true);
+    img.src = fotoLetras;
+    return () => { img.onload = null; };
+  }, [fotoLetras]);
+  // Hora del día: se calcula en el navegador (en el servidor no hay hora del teléfono).
+  const [hora, setHora] = useState<string | undefined>(undefined);
+  useEffect(() => setHora(horaDelDia ? franjaDe(ahora ?? new Date()) : undefined), [horaDelDia, ahora]);
 
   const foto = (k: number) => imagenes?.[k] ?? imagenGenerada(estilo?.id ?? "neon", [300, 40, 190][k % 3]);
   const conTomas = Boolean(tomas && imagenes && imagenes.length >= 2);
@@ -216,8 +241,11 @@ export function Encabezado({
       data-nivel={nivel}
       data-salida={salida !== "ninguna" ? salida : undefined}
       data-objeto={objeto ? objeto.tipo : undefined}
+      data-foto-letras={fotoLetrasOk ? "" : undefined}
+      data-tratamiento={tratamiento}
+      data-hora={hora}
       data-listo={listo ? "" : undefined}
-      style={{ ...style, "--mk-enc-alto": altoCss(alto), ...(altoCelular !== undefined ? { "--mk-enc-alto-celular": altoCss(altoCelular) } : {}) } as CSSProperties}
+      style={{ ...style, ...(fotoLetrasOk ? { "--mk-foto-letras": `url("${fotoLetras}")` } : {}), "--mk-enc-alto": altoCss(alto), ...(altoCelular !== undefined ? { "--mk-enc-alto-celular": altoCss(altoCelular) } : {}) } as CSSProperties}
     >
       {poster && <img className="mk-enc-poster" src={poster} alt="" decoding="async" fetchPriority="high" />}
       {shader && (liviano ? <div className="mk-shader" data-tipo={shader} aria-hidden="true" /> : <ShaderFondo tipo={shader} />)}
@@ -239,6 +267,7 @@ export function Encabezado({
       </div>
       {composicion !== "dividido" && protagonista}
       <div className="mk-enc-telon" aria-hidden="true"><i /><i /></div>
+      {hora && <i className="mk-enc-hora" aria-hidden="true" />}
       {salida === "telon" && <div className="mk-enc-cortinas" aria-hidden="true"><i /><i /></div>}
       {abriendo && <Apertura presenta={apertura?.presenta} titulo={titulo.replace(/\*/g, "")} alTerminar={terminarApertura} />}
     </header>

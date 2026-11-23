@@ -568,6 +568,9 @@ export function recetaAProps(r: RecetaEncabezado, { urlImagen }: OpcionesProps =
     logo: r.logo && url(r.logo),
     nombre: r.nombre,
     estado: r.estado,
+    fotoEnLetras: r.fotoEnLetras,
+    tratamiento: r.tratamiento,
+    horaDelDia: r.horaDelDia,
   };
   for (const k of Object.keys(p) as (keyof EncabezadoProps)[]) if (p[k] === undefined) delete p[k];
   return p;

@@ -1,3 +1,4 @@
+import { RUIDO } from "../estilos/texturas";
 export const CSS_ENCABEZADO = `
 .mk-enc{position:relative;container-type:inline-size;isolation:isolate;overflow:clip;color:inherit}
 .mk-enc-in{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr);min-height:var(--mk-enc-alto,92svh);padding:clamp(4.5rem,10cqi,7rem) clamp(1rem,5cqi,3.5rem) clamp(3rem,7cqi,5rem)}
@@ -189,4 +190,24 @@ export const CSS_ENCABEZADO = `
 .mk-enc-estado[data-abierto]>i{background:#2fbf71;box-shadow:0 0 0 3px color-mix(in srgb,#2fbf71 30%,transparent)}
 .mk-enc-estado-proxima{opacity:.85}
 @media (prefers-reduced-motion:reduce){.mk-enc-cortinas{display:none}.mk-enc-barra{transition:none}}
+/* Película: foto en las letras, tratamiento de foto y hora del día */
+.mk-enc[data-foto-letras] .mk-enc-titulo{background:var(--mk-foto-letras) center/cover;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;
+  -webkit-text-stroke:max(1px,.012em) color-mix(in srgb,var(--mk-texto,#fff) 55%,transparent)}
+/* Con la foto en las letras, las letras no pueden ser capas aparte (animación, opacidad, inline-block): background-clip:text
+   no las alcanza y el título desaparece. Se anima el título entero, no letra por letra. */
+.mk-enc[data-foto-letras] .mk-enc-titulo *{animation:none!important;opacity:1!important;transform:none!important;translate:none!important;scale:none!important;rotate:none!important;display:inline!important;position:static!important;z-index:auto!important}
+.mk-enc[data-foto-letras] .mk-enc-titulo .mk-tc-dest::before{display:none!important}
+.mk-enc[data-foto-letras][data-entrada]:not([data-entrada=ninguna]) .mk-enc-titulo{animation:mk-p-letras-entra .9s ease both}
+@keyframes mk-p-letras-entra{from{opacity:0;scale:.96}to{opacity:1;scale:1}}
+.mk-enc[data-tratamiento] .mk-enc-media{position:relative}
+.mk-enc[data-tratamiento] .mk-enc-media::after{position:absolute;inset:0;pointer-events:none}
+.mk-enc[data-tratamiento=duotono] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.1)}
+.mk-enc[data-tratamiento=duotono] .mk-enc-media::after{content:"";background:var(--mk-acento,#7c5cff);mix-blend-mode:color}
+.mk-enc[data-tratamiento=grano] .mk-enc-media::after{content:"";background-image:${RUIDO};opacity:.35;mix-blend-mode:overlay}
+.mk-enc[data-tratamiento=trama] .mk-enc-media::after{content:"";background:radial-gradient(circle,rgba(0,0,0,.4) 1px,transparent 1.7px) 0 0/6px 6px;mix-blend-mode:multiply}
+.mk-enc[data-tratamiento=bn] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.15)}
+.mk-enc-hora{position:absolute;inset:0;z-index:1;pointer-events:none}
+.mk-enc[data-hora=manana] .mk-enc-hora{background:linear-gradient(to bottom,rgba(255,214,150,.22),transparent 60%)}
+.mk-enc[data-hora=tarde] .mk-enc-hora{background:linear-gradient(to bottom,rgba(255,150,80,.2),transparent 65%)}
+.mk-enc[data-hora=noche] .mk-enc-hora{background:radial-gradient(ellipse at 80% 0,color-mix(in srgb,var(--mk-acento,#7c5cff) 28%,transparent),transparent 55%),linear-gradient(to bottom,rgba(8,10,30,.35),transparent 70%)}
 `;

@@ -173,6 +173,76 @@ const bajarHasta = (pagina, fraccion) => pagina.evaluate(async ([v, f]) => {
   await ctx.close();
 }
 
+// --- Foto en las letras, tratamiento de foto y hora del día ---
+const titulo = (pagina) => pagina.evaluate((v) => {
+  const h = document.querySelector(`${v} .mk-enc-titulo`);
+  const cs = getComputedStyle(h);
+  return { clip: cs.backgroundClip || cs.webkitBackgroundClip, fondo: cs.backgroundImage, color: cs.color };
+}, VISTA);
+{
+  const { ctx, pagina, errores } = await abrir();
+  await pagina.locator('[data-prueba="composicion"]').selectOption("gigante");
+  await pagina.locator('[data-prueba="fotos-ejemplo"]').check();
+  await pagina.locator('[data-prueba="foto-letras"]').check();
+  await pagina.waitForTimeout(600);
+  const t = await titulo(pagina);
+  revisar(t.clip === "text" && t.fondo.startsWith("url("), `foto en letras: el título usa la foto (${t.clip}, ${t.fondo.slice(0, 20)}…)`);
+  // Las letras no pueden ser capas aparte (animación, opacidad, inline-block): background-clip:text no las alcanza y el título desaparece.
+  const capas = await pagina.evaluate((v) => [...document.querySelectorAll(`${v} .mk-enc-titulo *`)]
+    .filter((e) => { const cs = getComputedStyle(e); return cs.animationName !== "none" || Number(cs.opacity) < 1 || cs.display === "inline-block" || cs.transform !== "none" || (cs.position !== "static" && cs.zIndex !== "auto"); }).length, VISTA);
+  revisar(capas === 0, `foto en letras: ninguna letra va en una capa aparte, así el título se ve (${capas} capas)`);
+  const contorno = await pagina.evaluate((v) => getComputedStyle(document.querySelector(`${v} .mk-enc-titulo`)).webkitTextStrokeWidth, VISTA);
+  revisar(parseFloat(contorno) > 0, `foto en letras: las letras llevan contorno para leerse con cualquier foto (${contorno})`);
+  await pagina.locator('[data-prueba="foto-letras"]').uncheck();
+  // Tratamientos
+  await pagina.locator('[data-prueba="composicion"]').selectOption("dividido");
+  const capa = () => pagina.evaluate((v) => {
+    const m = document.querySelector(`${v} .mk-enc-media`);
+    const img = m.querySelector("img");
+    return { filtro: getComputedStyle(img).filter, capa: getComputedStyle(m, "::after").content };
+  }, VISTA);
+  const sin = await capa();
+  const cambios = [];
+  for (const tr of ["duotono", "grano", "trama", "bn"]) {
+    await pagina.locator('[data-prueba="tratamiento"]').selectOption(tr);
+    await pagina.waitForTimeout(250);
+    const c = await capa();
+    cambios.push(`${tr}:${c.filtro !== sin.filtro || c.capa !== sin.capa ? "sí" : "no"}`);
+  }
+  revisar(cambios.every((c) => c.endsWith("sí")), `tratamientos: cada uno cambia el filtro o la capa de la foto (${cambios.join(", ")})`);
+  // Hora del día (fijada desde el editor)
+  const horas = [];
+  for (const h of ["manana", "tarde", "noche"]) {
+    await pagina.locator('[data-prueba="hora"]').selectOption(h);
+    await pagina.waitForTimeout(200);
+    horas.push(await pagina.locator(`${VISTA} .mk-enc`).getAttribute("data-hora"));
+  }
+  revisar(horas.join(",") === "manana,tarde,noche", `hora del día: data-hora sigue la hora fijada (${horas.join(", ")})`);
+  await pagina.locator('[data-prueba="hora"]').selectOption("");
+  await pagina.waitForTimeout(200);
+  revisar((await pagina.locator(`${VISTA} .mk-enc[data-hora]`).count()) === 0, "hora del día: apagada, sin tinte");
+  revisar(errores.length === 0, "foto en letras, tratamiento y hora: sin errores" + (errores.length ? ": " + errores[0] : ""));
+  await ctx.close();
+}
+{
+  // Review Focus 5: foto en letras sin foto o con una foto que no carga → el título se ve
+  for (const [nombre, extra] of [["sin foto", {}], ["con foto rota", { imagenes: ["https://motion-kit.invalid/no-existe.jpg"] }]]) {
+    const ctx = await navegador.newContext({ viewport: { width: 1280, height: 860 } });
+    const pagina = await ctx.newPage();
+    await pagina.route(/motion-kit\.invalid/, (r) => r.abort());
+    const d = Buffer.from(JSON.stringify({ estilo: "pelicula", titulo: "Café de *barrio*", composicion: "gigante", fotoEnLetras: true, ...extra })).toString("base64url");
+    await pagina.goto(base + "/#vista?d=" + d);
+    await pagina.waitForSelector(".mk-enc-titulo");
+    await pagina.waitForTimeout(800);
+    const t = await pagina.evaluate(() => {
+      const cs = getComputedStyle(document.querySelector(".mk-enc-titulo"));
+      return { clip: cs.backgroundClip || cs.webkitBackgroundClip, color: cs.color };
+    });
+    revisar(t.clip !== "text" && !/rgba\(\d+, \d+, \d+, 0\)|transparent/.test(t.color), `foto en letras ${nombre}: el título tiene color visible (${t.clip}, ${t.color})`);
+    await ctx.close();
+  }
+}
+
 await navegador.close();
 console.log(fallas ? `\n${fallas} fallas` : "\nTodo bien");
 process.exit(fallas ? 1 : 0);
