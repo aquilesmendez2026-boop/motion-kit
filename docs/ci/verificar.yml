@@ -22,6 +22,8 @@ jobs:
         run: npm ci
       - name: Tipos
         run: npm run typecheck
+      - name: Pruebas (receta y contrato)
+        run: npm test
       - name: Build de la librería
         run: npm run build
       # Playwright (Apache 2.0) solo existe en esta máquina de pruebas: no entra al package.json ni a la librería.

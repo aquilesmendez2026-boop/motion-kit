@@ -1,0 +1,189 @@
+{
+  "$comentario": "Receta del encabezado de motion-kit, v1 (niveles 1 y 2: base y CSS). Generado por scripts/generar-contrato.mjs desde src/receta: no editar a mano. Un campo fuera de «campos» es un error. Textos: el largo se cuenta en letras, sin los asteriscos del resaltado. href: https://, #seccion o ruta relativa sin esquema. Fotos y póster: URL https:// o key de S3 (letras, números, / _ . -, sin .. ni //). alto y altoCelular: un nombre de la lista o un número de altoMinimo a altoMaximo (% del alto de la pantalla). Un solo protagonista: gana el primero de protagonista.orden que se mueva sin parar; los demás se calman con protagonista.calmar. En la página de La Mente, un encabezado de motion-kit cuenta como el bloque protagonista.",
+  "version": 1,
+  "campos": [
+    "version",
+    "estilo",
+    "composicion",
+    "entrada",
+    "efectoTexto",
+    "pack",
+    "antetitulo",
+    "titulo",
+    "bajada",
+    "datos",
+    "botones",
+    "alto",
+    "altoCelular",
+    "imagenes",
+    "alt",
+    "poster",
+    "efecto",
+    "variante",
+    "profundidad",
+    "luz",
+    "mover",
+    "salida",
+    "ahorro"
+  ],
+  "obligatorios": [
+    "version",
+    "estilo",
+    "titulo"
+  ],
+  "listas": {
+    "estilo": [
+      "neon",
+      "retro",
+      "rock",
+      "anime",
+      "pelicula"
+    ],
+    "composicion": [
+      "centrado",
+      "izquierda",
+      "dividido",
+      "gigante",
+      "tarjeta",
+      "imagen",
+      "letrero",
+      "poster",
+      "boleto",
+      "pantalla",
+      "vinetas",
+      "marquesina"
+    ],
+    "entrada": [
+      "ninguna",
+      "cascada",
+      "deslizar",
+      "zoom",
+      "foco",
+      "telon",
+      "golpe"
+    ],
+    "efectoTexto": [
+      "revelar",
+      "voltear",
+      "rebote",
+      "encender",
+      "glitch",
+      "maquina",
+      "impacto",
+      "temblor",
+      "caer",
+      "trailer",
+      "onda"
+    ],
+    "pack": [
+      "clasico",
+      "minimal",
+      "neon-tubo",
+      "arcade",
+      "tecla",
+      "sello",
+      "ticket",
+      "manga",
+      "vidrio",
+      "degradado",
+      "flecha",
+      "borde"
+    ],
+    "alto": [
+      "pantalla",
+      "grande",
+      "medio",
+      "compacto",
+      "auto"
+    ],
+    "efecto": [
+      "cafe",
+      "petalos",
+      "pulso",
+      "abecedario",
+      "letrero",
+      "cometas",
+      "niebla",
+      "burbujas",
+      "olas",
+      "puntos",
+      "lluvia",
+      "estrellas",
+      "rejilla",
+      "tubo",
+      "ecualizador",
+      "velocidad",
+      "grano"
+    ],
+    "variante": [
+      1,
+      2,
+      3
+    ],
+    "luz": [
+      "puntero",
+      "barrido"
+    ],
+    "mover": [
+      "puntero",
+      "scroll",
+      "inclinacion"
+    ],
+    "salida": [
+      "ninguna",
+      "achicar",
+      "desvanecer",
+      "abrir"
+    ],
+    "ahorro": [
+      "auto",
+      "siempre",
+      "nunca"
+    ]
+  },
+  "topes": {
+    "antetitulo": 60,
+    "titulo": 80,
+    "bajada": 220,
+    "datos": 4,
+    "dato": 40,
+    "botones": 2,
+    "textoBoton": 30,
+    "href": 500,
+    "imagenes": 3,
+    "imagen": 500,
+    "alt": 120,
+    "altoMinimo": 20,
+    "altoMaximo": 100
+  },
+  "defectos": {
+    "composicion": "izquierda",
+    "entrada": "cascada",
+    "alto": "pantalla",
+    "profundidad": false,
+    "salida": "ninguna",
+    "ahorro": "auto",
+    "variante": 1,
+    "efectoTexto": "el primero del estilo",
+    "pack": "el del estilo"
+  },
+  "protagonista": {
+    "orden": [
+      "efecto",
+      "efectoTexto",
+      "luz"
+    ],
+    "textosQueSeMueven": [
+      "onda",
+      "temblor",
+      "glitch"
+    ],
+    "lucesQueSeMueven": [
+      "barrido"
+    ],
+    "calmar": {
+      "efectoTexto": "revelar",
+      "luz": "puntero"
+    }
+  }
+}

@@ -33,3 +33,25 @@ export const ENTRADAS: Record<EntradaId, string> = {
 
 export const COMPOSICION_IDS = Object.keys(COMPOSICIONES) as ComposicionId[];
 export const ENTRADA_IDS = Object.keys(ENTRADAS) as EntradaId[];
+
+/** Cómo se va el encabezado al bajar (animación de scroll nativa; donde el navegador no la tiene, no se anima). */
+export type SalidaEncabezado = "ninguna" | "achicar" | "desvanecer" | "abrir";
+export const SALIDAS: Record<SalidaEncabezado, string> = {
+  ninguna: "Sin salida",
+  achicar: "Se achica al bajar",
+  desvanecer: "Sube y se desvanece",
+  abrir: "Se abre (texto arriba, foto abajo)",
+};
+export const SALIDA_IDS = Object.keys(SALIDAS) as SalidaEncabezado[];
+
+/** Alto del encabezado: un tamaño con nombre o un número en % del alto de la pantalla (de 20 a 100). */
+export type AltoEncabezado = "pantalla" | "grande" | "medio" | "compacto" | "auto" | number;
+
+export const ALTOS: Record<Exclude<AltoEncabezado, number>, { nombre: string; css: string }> = {
+  pantalla: { nombre: "Pantalla completa", css: "92svh" },
+  grande: { nombre: "Grande", css: "78svh" },
+  medio: { nombre: "Medio", css: "62svh" },
+  compacto: { nombre: "Compacto", css: "44svh" },
+  auto: { nombre: "Solo el contenido", css: "0px" },
+};
+export const ALTO_IDS = Object.keys(ALTOS) as Exclude<AltoEncabezado, number>[];

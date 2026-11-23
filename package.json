@@ -22,7 +22,9 @@
     "build": "vite build && tsc -p tsconfig.build.json",
     "prepare": "npm run build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/generar-contrato.mjs --revisar && node scripts/pruebas.mjs",
+    "contrato": "node scripts/generar-contrato.mjs"
   },
   "peerDependencies": {
     "react": ">=18",

@@ -64,6 +64,15 @@ backend valida y el front copia con `sincronizar-contrato.mjs`.
   nuevo» con publicar o descartar.
 - **Acceso: lista nueva `LAMENTE_DISENO`**, aparte de `LAMENTE_ADMINS`.
 
+### Ajuste del mismo día
+
+- **Todo se crea primero en motion-kit** y se lleva a La Mente de lo más sencillo a lo más potente
+  (`docs/superpowers/plans/2026-11-23-de-sencillo-a-potente.md`).
+- **El equipo sube lo diseñado a una biblioteca en La Mente**; desde ahí se usa en los negocios y el dueño publica
+  (supuesto a confirmar).
+- **Roles del equipo de La Mente por área, con invitación**, en vez de la lista `LAMENTE_DISENO`. Encargo en borrador:
+  `cerebro-aquiles/lamente/ENCARGO_2026-11-23_roles-del-equipo-y-biblioteca.md`.
+
 ## Opciones que se evaluaron
 
 1. **Cómo se conecta:** A, B o C (recomendada C).

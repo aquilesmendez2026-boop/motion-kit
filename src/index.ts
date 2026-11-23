@@ -168,3 +168,10 @@ export type { MedidorFluidezProps, Carga, FallaContraste, SemaforoContrasteProps
 export { CodigoQR } from "./piezas/CodigoQR";
 export type { CodigoQRProps } from "./piezas/CodigoQR";
 export { generarQR, caminoQR } from "./utils/qr";
+
+// Receta del encabezado v1: lo que La Mente guarda y valida (contrato en contrato/encabezado-motionkit.json)
+export {
+  VERSION_RECETA, LISTAS_RECETA, TOPES_RECETA, DEFECTOS_RECETA, PROTAGONISTA_RECETA, CAMPOS_RECETA, OBLIGATORIOS_RECETA,
+  validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, contratoEncabezado, textoContrato,
+} from "./receta";
+export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps } from "./receta";

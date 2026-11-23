@@ -3,7 +3,7 @@ import {
   COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
   PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
   SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
-  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR,
+  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   type AltoEncabezado, type ComposicionId, type EfectoId, type EntradaId, type EstiloId, type FuenteMovimiento, type ModoLuz, type PackBotonId, type TextoEfecto, type Variante,
 } from "../src";
@@ -80,15 +80,19 @@ export function Encabezados() {
     }, ESTILOS[e].vista);
   };
   const datos = t.datos.split(",").map((d) => d.trim()).filter(Boolean);
-  const portada = {
-    tipo: "portada", composicion, entrada, efectoTexto, pack, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
-    ...(profundidad ? { profundidad: true, mover: mover.split(",") as FuenteMovimiento[] } : {}), ...(luz ? { luz } : {}),
-    ...(shader ? { shader } : {}), ...(salida !== "ninguna" ? { salida } : {}), ...(ahorro !== "auto" ? { ahorro } : {}),
-    antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada,
-    boton: { texto: t.boton, href: "#carta" }, botonSecundario: t.secundario ? { texto: t.secundario, href: "#contacto" } : undefined, datos,
+  // Lo que se guarda: la receta v1 (ver src/receta). Shader, objeto 3D y la foto local se ven aquí, pero no viajan en ella.
+  const botones = [{ texto: t.boton, href: "#carta" }, { texto: t.secundario, href: "#contacto" }].filter((b) => b.texto.trim());
+  const cruda = {
+    version: 1, estilo, composicion, entrada, efectoTexto, pack, ...(efecto ? { efecto, variante } : {}),
+    antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada, datos, botones, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
+    profundidad, ...(luz ? { luz } : {}), ...(profundidad || luz === "puntero" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
+    salida, ahorro,
   };
+  const resultado = validarReceta(cruda);
+  const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
+  const props = recetaAProps(receta);
   const objeto: ObjetoEncabezado | undefined = forma ? { tipo: "3d", forma, caras: foto ? [foto, foto] : undefined, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } : undefined;
-  const config: ConfigVista = { estilo, efecto: efecto || undefined, variante, ...portada, objeto: objeto && { ...objeto, caras: undefined } };
+  const config: ConfigVista = { estilo, ...props, ...(shader ? { shader } : {}), objeto: objeto && { ...objeto, caras: undefined } };
   const enlace = enlaceVista(config);
   const campo = (k: keyof typeof EJEMPLO, etiqueta: string, ayuda?: string) => (
     <label>{etiqueta}
@@ -234,16 +238,26 @@ export function Encabezados() {
           <a href={enlace.url} target="_blank" rel="noreferrer" data-prueba="enlace-vista">Abrir la vista aquí</a>
         </fieldset>
         <label className="estudio-check"><input type="checkbox" checked={celular} onChange={(e) => setCelular(e.target.checked)} /> Ver como celular</label>
-        <details><summary>Lo que se guarda (JSON)</summary><pre data-prueba="json">{JSON.stringify(portada, null, 2)}</pre></details>
+        <details><summary>Lo que se guarda (receta v1, JSON)</summary>
+          {!resultado.ok && (
+            <ul className="enc-errores" data-prueba="errores">
+              {resultado.errores.map((e) => <li key={e.campo + e.mensaje}><b>{e.campo}</b>: {e.mensaje}</li>)}
+            </ul>
+          )}
+          {resultado.ok && resultado.avisos.length > 0 && (
+            <ul className="enc-avisos" data-prueba="avisos">{resultado.avisos.map((a) => <li key={a}>{a}</li>)}</ul>
+          )}
+          {(shader || forma) && <small>El fondo WebGL y el objeto 3D se ven aquí, pero entran en la receta v2: no se guardan.</small>}
+          {foto && <small>La foto propia no va en la receta: en La Mente se sube y queda su key de S3.</small>}
+          <pre data-prueba="json" data-valida={resultado.ok ? "" : undefined}>{JSON.stringify(resultado.ok ? resultado.receta : cruda, null, 2)}</pre>
+        </details>
       </aside>
       <main className="enc-vista">
         <div className={celular ? "enc-celular" : "enc-ancho"} ref={vista}>
           <Estilo nombre={estilo} fuentes cursor data-prueba="vista">
-            <Encabezado key={n} composicion={composicion} entrada={entrada} efectoTexto={efectoTexto} efecto={efecto || undefined} variante={variante} pack={pack}
-              antetitulo={t.antetitulo} titulo={t.titulo} bajada={t.bajada} boton={{ texto: t.boton, href: "#" }} botonSecundario={t.secundario ? { texto: t.secundario, href: "#" } : undefined}
-              datos={datos} alto={alto} altoCelular={altoCelular === "" ? undefined : altoCelular}
-              profundidad={profundidad} luz={luz || undefined} mover={mover.split(",") as FuenteMovimiento[]} imagenes={foto ? [foto, foto, foto] : undefined}
-              shader={shader || undefined} objeto={objeto} salida={salida} ahorro={ahorro} alCambiarNivel={setNivel} />
+            {/* La vista sale de la receta validada: lo que se ve es lo que se guarda (más shader, objeto y foto local). */}
+            <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#" }}
+              imagenes={foto ? [foto, foto, foto] : undefined} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel} />
           </Estilo>
         </div>
         <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>

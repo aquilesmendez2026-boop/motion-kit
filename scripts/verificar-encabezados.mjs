@@ -124,6 +124,15 @@ for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, fa
   ok((await page.locator(`${VISTA} h1`).getAttribute("aria-label")) === "Pan de masa madre, todos los días", "el lector lee el título sin asteriscos");
   const json = JSON.parse(await page.locator('[data-prueba="json"]').textContent());
   ok(json.composicion && json.entrada && json.pack === "ticket" && json.titulo.includes("*masa madre*"), "el JSON guarda lo que el cliente eligió");
+  ok(json.version === 1 && json.estilo && (await page.locator('[data-prueba="json"][data-valida]').count()) === 1, "el JSON es una receta v1 válida");
+  // receta mala: título largo → error en español con el campo; al corregirlo, vuelve a ser válida
+  await page.locator('[data-campo="titulo"]').fill("x".repeat(90));
+  await page.locator('[data-campo="titulo"]').blur();
+  const error = await page.locator('[data-prueba="errores"]').textContent().catch(() => "");
+  ok(/titulo: El título no puede pasar de 80 letras/.test(error), "un título de 90 letras da su error en español");
+  await page.locator('[data-campo="titulo"]').fill("Pan de *masa madre*, todos los días");
+  await page.locator('[data-campo="titulo"]').blur();
+  ok((await page.locator('[data-prueba="errores"]').count()) === 0, "al corregirlo, el error se va");
   for (let i = 0; i < 5; i++) { await page.locator('[data-prueba="azar"]').click(); await page.waitForTimeout(900); }
   ok(errs.length === 0, "entradas y sorpréndeme sin errores" + (errs.length ? ": " + errs[0] : ""));
   ok((await page.locator("[data-muestra] .mk-enc-titulo").count()) === 12, "la galería muestra las 12 composiciones");

@@ -9,7 +9,7 @@ import { BotonesPack, type EnlaceBoton } from "../piezas/BotonesPack";
 import type { PackBotonId } from "../piezas/packs";
 import { imagenGenerada } from "../plantillas/imagenes";
 import { CSS_ENCABEZADO } from "./css";
-import type { ComposicionId, EntradaId } from "./catalogo";
+import { ALTOS, type AltoEncabezado, type ComposicionId, type EntradaId, type SalidaEncabezado } from "./catalogo";
 import { CapasEscena, CAPAS_POR_DEFECTO, type Capa } from "../escena/CapasProfundidad";
 import { LuzEscena, type ModoLuz } from "../escena/LuzYReflejo";
 import { useMovimientoEscena, type FuenteMovimiento } from "../escena/movimiento";
@@ -18,32 +18,13 @@ import { Objeto3DCss, type FormaObjeto } from "../escena/Objeto3DCss";
 import { EscenaVideo } from "../escena/EscenaVideo";
 import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/nivel";
 
-/** Cómo se va el encabezado al bajar (animación de scroll nativa; donde el navegador no la tiene, no se anima). */
-export type SalidaEncabezado = "ninguna" | "achicar" | "desvanecer" | "abrir";
-export const SALIDAS: Record<SalidaEncabezado, string> = {
-  ninguna: "Sin salida",
-  achicar: "Se achica al bajar",
-  desvanecer: "Sube y se desvanece",
-  abrir: "Se abre (texto arriba, foto abajo)",
-};
-export const SALIDA_IDS = Object.keys(SALIDAS) as SalidaEncabezado[];
+export { ALTOS, ALTO_IDS, SALIDAS, SALIDA_IDS } from "./catalogo";
+export type { AltoEncabezado, SalidaEncabezado } from "./catalogo";
 
 /** Objeto protagonista: un video con fondo transparente o un objeto en 3D hecho con CSS. */
 export type ObjetoEncabezado =
   | { tipo: "video"; webm?: string; hevc?: string; mp4?: string; poster: string; alt?: string }
   | { tipo: "3d"; forma: FormaObjeto; caras?: string[]; texto?: string; etiqueta?: string };
-
-/** Alto del encabezado: un tamaño con nombre o un número en % del alto de la pantalla (de 20 a 100). */
-export type AltoEncabezado = "pantalla" | "grande" | "medio" | "compacto" | "auto" | number;
-
-export const ALTOS: Record<Exclude<AltoEncabezado, number>, { nombre: string; css: string }> = {
-  pantalla: { nombre: "Pantalla completa", css: "92svh" },
-  grande: { nombre: "Grande", css: "78svh" },
-  medio: { nombre: "Medio", css: "62svh" },
-  compacto: { nombre: "Compacto", css: "44svh" },
-  auto: { nombre: "Solo el contenido", css: "0px" },
-};
-export const ALTO_IDS = Object.keys(ALTOS) as Exclude<AltoEncabezado, number>[];
 
 const altoCss = (a: AltoEncabezado) => (typeof a === "number" ? `${Math.max(20, Math.min(100, Math.round(a)))}svh` : ALTOS[a].css);
 
