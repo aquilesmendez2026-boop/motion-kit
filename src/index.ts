@@ -138,31 +138,8 @@ export { PACKS_BOTONES, PACK_IDS } from "./piezas/packs";
 export type { PackBotonId, PackBoton } from "./piezas/packs";
 export type { BotonForma } from "./piezas/Boton";
 
-// Escena: encabezados vivos sin dependencias (capas en profundidad, luz) y medidor de peso
-export { CapasProfundidad, CapasEscena, CAPAS_POR_DEFECTO } from "./escena/CapasProfundidad";
-export type { Capa, FormaCapa, CapasProfundidadProps } from "./escena/CapasProfundidad";
-export { LuzYReflejo, LuzEscena } from "./escena/LuzYReflejo";
-export type { ModoLuz, LuzYReflejoProps } from "./escena/LuzYReflejo";
-export { useMovimientoEscena } from "./escena/movimiento";
-export type { FuenteMovimiento, OpcionesMovimiento } from "./escena/movimiento";
-export { MedidorPeso, usePeso } from "./escena/MedidorPeso";
-export type { MedidorPesoProps } from "./escena/MedidorPeso";
-export { medirPeso, recursosDe, estadoPeso, formatearPeso, PRESUPUESTO_ENCABEZADO, PRESUPUESTO_RECURSOS, ANCHO_ESCRITORIO } from "./escena/peso";
-export type { Dispositivo, EstadoPeso, Presupuesto, MedicionPeso, RecursoPeso, TipoRecurso, OrigenDato } from "./escena/peso";
-export { ShaderFondo, SHADERS, SHADER_IDS } from "./escena/ShaderFondo";
-export type { ShaderId, ShaderFondoProps } from "./escena/ShaderFondo";
-export { Objeto3DCss, FORMAS_OBJETO } from "./escena/Objeto3DCss";
-export type { FormaObjeto, Objeto3DCssProps } from "./escena/Objeto3DCss";
-export { EscenaVideo } from "./escena/EscenaVideo";
-export type { EscenaVideoProps } from "./escena/EscenaVideo";
-export { SecuenciaScroll, cuadrosDe } from "./escena/SecuenciaScroll";
-export type { SecuenciaScrollProps } from "./escena/SecuenciaScroll";
-export { comprimirFoto } from "./escena/comprimir";
-export type { OpcionesComprimir, FotoComprimida } from "./escena/comprimir";
-export { useNivelEscena, useModoAhorro, useFluidez, senalesAhorro, hayQueAhorrar } from "./escena/nivel";
-export type { NivelEscena, ModoAhorro, SenalesAhorro, Fluidez } from "./escena/nivel";
-export { MedidorFluidez, MedidorCarga, SemaforoContraste, useCarga, revisarContraste } from "./escena/calidad";
-export type { MedidorFluidezProps, Carga, FallaContraste, SemaforoContrasteProps } from "./escena/calidad";
+// Escena: encabezados vivos sin dependencias y medidores (también en motion-kit/escena)
+export * from "./entradas/escena";
 
 // Código QR propio (sin librerías)
 export { CodigoQR } from "./piezas/CodigoQR";
@@ -173,11 +150,14 @@ export { generarQR, caminoQR } from "./utils/qr";
 export {
   VERSION_RECETA, LISTAS_RECETA, TOPES_RECETA, DEFECTOS_RECETA, PROTAGONISTA_RECETA, CAMPOS_RECETA, OBLIGATORIOS_RECETA,
   validarReceta, normalizarReceta, recetaAProps, protagonistaDe, esHrefSeguro, esImagenSegura, contratoEncabezado, textoContrato,
-} from "./receta";
-export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps } from "./receta";
+} from "./receta/index";
+export type { RecetaEncabezado, BotonReceta, ErrorReceta, ResultadoReceta, OpcionesProps } from "./receta/index";
 export {
   estiloDesdeLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA,
-} from "./receta";
-export type { TemaLaMente, PaletaLaMente, PuenteLaMente } from "./receta";
+} from "./receta/index";
+export type { TemaLaMente, PaletaLaMente, PuenteLaMente } from "./receta/index";
 export { EstiloLaMente } from "./receta/EstiloLaMente";
 export type { EstiloLaMenteProps } from "./receta/EstiloLaMente";
+
+// CSS: apagar la inserción de <style> cuando se carga motion-kit/estilos.css
+export { sinInyectarEstilos } from "./utils/styles";

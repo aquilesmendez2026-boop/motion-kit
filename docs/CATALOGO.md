@@ -163,6 +163,21 @@ salvo en el tema neón, que tiene brillo propio. Los 12 temas con su paleta y ha
 semáforo de contraste (`scripts/verificar-lamente.mjs`). En el editor: «Tema y paleta de La Mente». El tema y la paleta
 son de la página: no van en la receta.
 
+## Paquete v0.2.0 (23-11-2026)
+
+| Entrada | Qué trae | Al cargar (gzip) | Tope |
+|---|---|---|---|
+| `motion-kit/encabezado` | `Encabezado`, `Estilo`, `EstiloLaMente`, la receta, catálogos y `sinInyectarEstilos` | 31,6 KB (+12 KB de efectos, solo el que se use) | 35 KB |
+| `motion-kit/receta` | Receta, contrato y puente, sin React | 8,4 KB | 10 KB |
+| `motion-kit/escena` | Capas, luz, shader, objeto 3D, video, secuencia, ahorro y medidores | 14,0 KB | 16 KB |
+| `motion-kit` | Todo | 63,7 KB | 70 KB |
+
+Medido minificado y con react afuera (`npm run peso`, que falla si una entrada pasa su tope). CSS de respaldo:
+`estilos.css` (14,9 KB gzip) y `estilos-encabezado.css` (11,4 KB), generados desde las constantes CSS del código.
+`npm run probar-paquete` instala el paquete en un proyecto de prueba e importa solo el encabezado. Detalle en
+`CHANGELOG.md`. Mejora posible: cargar aparte el shader, el objeto 3D y el video (son de la receta v2), unos 3 KB
+menos al cargar.
+
 ## Mejoras a lo que ya existe
 
 - `Toast`: sumar cierre por deslizamiento y variantes (éxito, error).

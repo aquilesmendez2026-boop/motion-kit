@@ -155,7 +155,8 @@ el contenido se ve.
 npm install
 npm run dev        # abre la página demo
 npm run typecheck  # revisa los tipos
-npm run build      # genera la librería en dist/
+npm run build      # genera la librería en dist/ y mide el peso de cada entrada
+npm test           # receta, contrato y puente con La Mente
 ```
 
 ## Usar en otro proyecto
@@ -167,6 +168,12 @@ npm install github:aquilesmendez2026-boop/motion-kit
 ```
 
 Al instalarla así se compila sola (script `prepare`); no hace falta subir `dist/`.
+
+Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.2.0`.
+
+Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
+`motion-kit/escena`, `motion-kit/receta` (sin React) y los CSS `motion-kit/estilos.css` y
+`motion-kit/estilos-encabezado.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`.
 
 ```tsx
 import { Reveal, MagneticButton, TiltCard } from "motion-kit";

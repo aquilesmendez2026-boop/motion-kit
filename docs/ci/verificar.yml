@@ -26,6 +26,10 @@ jobs:
         run: npm test
       - name: Build de la librería
         run: npm run build
+      - name: Peso y paquete
+        run: |
+          npm run peso
+          npm run probar-paquete
       # Playwright (Apache 2.0) solo existe en esta máquina de pruebas: no entra al package.json ni a la librería.
       - name: Playwright
         run: |

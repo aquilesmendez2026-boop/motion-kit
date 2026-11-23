@@ -1,6 +1,6 @@
 {
   "name": "motion-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Librería propia de efectos y animaciones para React",
   "license": "MIT",
   "type": "module",
@@ -12,19 +12,40 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/motion-kit.js",
       "require": "./dist/motion-kit.cjs"
-    }
+    },
+    "./encabezado": {
+      "types": "./dist/entradas/encabezado.d.ts",
+      "import": "./dist/encabezado.js",
+      "require": "./dist/encabezado.cjs"
+    },
+    "./escena": {
+      "types": "./dist/entradas/escena.d.ts",
+      "import": "./dist/escena.js",
+      "require": "./dist/escena.cjs"
+    },
+    "./receta": {
+      "types": "./dist/receta/index.d.ts",
+      "import": "./dist/receta.js",
+      "require": "./dist/receta.cjs"
+    },
+    "./estilos.css": "./dist/estilos.css",
+    "./estilos-encabezado.css": "./dist/estilos-encabezado.css",
+    "./contrato/encabezado-motionkit.json": "./contrato/encabezado-motionkit.json",
+    "./package.json": "./package.json"
   },
-  "files": ["dist"],
-  "sideEffects": false,
+  "files": ["dist", "contrato"],
+  "sideEffects": ["**/*.css"],
   "scripts": {
     "dev": "vite",
     "dev:red": "vite --host",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && tsc -p tsconfig.build.json && node scripts/generar-css.mjs && node scripts/medir-paquete.mjs",
     "prepare": "npm run build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/generar-contrato.mjs --revisar && node scripts/pruebas.mjs",
-    "contrato": "node scripts/generar-contrato.mjs"
+    "contrato": "node scripts/generar-contrato.mjs",
+    "peso": "node scripts/medir-paquete.mjs --revisar",
+    "probar-paquete": "node scripts/probar-paquete.mjs"
   },
   "peerDependencies": {
     "react": ">=18",

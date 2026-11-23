@@ -20,7 +20,7 @@ que ya está terminado en motion-kit. Ver `DECISIONES.md` del cerebro (23-11-202
 |---|---|---|
 | 1. Receta del encabezado v1 ✅ (23-11) | El formato con versión (solo nivel 1 y 2), `validarReceta` y `normalizarReceta` (un solo protagonista, topes), y el contrato `encabezado-motionkit.json` generado desde el código | Las recetas de los ejemplos y del editor pasan la validación; una mala da el error en español |
 | 2. Puente con La Mente ✅ (23-11) | Los 12 temas y 5 paletas de La Mente pasan a colores y letras de motion-kit | Un encabezado con tema «hamburgueseria» y paleta «bosque» combina con la página de La Mente |
-| 3. Paquete v0.2.0 | Entradas separadas (`motion-kit/encabezado`, `/escena`), peso del JS medido por entrada con tope, CSS en archivo de respaldo, etiqueta en GitHub | La Mente lo puede instalar desde la etiqueta y baja solo el encabezado |
+| 3. Paquete v0.2.0 ✅ (23-11, falta etiqueta) | Entradas separadas (`motion-kit/encabezado`, `/escena`), peso del JS medido por entrada con tope, CSS en archivo de respaldo, etiqueta en GitHub | La Mente lo puede instalar desde la etiqueta y baja solo el encabezado |
 | 4. Biblioteca en motion-kit | Guardar, abrir, duplicar y etiquetar diseños por rubro, con miniatura; exportar e importar en el mismo formato que tendrá La Mente | El equipo arma una colección de diseños en local |
 | 5. Llevar el nivel 1 y 2 a La Mente | Encargo: roles del equipo por área con invitación, biblioteca en `paginas`, encabezado de motion-kit en la página pública, el estudio sube a la biblioteca | Un diseño aprobado llega como borrador a un negocio de dev y el dueño lo publica |
 | 6. Nivel 3 | Receta v2 con shader y objeto 3D (v1 sigue valiendo) | Probado en Android de gama media con el QR; sube a La Mente como versión nueva |
@@ -41,3 +41,7 @@ guardar y usar: pasos 1 a 5.
 
 **Paso 2 listo (23-11):** `estiloDesdeLaMente` y `EstiloLaMente` con los 12 temas y las 12 paletas (no 5: el encargo
 se equivocó en la cuenta). Selector en el editor y en la vista del QR; `scripts/verificar-lamente.mjs`.
+
+**Paso 3 listo (23-11):** entradas `encabezado`, `escena` y `receta`; peso medido con tope; `estilos.css` y
+`estilos-encabezado.css` con `sinInyectarEstilos()`; versión 0.2.0 y `CHANGELOG.md`. Falta la etiqueta `v0.2.0` y el push
+(con OK de Aquiles).
