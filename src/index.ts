@@ -123,6 +123,7 @@ export type { Combinacion } from "./plantillas/sorprendeme";
 
 // Encabezados (portadas) y packs de botones
 export { Encabezado } from "./encabezados/Encabezado";
+export { olvidarApertura } from "./encabezados/Apertura";
 export type { EncabezadoProps, AltoEncabezado } from "./encabezados/Encabezado";
 export { ALTOS, ALTO_IDS, SALIDAS, SALIDA_IDS } from "./encabezados/Encabezado";
 export type { SalidaEncabezado, ObjetoEncabezado } from "./encabezados/Encabezado";

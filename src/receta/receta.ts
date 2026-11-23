@@ -562,6 +562,9 @@ export function recetaAProps(r: RecetaEncabezado, { urlImagen }: OpcionesProps =
     ahorro: r.ahorro,
     shader: r.shader,
     objeto: r.objeto && { tipo: "3d", forma: r.objeto.forma, texto: r.objeto.texto },
+    apertura: r.apertura,
+    tomas: r.tomas,
+    palabras: r.palabras,
   };
   for (const k of Object.keys(p) as (keyof EncabezadoProps)[]) if (p[k] === undefined) delete p[k];
   return p;

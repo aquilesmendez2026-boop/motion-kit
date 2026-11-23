@@ -145,4 +145,25 @@ export const CSS_ENCABEZADO = `
 @keyframes mk-sal-arriba{to{translate:0 -35%;opacity:0}}
 @keyframes mk-sal-abajo{to{translate:0 30%;opacity:.2}}
 @media (prefers-reduced-motion:reduce){.mk-enc[data-salida] :is(.mk-enc-in,.mk-enc-caja,.mk-enc-media,.mk-enc-objeto,.mk-enc-paneles){animation:none!important}}
+/* Película: apertura, varias tomas y palabras que rotan */
+.mk-enc-apertura{position:absolute;inset:0;z-index:40;display:grid;place-items:center;cursor:pointer;animation:mk-p-ap-fuera 2.6s linear forwards}
+.mk-ap-franja{position:absolute;left:0;right:0;height:50.5%;background:#000}
+.mk-ap-franja[data-lado=arriba]{top:0;animation:mk-p-ap-arriba 2.6s cubic-bezier(.7,0,.2,1) forwards}
+.mk-ap-franja[data-lado=abajo]{bottom:0;animation:mk-p-ap-abajo 2.6s cubic-bezier(.7,0,.2,1) forwards}
+.mk-ap-texto{position:relative;text-align:center;color:#fff;padding:0 1rem;animation:mk-p-ap-texto 2.6s ease forwards}
+.mk-ap-texto small{display:block;letter-spacing:.3em;text-transform:uppercase;font-size:.8rem;opacity:.8;margin-bottom:.6rem}
+.mk-ap-texto b{display:block;font-family:var(--mk-fuente-titulo,inherit);font-size:clamp(1.8rem,5cqi,3.4rem);line-height:1.05}
+@keyframes mk-p-ap-arriba{0%,45%{translate:0 0}100%{translate:0 -101%}}
+@keyframes mk-p-ap-abajo{0%,45%{translate:0 0}100%{translate:0 101%}}
+@keyframes mk-p-ap-texto{0%{opacity:0;scale:.96}15%,45%{opacity:1;scale:1}62%,100%{opacity:0;scale:1.04}}
+@keyframes mk-p-ap-fuera{0%,90%{opacity:1}100%{opacity:0}}
+.mk-tomas{position:relative;width:100%;height:100%}
+.mk-tomas>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
+.mk-tomas>img[data-activa]{opacity:1;animation:mk-p-toma 6s linear both}
+@keyframes mk-p-toma{from{scale:1}to{scale:1.08}}
+.mk-enc[data-nivel=quieto] .mk-tomas>img,.mk-enc[data-nivel=liviano] .mk-tomas>img{animation:none;transition:none}
+.mk-rot{display:inline-grid}
+.mk-rot>span{grid-area:1/1;white-space:nowrap;opacity:0;translate:0 .35em;transition:opacity .45s ease,translate .45s ease}
+.mk-rot>span[data-activa]{opacity:1;translate:0 0}
+@media (prefers-reduced-motion:reduce){.mk-enc-apertura{display:none}.mk-tomas>img,.mk-rot>span{transition:none;animation:none}}
 `;

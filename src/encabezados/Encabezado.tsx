@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { useStyles } from "../utils/styles";
 import { useEstilo } from "../estilos/Estilo";
 import { TextoCinetico } from "../estilos/TextoCinetico";
@@ -17,6 +17,9 @@ import { ShaderFondo, type ShaderId } from "../escena/ShaderFondo";
 import { Objeto3DCss, type FormaObjeto } from "../escena/Objeto3DCss";
 import { EscenaVideo } from "../escena/EscenaVideo";
 import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/nivel";
+import { Apertura, aperturaYaVista } from "./Apertura";
+import { Tomas } from "./Tomas";
+import { PalabrasRotan } from "./PalabrasRotan";
 
 export { ALTOS, ALTO_IDS, SALIDAS, SALIDA_IDS } from "./catalogo";
 export type { AltoEncabezado, SalidaEncabezado } from "./catalogo";
@@ -74,6 +77,12 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   ahorro?: ModoAhorro;
   /** Avisa el nivel con que quedó (completo, liviano o quieto). */
   alCambiarNivel?: (nivel: NivelEscena) => void;
+  /** Apertura de película la primera vez de la sesión: franjas que se abren, «presenta» y el título. */
+  apertura?: { presenta?: string };
+  /** Las fotos (dos o más) se suceden con un acercamiento lento, donde la composición usa foto. */
+  tomas?: boolean;
+  /** Palabras que rotan en la palabra resaltada del título (la del título va primero). */
+  palabras?: string[];
 }
 
 /**
@@ -83,7 +92,7 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function Encabezado({
   composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
-  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, className, style, ...resto
+  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, palabras, className, style, ...resto
 }: EncabezadoProps) {
   useStyles("encabezado", CSS_ENCABEZADO);
   const estilo = useEstilo();
@@ -126,14 +135,27 @@ export function Encabezado({
     return () => o.disconnect();
   }, [titulo, composicion, efectoTexto]);
 
+  // Apertura: solo en el navegador, una vez por sesión, nunca en quieto.
+  const [abriendo, setAbriendo] = useState(false);
+  useLayoutEffect(() => {
+    if (apertura && !quieto && !aperturaYaVista()) setAbriendo(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const terminarApertura = useCallback(() => setAbriendo(false), []);
+  const destacada = titulo.match(/\*([^*]+)\*/)?.[1];
+  const rotacion = destacada && palabras && palabras.length ? [...new Set([destacada, ...palabras])] : undefined;
+
   const foto = (k: number) => imagenes?.[k] ?? imagenGenerada(estilo?.id ?? "neon", [300, 40, 190][k % 3]);
+  const conTomas = Boolean(tomas && imagenes && imagenes.length >= 2);
   const media = (k = 0) => (
     <div className="mk-enc-media" key={k}>
-      <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />
+      {k === 0 && conTomas ? <Tomas fotos={imagenes!} alt={alt} quieto={liviano} /> : <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />}
     </div>
   );
   const ante = antetitulo && <p className="mk-enc-ante">{antetitulo}</p>;
-  const tit = <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre" retraso={entrada === "telon" ? 900 : entrada === "foco" ? 600 : 150} />;
+  const tit = (
+    <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre"
+      retraso={entrada === "telon" ? 900 : entrada === "foco" ? 600 : 150} resaltado={rotacion && <PalabrasRotan palabras={rotacion} quieto={quieto} />} />
+  );
   const baj = bajada && <p className="mk-enc-bajada">{bajada}</p>;
   const dat = datos && datos.length > 0 && <ul className="mk-enc-datos">{datos.map((d) => <li key={d}>{d}</li>)}</ul>;
   const bot = boton && (
@@ -204,6 +226,7 @@ export function Encabezado({
       </div>
       {composicion !== "dividido" && protagonista}
       <div className="mk-enc-telon" aria-hidden="true"><i /><i /></div>
+      {abriendo && <Apertura presenta={apertura?.presenta} titulo={titulo.replace(/\*/g, "")} alTerminar={terminarApertura} />}
     </header>
   );
 }

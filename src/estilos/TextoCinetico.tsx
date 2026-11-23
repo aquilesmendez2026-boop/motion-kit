@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { useStyles } from "../utils/styles";
 import type { TextoEfecto } from "./estilos";
 
@@ -10,6 +10,8 @@ export interface TextoCineticoProps extends HTMLAttributes<HTMLElement> {
   cuando?: "entrar" | "siempre";
   /** Milisegundos antes de empezar. */
   retraso?: number;
+  /** Reemplaza el contenido de la palabra resaltada (por ejemplo, palabras que rotan). El `aria-label` no cambia. */
+  resaltado?: ReactNode;
 }
 
 const CSS = `
@@ -64,7 +66,7 @@ const POR_PALABRA: TextoEfecto[] = ["impacto", "trailer", "revelar"];
  * Una palabra entre asteriscos (`*Smash* burgers`) se resalta con el color de acento.
  * El lector de pantalla lee el texto completo; si el JS no carga, el texto se ve quieto.
  */
-export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", retraso = 0, className, style, ...resto }: TextoCineticoProps) {
+export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", retraso = 0, resaltado, className, style, ...resto }: TextoCineticoProps) {
   useStyles("texto-cinetico", CSS);
   const ref = useRef<HTMLElement>(null);
   const [fase, setFase] = useState<"inicial" | "esperando" | "jugando">("inicial");
@@ -102,7 +104,7 @@ export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", r
   };
   const partes = segmentos.map((seg, n) => {
     const piezas = seg.t.split(/(\s+)/).map((p, k) => (/^\s+$/.test(p) || !p ? <span key={k}>{p}</span> : palabra(p, `${n}-${k}`)));
-    return seg.d ? <span key={n} className="mk-tc-dest">{piezas}</span> : <span key={n}>{piezas}</span>;
+    return seg.d ? <span key={n} className="mk-tc-dest">{resaltado ?? piezas}</span> : <span key={n}>{piezas}</span>;
   });
 
   const Etiqueta = como as "h2";

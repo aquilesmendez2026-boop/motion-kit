@@ -17,7 +17,7 @@ const aBase64Url = (s: string) => btoa(String.fromCharCode(...new TextEncoder().
 const deBase64Url = (s: string) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)));
 
 export function codificar(c: ConfigVista): string {
-  const limpio = JSON.parse(JSON.stringify(c, (_k, v) => (typeof v === "string" && v.startsWith("blob:") ? undefined : v)));
+  const limpio = JSON.parse(JSON.stringify(c, (_k, v) => (typeof v === "string" && (v.startsWith("blob:") || v.startsWith("data:")) ? undefined : v)));
   return aBase64Url(JSON.stringify(limpio));
 }
 

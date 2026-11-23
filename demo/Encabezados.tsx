@@ -3,7 +3,7 @@ import {
   COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
   PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
   SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
-  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps,
+  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps, imagenGenerada, olvidarApertura,
   EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   crearDiseno, editarDiseno, type DisenoBiblioteca, type RecetaEncabezado,
@@ -46,6 +46,12 @@ export function Encabezados({ id }: { id?: string } = {}) {
   const [lmTema, setLmTema] = useState<TemaLaMente | "">("");
   const [lmPaleta, setLmPaleta] = useState<PaletaLaMente>("clasica");
   const [hrefs, setHrefs] = useState<[string, string]>(["#carta", "#contacto"]);
+  // Película (receta v2)
+  const [apertura, setApertura] = useState(false);
+  const [presenta, setPresenta] = useState("");
+  const [fotosEjemplo, setFotosEjemplo] = useState(false);
+  const [tomas, setTomas] = useState(false);
+  const [palabras, setPalabras] = useState("");
   // Biblioteca: el diseño abierto (si vino de ahí), su nombre y etiquetas, y el último aviso.
   const [abierto, setAbierto] = useState<DisenoBiblioteca | null>(null);
   const [nombre, setNombre] = useState("");
@@ -93,17 +99,21 @@ export function Encabezados({ id }: { id?: string } = {}) {
     }, ESTILOS[e].vista);
   };
   const datos = t.datos.split(",").map((d) => d.trim()).filter(Boolean);
-  // Lo que se guarda: la receta v1 (ver src/receta). Shader, objeto 3D y la foto local se ven aquí, pero no viajan en ella.
+  // Lo que se guarda: la receta (ver src/receta). La foto local se ve aquí, pero no viaja en ella; las fotos de ejemplo
+  // van como keys «ejemplo/N», que la vista convierte en ilustraciones del estilo.
   const botones = [{ texto: t.boton, href: hrefs[0] }, { texto: t.secundario, href: hrefs[1] }].filter((b) => b.texto.trim());
   const cruda = {
     version: 1, estilo, composicion, entrada, efectoTexto, pack, ...(efecto ? { efecto, variante } : {}),
     antetitulo: t.antetitulo, titulo: t.titulo, bajada: t.bajada, datos, botones, alto, ...(altoCelular !== "" ? { altoCelular } : {}),
     profundidad, ...(luz ? { luz } : {}), ...((profundidad || luz === "puntero") && mover !== "puntero,scroll" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
     salida, ahorro, ...(shader ? { shader } : {}), ...(forma ? { objeto: { forma, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } } : {}),
+    ...(fotosEjemplo ? { imagenes: ["ejemplo/1", "ejemplo/2", "ejemplo/3"], alt: "Foto de ejemplo" } : {}),
+    ...(apertura ? { apertura: presenta.trim() ? { presenta } : {} } : {}), ...(tomas ? { tomas: true } : {}),
+    ...(palabras.trim() ? { palabras: palabras.split(",").map((w) => w.trim()).filter(Boolean) } : {}),
   };
   const resultado = validarReceta(cruda);
   const receta = resultado.ok ? resultado.receta : normalizarReceta(cruda);
-  const props = recetaAProps(receta);
+  const props = recetaAProps(receta, { urlImagen: (k) => (k.startsWith("ejemplo/") ? imagenGenerada(estilo, [300, 40, 190][(Number(k.slice(8)) - 1) % 3]) : k) });
   const objeto: ObjetoEncabezado | undefined = forma ? { tipo: "3d", forma, caras: foto ? [foto, foto] : undefined, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } : undefined;
   const config: ConfigVista = { estilo, ...(lmTema ? { lmTema, lmPaleta } : {}), ...props, ...(shader ? { shader } : {}), objeto: objeto && { ...objeto, caras: undefined } };
   const enlace = enlaceVista(config);
@@ -118,7 +128,10 @@ export function Encabezados({ id }: { id?: string } = {}) {
     setHrefs([r.botones?.[0]?.href ?? "#carta", r.botones?.[1]?.href ?? "#contacto"]);
     setAlto(r.alto); setAltoCelular(r.altoCelular ?? ""); setProfundidad(r.profundidad); setLuz(r.luz ?? "");
     setMover((r.mover ?? ["puntero", "scroll"]).join(",")); setSalida(r.salida); setAhorro(r.ahorro);
-    setShader(""); setForma(""); otra();
+    setShader(r.shader ?? ""); setForma(r.objeto?.forma ?? "");
+    setApertura(Boolean(r.apertura)); setPresenta(r.apertura?.presenta ?? ""); setTomas(Boolean(r.tomas));
+    setFotosEjemplo(Boolean(r.imagenes?.length && r.imagenes.every((k) => k.startsWith("ejemplo/")))); setPalabras((r.palabras ?? []).join(", "));
+    otra();
   };
   useEffect(() => {
     if (!id) return;
@@ -218,7 +231,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <select value={efectoTexto} onChange={(e) => { setEfectoTexto(e.target.value as TextoEfecto); otra(); }}>{TEXTOS.map((x) => <option key={x}>{x}</option>)}</select>
         </label>
         <label>Fondo animado
-          <select value={efecto} onChange={(e) => setEfecto(e.target.value as EfectoId | "")}>
+          <select value={efecto} onChange={(e) => setEfecto(e.target.value as EfectoId | "")} data-prueba="efecto">
             <option value="">Ninguno</option>
             {(Object.keys(EFECTOS) as EfectoId[]).map((id) => <option key={id} value={id}>{EFECTOS[id].nombre}{ESTILOS[estilo].efectos.includes(id) ? " ★" : ""}</option>)}
           </select>
@@ -259,6 +272,18 @@ export function Encabezados({ id }: { id?: string } = {}) {
               <input type="range" min={20} max={100} value={altoCelular} onChange={(e) => setAltoCelular(Number(e.target.value))} />
             </label>
           )}
+        </fieldset>
+        <fieldset><legend>Película</legend>
+          <label className="estudio-check"><input type="checkbox" checked={apertura} onChange={(e) => { setApertura(e.target.checked); olvidarApertura(); otra(); }} data-prueba="apertura" /> Apertura (franjas, «presenta» y el título)</label>
+          <label>Presenta
+            <input value={presenta} onChange={(e) => setPresenta(e.target.value)} placeholder="Café Vinilo presenta" data-prueba="presenta" />
+          </label>
+          <button className="enc-repetir" onClick={() => { olvidarApertura(); otra(); }} data-prueba="apertura-otra-vez">↻ Ver la apertura otra vez</button>
+          <label className="estudio-check"><input type="checkbox" checked={fotosEjemplo} onChange={(e) => setFotosEjemplo(e.target.checked)} data-prueba="fotos-ejemplo" /> Fotos de ejemplo (tres)</label>
+          <label className="estudio-check"><input type="checkbox" checked={tomas} onChange={(e) => setTomas(e.target.checked)} data-prueba="tomas" /> Varias tomas (necesita dos o más fotos)</label>
+          <label>Palabras que rotan (en la palabra resaltada, separadas por coma)
+            <input value={palabras} onChange={(e) => setPalabras(e.target.value)} placeholder="barrio, autor" data-prueba="palabras" />
+          </label>
         </fieldset>
         <fieldset><legend>Escena</legend>
           <label className="estudio-check"><input type="checkbox" checked={profundidad} onChange={(e) => setProfundidad(e.target.checked)} data-prueba="profundidad" /> Capas en profundidad (2.5D)</label>
@@ -350,7 +375,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <Marco key={`${lmTema}-${lmPaleta}`} tema={lmTema} paleta={lmPaleta} estilo={estilo}>
             {/* La vista sale de la receta validada: lo que se ve es lo que se guarda (más shader, objeto y foto local). */}
             <Encabezado key={n} {...props} boton={props.boton && { ...props.boton, href: "#encabezados" }} botonSecundario={props.botonSecundario && { ...props.botonSecundario, href: "#encabezados" }}
-              imagenes={foto ? [foto, foto, foto] : undefined} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel} />
+              imagenes={foto ? [foto, foto, foto] : props.imagenes} shader={shader || undefined} objeto={objeto} alCambiarNivel={setNivel} />
           </Marco>
         </div>
         <h2 className="enc-galeria-titulo">Las 12 composiciones</h2>
