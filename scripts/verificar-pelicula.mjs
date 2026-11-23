@@ -243,6 +243,29 @@ const titulo = (pagina) => pagina.evaluate((v) => {
   }
 }
 
+// --- Colores desde la foto y receta v2 ---
+{
+  const { ctx, pagina, errores } = await abrir();
+  const b64 = await pagina.evaluate(() => {
+    const c = document.createElement("canvas");
+    c.width = 100; c.height = 100;
+    const x = c.getContext("2d");
+    x.fillStyle = "#f3f7f2"; x.fillRect(0, 0, 100, 70);
+    x.fillStyle = "#2f6b3f"; x.fillRect(0, 70, 100, 30);
+    return c.toDataURL("image/png").split(",")[1];
+  });
+  await pagina.locator('[data-prueba="foto"]').setInputFiles({ name: "bosque.png", mimeType: "image/png", buffer: Buffer.from(b64, "base64") });
+  await pagina.locator('[data-prueba="colores-foto"]').click();
+  await pagina.waitForTimeout(800);
+  const tema = await pagina.locator('[data-prueba="lm-tema"]').inputValue();
+  const paleta = await pagina.locator('[data-prueba="lm-paleta"]').inputValue().catch(() => "");
+  revisar(paleta === "bosque" && tema === "clasico", `colores desde la foto: el botón pone tema y paleta de La Mente (${tema} + ${paleta})`);
+  const json = JSON.parse(await pagina.locator('[data-prueba="json"]').textContent());
+  revisar(json.version === 2 && (await pagina.locator('[data-prueba="json"][data-valida]').count()) === 1, "el JSON del editor es una receta v2 válida");
+  revisar(errores.length === 0, "colores desde la foto: sin errores" + (errores.length ? ": " + errores[0] : ""));
+  await ctx.close();
+}
+
 await navegador.close();
 console.log(fallas ? `\n${fallas} fallas` : "\nTodo bien");
 process.exit(fallas ? 1 : 0);

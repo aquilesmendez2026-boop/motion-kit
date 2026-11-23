@@ -10,3 +10,5 @@ export {
   estiloDesdeLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, contraste, luminancia, mezclar,
 } from "./lamente";
 export type { TemaLaMente, PaletaLaMente, ColorLaMente, FormaTemaLaMente, PuenteLaMente } from "./lamente";
+export { paletaDeFoto, paletaDesdePixeles } from "./paletaDeFoto";
+export type { PaletaPropuesta } from "./paletaDeFoto";

@@ -3,7 +3,7 @@ import {
   COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
   PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
   SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
-  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps, imagenGenerada, olvidarApertura,
+  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps, imagenGenerada, olvidarApertura, paletaDeFoto,
   EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   crearDiseno, editarDiseno, type DisenoBiblioteca, type RecetaEncabezado,
@@ -69,6 +69,18 @@ export function Encabezados({ id }: { id?: string } = {}) {
   const [fotoLetras, setFotoLetras] = useState(false);
   const [tratamiento, setTratamiento] = useState<Tratamiento | "">("");
   const [horaDemo, setHoraDemo] = useState<"" | "auto" | "manana" | "tarde" | "noche">("");
+  const [archivoFoto, setArchivoFoto] = useState<File | null>(null);
+  const [infoColores, setInfoColores] = useState("");
+  const usarColoresDeFoto = async () => {
+    if (!archivoFoto) return;
+    try {
+      const r = await paletaDeFoto(archivoFoto);
+      setLmTema(r.tema); setLmPaleta(r.paleta);
+      setInfoColores(`Colores de la foto: ${r.colores.join(", ")} → paleta ${PALETAS_LAMENTE[r.paleta].nombre}, tema ${TEMAS_LAMENTE[r.tema].nombre}.`);
+    } catch (e) {
+      setInfoColores(`No se pudieron leer los colores: ${(e as Error).message}`);
+    }
+  };
   // Biblioteca: el diseño abierto (si vino de ahí), su nombre y etiquetas, y el último aviso.
   const [abierto, setAbierto] = useState<DisenoBiblioteca | null>(null);
   const [nombre, setNombre] = useState("");
@@ -381,9 +393,11 @@ export function Encabezados({ id }: { id?: string } = {}) {
             </select>
           </label>
           <label>Foto propia (para ver cuánto pesa)
-            <input type="file" accept="image/*" onChange={(e) => subirFoto(e.target.files?.[0])} data-prueba="foto" />
+            <input type="file" accept="image/*" onChange={(e) => { setArchivoFoto(e.target.files?.[0] ?? null); setInfoColores(""); subirFoto(e.target.files?.[0]); }} data-prueba="foto" />
             <small>Se usa en las composiciones con foto (dividido, tarjeta, foto completa, viñetas) y en el objeto 3D.</small>
           </label>
+          {archivoFoto && <button className="enc-repetir" onClick={usarColoresDeFoto} data-prueba="colores-foto">🎨 Usar colores de la foto (tema y paleta de La Mente)</button>}
+          {infoColores && <small data-prueba="info-colores">{infoColores}</small>}
           <label className="estudio-check"><input type="checkbox" checked={comprimir} onChange={(e) => setComprimir(e.target.checked)} data-prueba="comprimir" /> Comprimir al subir (WebP bajo 200 KB; 100 KB en celular)</label>
           {infoFoto && <small data-prueba="info-foto">{infoFoto}</small>}
         </fieldset>
