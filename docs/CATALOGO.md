@@ -310,6 +310,10 @@ Detalles que cuidar (salieron de la revisión final):
   llega y duerme cuando lo que falta ya no se ve (`llegoA`).
 - **Entradas.** Con la entrada `zoom` (la única que anima la `<img>` y no su caja), el lienzo espera a que termine.
 
+**En pausa (decisión de Aquiles, 24-11-2026):** por ahora no se usan modelos de IA, así que nadie calcula mapas y el
+efecto queda dormido (sin mapa, la foto se ve normal). «El sujeto sale del marco», que dependía de un modelo de
+recorte, tampoco se construye por ahora. Se retoma cuando Aquiles lo diga (`cerebro-aquiles/DECISIONES.md`).
+
 **De dónde sale el mapa.** De un modelo abierto de profundidad (Depth Anything V2 Small, Apache-2.0), una vez por foto.
 No es parte del paquete: corre donde se sube la foto. En la prueba del 24-11, en un navegador y sin tarjeta gráfica,
 tomó 4,2 a 4,6 segundos por foto; quien edita baja 3 MB del motor que lo corre, más el modelo. La vitrina trae el
@@ -580,6 +584,28 @@ versión 0 a la 1. Limitaciones conocidas: mientras un texto está cortado pierd
 ajuste entre letras; una partitura dentro de otra no comparte actores; lo que sigue al cursor escribe en el estilo en
 línea del elemento (si React también lo usa para `scale` u `opacity`, se pisan); y con render en el servidor el texto
 se ve entero un instante antes de entrar.
+
+## Safari (sondeo del 24-11-2026)
+
+Las pruebas visuales están escritas para Chrome. El 24-11 se corrieron las quince, una vez, con el motor de Safari
+(WebKit de Playwright). Para repetirlo con una: `node scripts/en-safari.mjs <prueba> [parte]`. No es un semáforo:
+sirve para buscar diferencias de verdad.
+
+| Prueba | En Safari | Qué era |
+|---|---|---|
+| efectos, encabezados, lamente, biblioteca, momentos3 | Pasan enteras | — |
+| fotos | Un error real, arreglado | Al arrastrar sobre una foto de la galería, el navegador iniciaba su «arrastrar imagen» y se tragaba el toque siguiente: el visor no abría. Ahora las fotos con gestos lo evitan |
+| piezas, estilos, escena, momentos, momentos2 | Diferencias que no son errores | Safari no lleva el Tab a los enlaces por defecto; mide distinto lo que sobra dentro de una caja (nada se sale a la vista); la foto de prueba pesa menos; una revisión usa una herramienta que solo tiene Chrome |
+| relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Quietos, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, el contenido se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |
+| director | 10 diferencias, sin resolver | Varias son de la prueba (en Safari el Director usa su respaldo manual y la prueba cuenta esas animaciones como «vivas»). Las demás se revisan en la fase 2 del Director |
+
+Lo que hay que saber:
+
+- **En iPhone con Safari anterior a la 26, los relatos y la pila no se mueven con el scroll.** Se ve todo, quieto. El
+  Director ya trae un respaldo manual para eso: pasar los relatos al Director (fase 2) les da movimiento también ahí.
+- **Sin comprobar en un aparato real.** El WebKit de las pruebas no es el Safari de un iPhone: no prueba el dedo de
+  verdad, la memoria ni VoiceOver.
+- Firefox no se probó: no está instalado en las pruebas (`npx playwright install firefox`).
 
 ## Mejoras a lo que ya existe
 

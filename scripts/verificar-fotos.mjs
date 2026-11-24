@@ -28,9 +28,12 @@ async function abrir(hash, { opciones = {}, cors = false, antes = [], preparar }
   const pagina = await ctx.newPage();
   const errores = [];
   const pedidos = { otro: 0, conCors: 0, porDireccion: {} };
-  pagina.on("pageerror", (e) => errores.push(e.message));
+  // Safari avisa una foto sin permiso también como error de página («Cannot load image … due to access control checks»):
+  // es del navegador, no del kit.
+  pagina.on("pageerror", (e) => !/access control checks/.test(e.message) && errores.push(e.message));
   // Una foto caída deja su propio aviso de red: ese no cuenta como error del kit.
-  pagina.on("console", (m) => m.type() === "error" && !/Failed to load resource|ERR_FAILED|CORS/.test(m.text()) && errores.push(m.text()));
+  // (Chrome y Safari lo dicen distinto: «blocked by CORS policy», «not allowed by Access-Control-Allow-Origin», «due to access control checks».)
+  pagina.on("console", (m) => m.type() === "error" && !/Failed to load resource|ERR_FAILED|CORS|Access-Control-Allow-Origin|access control checks/.test(m.text()) && errores.push(m.text()));
   await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
   await pagina.route(/\/__foto\/(\d)\.svg/, (r) => r.fulfill({ status: 200, contentType: "image/svg+xml", body: svg(["#b5462f", "#2f6db5", "#3a9b5c"][Number(r.request().url().match(/(\d)\.svg/)[1]) % 3]) }));
   await pagina.route(/\/__foto\/falta\.svg/, (r) => r.fulfill({ status: 404, body: "" }));
@@ -521,6 +524,10 @@ if (parte("visor")) {
   await pagina.mouse.up();
   await pagina.waitForTimeout(400);
   revisar((await pagina.locator(DIALOGO).count()) === 0, "arrastrar sobre la foto no abre el visor");
+  // El navegador no inicia su propio «arrastrar imagen» sobre las fotos con gestos: en Safari eso se tragaba el toque
+  // siguiente y el visor no abría (visto el 24-11-2026 con `node scripts/en-safari.mjs fotos visor`).
+  const arrastreNativo = await pagina.locator(`${BOTON("mosaico", 1)} img`).evaluate((img) => !img.dispatchEvent(new DragEvent("dragstart", { bubbles: true, cancelable: true })));
+  revisar(arrastreNativo, "arrastrar una foto de la galería no inicia el arrastre de imágenes del navegador");
 
   const src = await pagina.locator(`${BOTON("mosaico", 1)} img`).getAttribute("src");
   await pagina.locator(BOTON("mosaico", 1)).click();
@@ -899,7 +906,9 @@ if (parte("profunda")) {
       pagina.evaluate(
         async ([ls, ms]) => {
           for (const [beta, gamma] of ls) {
-            window.dispatchEvent(new DeviceOrientationEvent("deviceorientation", { alpha: 0, beta, gamma }));
+            // En un computador, Safari no trae `DeviceOrientationEvent`: va un evento común con los mismos datos.
+            const datos = { alpha: 0, beta, gamma };
+            window.dispatchEvent(typeof DeviceOrientationEvent === "function" ? new DeviceOrientationEvent("deviceorientation", datos) : Object.assign(new Event("deviceorientation"), datos));
             await new Promise((r) => setTimeout(r, ms));
           }
         },

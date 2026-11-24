@@ -2,6 +2,16 @@
 
 ## Sin publicar (en `dev`, después de 0.3.0)
 
+### Safari: sondeo de todas las pruebas y un arreglo en la galería
+
+- **Arreglo:** en la galería (`MosaicoQueSeArma` con `viva` o `visor`), arrastrar sobre una foto ya no inicia el
+  «arrastrar imagen» del navegador. En Safari eso se tragaba el toque siguiente y el visor no abría.
+- `scripts/en-safari.mjs <prueba> [parte]`: corre una prueba visual con el motor de Safari (WebKit), sin tocarla.
+- Resultado del sondeo (las quince pruebas, una vez) en `docs/CATALOGO.md`, sección «Safari». Lo demás que apareció
+  no eran errores, o es el comportamiento previsto donde no hay animaciones atadas al scroll (Safari antes de la 26).
+- Vitrina `#profundidad`: se quitó la herramienta «Prueba con tu foto», que bajaba un modelo de internet (decisión de
+  Aquiles del 24-11: por ahora, sin modelos de IA).
+
 ### Efectos vistosos: fuegos artificiales, carrusel giratorio y libro que se abre
 
 - **Tres piezas nuevas en `motion-kit/momentos`**, que se bajan aparte y aceptan `respaldo`:
@@ -38,8 +48,9 @@
 - **El mapa** es una imagen en grises, más claro es más cerca (se recomienda 256 px de ancho: pesa de 2 a 5 KB; tiene que tener la proporción de la foto). Se
   calcula una vez por foto con un modelo abierto (Depth Anything V2 Small, Apache-2.0). **El modelo no es parte del
   paquete:** corre donde se sube la foto.
-- Vitrina `#profundidad`: tres fotos de ejemplo con su mapa (`demo/fotos/`, licencia libre) y una herramienta para
-  soltar una foto propia, que baja el modelo de internet solo ahí.
+- Vitrina `#profundidad`: tres fotos de ejemplo con su mapa (`demo/fotos/`, licencia libre). La herramienta para
+  soltar una foto propia (bajaba un modelo de internet) se quitó el 24-11: por decisión de Aquiles todavía no se usan
+  modelos de IA. El efecto queda en el kit, dormido hasta que haya de dónde sacar los mapas.
 - **Revisión final (24-11), arreglada entera:**
   - La foto de abajo va acercada el mismo 6 % que el lienzo mientras el efecto esté pedido (`data-foto-profunda` en la
     caja de la foto): antes, al aparecer o al irse el lienzo, la foto saltaba.

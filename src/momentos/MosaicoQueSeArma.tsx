@@ -76,6 +76,9 @@ export function MosaicoQueSeArma({ fotos, semilla = "", viva, origenesFotos = SI
         className="mk-m-mosaico-grilla"
         onPointerOver={conOndas ? gesto : undefined}
         onPointerDown={conOndas || visor ? gesto : undefined}
+        // Con gestos sobre las fotos, el navegador no debe iniciar su propio «arrastrar imagen»: se traga el resto del
+        // gesto y el toque que sigue (en Safari, después de arrastrar, el toque siguiente no abría el visor).
+        onDragStart={conOndas || visor ? (e) => e.preventDefault() : undefined}
         onClick={visor ? gesto : undefined}
       >
         {lista.map((f, i) => (
