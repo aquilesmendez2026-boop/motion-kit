@@ -65,7 +65,10 @@ Aquiles.
   fotos grandes); la versión completa es para computador.
 - **Después, la app móvil:** `lamente-app` es Kotlin Multiplatform, no React. Decidir entre mostrar la página web
   dentro de la app (rápido, igual que la web) o rehacer en Compose los efectos más usados (más fluido, más trabajo).
-- **Tanda que sigue: escenas por capas** (pedido de Aquiles, 24-11: «sí, anótalo»). Va apenas cierre «dedo y física»:
+- **Tanda que sigue: motor de animación propio (Partitura y Director)**, aprobado por Aquiles el 24-11 («si a todo,
+  partamos con la fase 0»). Reemplaza a «escenas por capas», que queda adentro (sus efectos pasan a ser partituras).
+  Análisis y plan: `docs/superpowers/specs/2026-11-24-motor-de-animacion-analisis-y-plan.md`.
+- **Escenas por capas** (pedido de Aquiles, 24-11; ahora dentro del motor de animación). Lo anotado antes:
   - **Motor de escenas por capas:** una «receta de escena» (la lista de capas; qué mueve a cada una: dedo,
     inclinación, scroll o tiempo; con qué fuerza; su foco y su sombra) y un solo motor que la dibuja. «Sorpréndeme»
     arma escenas con una semilla. Se apoya en lo que ya existe: `CapasProfundidad`, la luz, el resorte, el péndulo, la
