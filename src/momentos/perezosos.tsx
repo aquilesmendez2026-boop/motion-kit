@@ -2,7 +2,8 @@
 // llegan, se ve lo esencial: el título y el ganador del sorteo (el premio queda para lectores, para no arruinar el
 // raspe) y la foto de «antes». Si el archivo no baja (red mala, deploy nuevo), la página sigue: el sorteo muestra el
 // premio sin capa y el antes y después, la foto de «antes».
-import { Component, Suspense, lazy, type ReactNode } from "react";
+import { Suspense, lazy } from "react";
+import { Limite } from "./aparte";
 import type { SorteoRaspeProps } from "./SorteoRaspe";
 import type { AntesDespuesProps } from "./AntesDespues";
 
@@ -17,16 +18,6 @@ export function Confeti(props: { semilla: number; n?: number }) {
       <Suspense fallback={null}><ConfetiReal {...props} /></Suspense>
     </Limite>
   );
-}
-
-class Limite extends Component<{ children: ReactNode; siFalla: ReactNode }, { fallo: boolean }> {
-  state = { fallo: false };
-  static getDerivedStateFromError() {
-    return { fallo: true };
-  }
-  render() {
-    return this.state.fallo ? this.props.siFalla : this.props.children;
-  }
 }
 
 const clase = (base: string, extra?: string) => [base, extra].filter(Boolean).join(" ");

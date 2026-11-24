@@ -18,12 +18,12 @@ const esEspacio = (l: string) => /^\s*$/.test(l);
 
 /**
  * Lo que muestra cada letra a los `t` ms. `i` es la posición de la letra entre las que no son espacio (los espacios
- * no cuentan ni retrasan): se resuelve cuando `t >= (i + 1) * paso`, con `paso = min(45, 1200 / n)`; antes muestra un
- * signo que cambia cada 40 ms. Los espacios no cambian.
+ * no cuentan ni retrasan): se resuelve cuando `t >= (i + 1) * paso`, con `paso = min(45, tope / n)`; antes muestra un
+ * signo que cambia cada 40 ms. Los espacios no cambian. `tope` es lo más que dura el efecto entero (ms).
  */
-export function cuadroDescifrar(letras: string[], t: number, semilla: number): string[] {
+export function cuadroDescifrar(letras: string[], t: number, semilla: number, tope = 1200): string[] {
   const n = letras.reduce((c, l) => c + (esEspacio(l) ? 0 : 1), 0);
-  const paso = Math.min(45, 1200 / Math.max(1, n));
+  const paso = Math.min(45, tope / Math.max(1, n));
   let i = -1;
   return letras.map((l) => {
     if (esEspacio(l)) return l;
@@ -35,14 +35,14 @@ export function cuadroDescifrar(letras: string[], t: number, semilla: number): s
 }
 
 /** Cuánto dura descifrar `n` letras (ms). */
-export const duracionDescifrar = (n: number) => Math.max(1, n) * Math.min(45, 1200 / Math.max(1, n));
+export const duracionDescifrar = (n: number, tope = 1200) => Math.max(1, n) * Math.min(45, tope / Math.max(1, n));
 
 /**
  * Corre el efecto sobre las letras (`.mk-tc-l`) de un título. Fija el ancho de cada letra mientras cambia, para que el
  * título no baile, y al terminar deja el texto y los anchos como estaban. Devuelve cómo cancelar (que también
  * restaura). No hace nada con movimiento reducido ni en nivel liviano o quieto.
  */
-export function descifrar(el: HTMLElement, semilla = 1): () => void {
+export function descifrar(el: HTMLElement, semilla = 1, tope = 1200): () => void {
   if (typeof window === "undefined" || typeof requestAnimationFrame === "undefined") return () => {};
   if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || el.closest("[data-nivel=liviano],[data-nivel=quieto]")) return () => {};
   const spans = [...el.querySelectorAll<HTMLElement>(".mk-tc-l")];
@@ -56,7 +56,7 @@ export function descifrar(el: HTMLElement, semilla = 1): () => void {
       s.style.textAlign = "center";
     }
   });
-  const total = duracionDescifrar(letras.filter((l) => !esEspacio(l)).length);
+  const total = duracionDescifrar(letras.filter((l) => !esEspacio(l)).length, tope);
   const inicio = performance.now();
   let cuadro = 0;
   let listo = false;
@@ -73,7 +73,7 @@ export function descifrar(el: HTMLElement, semilla = 1): () => void {
   const paso = (ahora: number) => {
     const t = ahora - inicio;
     if (t >= total) return restaurar();
-    const ver = cuadroDescifrar(letras, t, semilla);
+    const ver = cuadroDescifrar(letras, t, semilla, tope);
     spans.forEach((s, i) => {
       if (s.textContent !== ver[i]) s.textContent = ver[i];
     });

@@ -159,6 +159,15 @@ export function seguirQuietud(el: HTMLElement, alCambiar: () => void): { quieta:
   };
 }
 
+/**
+ * Cuántas cosas dibuja un fondo: la cantidad de su variante (una variante rara cuenta como la 1), el 60 % en pantallas
+ * angostas y otro 60 % en la versión quieta (nivel liviano o movimiento reducido).
+ */
+export function cantidadFondo(variante: number, ancho: number, cantidades: [number, number, number], quieta = false): number {
+  const base = cantidades[variante - 1] ?? cantidades[0];
+  return Math.round(base * (ancho < 700 ? 0.6 : 1) * (quieta ? 0.6 : 1));
+}
+
 /** Dónde escuchar el puntero: el encabezado (o lo que envuelve a la capa), porque la capa del fondo no recibe toques. */
 export const zonaPuntero = (cv: HTMLElement): HTMLElement | null => cv.closest<HTMLElement>(".mk-enc") ?? cv.parentElement?.parentElement ?? null;
 

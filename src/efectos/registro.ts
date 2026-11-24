@@ -25,6 +25,12 @@ export const EFECTOS: Record<EfectoId, EfectoDef> = {
   pesas: { id: "pesas", nombre: "Pesas que caen", familia: "escena", rubros: ["salud"], animo: "vistoso", cargar: () => import("./escenas/Pesas") },
   lapices: { id: "lapices", nombre: "Lápices que caen", familia: "escena", rubros: ["clases"], animo: "vistoso", cargar: () => import("./escenas/Lapices") },
   constelacion: { id: "constelacion", nombre: "Constelación", familia: "fondo", rubros: ["otro"], animo: "sobrio", cargar: () => import("./fondos/Constelacion") },
+  // Fondos vivos de lienzo (segunda tanda): siguen al dedo y quedan en un cuadro con movimiento reducido.
+  bandada: { id: "bandada", nombre: "Bandada", familia: "fondo", rubros: ["otro"], animo: "vistoso", cargar: () => import("./fondos/Bandada") },
+  luciernagas: { id: "luciernagas", nombre: "Luciérnagas", familia: "fondo", rubros: ["comida"], animo: "sobrio", cargar: () => import("./fondos/Luciernagas") },
+  corrientes: { id: "corrientes", nombre: "Corrientes", familia: "fondo", rubros: ["belleza"], animo: "sobrio", cargar: () => import("./fondos/Corrientes") },
+  gotas: { id: "gotas", nombre: "Gotas", familia: "fondo", rubros: ["salud"], animo: "sobrio", cargar: () => import("./fondos/Gotas") },
+  relieve: { id: "relieve", nombre: "Relieve", familia: "fondo", rubros: ["clases"], animo: "sobrio", cargar: () => import("./fondos/Relieve") },
 };
 
 export const ids = Object.keys(EFECTOS) as EfectoId[];

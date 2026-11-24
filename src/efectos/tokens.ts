@@ -6,7 +6,8 @@ export type EfectoId =
   | "cafe" | "petalos" | "pulso" | "abecedario" | "letrero" | "cometas"
   | "niebla" | "burbujas" | "olas" | "puntos" | "lluvia" | "estrellas"
   | "rejilla" | "tubo" | "ecualizador" | "velocidad" | "grano"
-  | "granos" | "tijeras" | "huellas" | "pesas" | "lapices" | "constelacion";
+  | "granos" | "tijeras" | "huellas" | "pesas" | "lapices" | "constelacion"
+  | "bandada" | "luciernagas" | "corrientes" | "gotas" | "relieve";
 
 export interface EfectoProps extends HTMLAttributes<HTMLDivElement> {
   /** 1, 2 o 3: cambia densidad, velocidad o forma. */

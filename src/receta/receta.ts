@@ -33,6 +33,7 @@ const EFECTOS: Record<EfectoId, true> = {
   niebla: true, burbujas: true, olas: true, puntos: true, lluvia: true, estrellas: true,
   rejilla: true, tubo: true, ecualizador: true, velocidad: true, grano: true,
   granos: true, tijeras: true, huellas: true, pesas: true, lapices: true, constelacion: true,
+  bandada: true, luciernagas: true, corrientes: true, gotas: true, relieve: true,
 };
 const LUCES: Record<ModoLuz, true> = { puntero: true, barrido: true };
 const MOVIMIENTOS: Record<FuenteMovimiento, true> = { puntero: true, scroll: true, inclinacion: true };

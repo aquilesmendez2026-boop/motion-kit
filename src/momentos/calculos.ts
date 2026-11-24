@@ -67,7 +67,7 @@ const RE_HORA = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const formatos = new Map<string, Intl.DateTimeFormat>();
 
 /** Año, mes, día, hora, minuto y segundo de un instante en una zona (lanza si la zona no existe). */
-function partesEn(zona: string, instante: number): number[] {
+export function partesEn(zona: string, instante: number): number[] {
   let f = formatos.get(zona);
   if (!f) {
     f = new Intl.DateTimeFormat("en-US", {
@@ -179,8 +179,12 @@ export function desordenDe(n: number, s: number): { x: number; y: number; giro: 
 
 /** Enlace que se puede poner en un href: web (http o https), correo, teléfono o una ruta de la misma página. */
 export function esEnlaceSeguro(href: string): boolean {
-  const h = href.trim();
-  if (!h || h.startsWith("//")) return false;
+  if (typeof href !== "string") return false;
+  // Se mira lo que va a ver el navegador: quita los saltos y tabuladores de cualquier parte, y los espacios y
+  // caracteres de control del comienzo. Sin esto, «java\nscript:» pasaría por una ruta de la misma página.
+  const h = href.replace(/[\t\n\r]/g, "").replace(/^[\u0000-\u0020]+/, "").trimEnd();
+  // Dos barras (de cualquier tipo) al comienzo llevan a otro sitio.
+  if (!h || /^[\\/]{2}/.test(h)) return false;
   const esquema = /^([a-z][a-z0-9+.-]*):/i.exec(h);
   return !esquema || ["http", "https", "mailto", "tel"].includes(esquema[1].toLowerCase());
 }

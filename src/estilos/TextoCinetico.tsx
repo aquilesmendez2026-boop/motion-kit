@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { grafemas } from "../utils/grafemas";
 import { useStyles } from "../utils/styles";
 import type { TextoEfecto } from "./estilos";
 
@@ -22,7 +23,7 @@ export interface TextoCineticoProps extends HTMLAttributes<HTMLElement> {
 const CSS = `
 .mk-tc{position:relative}
 .mk-tc>span{display:inline}
-.mk-tc .mk-tc-palabra{white-space:nowrap}
+.mk-tc .mk-tc-palabra{display:inline-block;white-space:nowrap}
 .mk-tc[data-fase=esperando][data-oculta] .mk-tc-l{opacity:0}
 .mk-tc[data-fase=jugando] .mk-tc-l{animation:var(--n) var(--d) var(--c,cubic-bezier(.2,.8,.2,1)) calc(var(--r) + var(--i) * var(--paso)) var(--v,1) both}
 .mk-tc[data-efecto=encender]{--n:mk-t-encender;--d:1.1s;--paso:35ms;--c:linear}
@@ -53,7 +54,7 @@ const CSS = `
 @keyframes mk-t-temblor{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-1px,1px) rotate(-2deg)}100%{transform:translate(1px,-1px) rotate(1.5deg)}}
 @keyframes mk-t-caer{0%{opacity:0;transform:translateY(-120%) rotate(-25deg)}55%{opacity:1;transform:translateY(8%) rotate(4deg)}75%{transform:translateY(-6%) rotate(-2deg)}100%{opacity:1;transform:none}}
 @keyframes mk-t-trailer{0%{opacity:0;transform:scale(1.18)}100%{opacity:1;transform:none}}
-@keyframes mk-t-revelar{from{transform:translateY(110%)}to{transform:none}}
+@keyframes mk-t-revelar{from{transform:translateY(135%)}to{transform:none}}
 @keyframes mk-t-voltear{from{opacity:0;transform:perspective(400px) rotateX(-95deg)}to{opacity:1;transform:none}}
 @keyframes mk-t-rebote{0%{opacity:0;transform:scale(0)}55%{opacity:1;transform:scale(1.3)}75%{transform:scale(.88)}100%{opacity:1;transform:none}}
 @keyframes mk-t-resaltar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -119,14 +120,14 @@ export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", r
     if (POR_PALABRA.includes(efecto)) {
       const l = (
         <span key={k} className="mk-tc-l mk-tc-palabra" style={{ "--i": i++ } as CSSProperties}>
-          {letras ? Array.from(p).map((ch, j) => <span key={j} className="mk-tc-g" style={{ display: "inline-block" }}>{ch}</span>) : p}
+          {letras ? grafemas(p).map((ch, j) => <span key={j} className="mk-tc-g" style={{ display: "inline-block" }}>{ch}</span>) : p}
         </span>
       );
       return efecto === "revelar" ? <span key={k} className="mk-tc-mascara">{l}</span> : l;
     }
     return (
       <span key={k} className="mk-tc-palabra">
-        {Array.from(p).map((ch, j) => (
+        {grafemas(p).map((ch, j) => (
           <span key={j} className="mk-tc-l" style={{ "--i": i++, display: "inline-block" } as CSSProperties}>{ch}</span>
         ))}
       </span>

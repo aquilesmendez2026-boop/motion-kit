@@ -24,6 +24,22 @@ export { AntesDespues, SorteoRaspe, Confeti } from "../momentos/perezosos";
 export type { AntesDespuesProps } from "../momentos/AntesDespues";
 export type { SorteoRaspeProps } from "../momentos/SorteoRaspe";
 
+// La segunda tanda (los bloques que faltaban): todas se bajan aparte y aceptan `respaldo`, lo que se ve mientras llegan.
+export {
+  FechasQueVienen, ClasesDeHoy, NovedadesQueLlegan, EnlacesDomino, EpisodiosOnda, SeccionesVivas, AvisoQueSeDespliega, CintaConImpulso, LlamadoConVida,
+} from "../momentos/perezosos-2";
+export type { AvisoQueSeDespliegaProps } from "../momentos/AvisoQueSeDespliega";
+export type { CintaConImpulsoProps } from "../momentos/CintaConImpulso";
+export type { LlamadoConVidaProps } from "../momentos/LlamadoConVida";
+export type { EscenaLlamado } from "../momentos/escenas-llamado";
+export type { EpisodiosOndaProps, EpisodioOnda } from "../momentos/EpisodiosOnda";
+export type { SeccionesVivasProps, SeccionViva } from "../momentos/SeccionesVivas";
+export type { NovedadesQueLleganProps, EntradaNovedad } from "../momentos/NovedadesQueLlegan";
+export type { EnlacesDominoProps, EnlaceDomino } from "../momentos/EnlacesDomino";
+export type { ClasesDeHoyProps, SesionDeClase } from "../momentos/ClasesDeHoy";
+export type { FechasQueVienenProps, FechaQueViene } from "../momentos/FechasQueVienen";
+export type { ConRespaldo } from "../momentos/aparte";
+
 // La base: cuándo arranca un momento y en qué nivel, y el resorte de cada estilo.
 export { useMomento } from "../momentos/base";
 export type { ComunesMomento } from "../momentos/base";

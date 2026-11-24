@@ -22,7 +22,10 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // 23-11-2026: momentos 12 (diseño de momentos por bloque, aprobado por Aquiles).
 // 23-11-2026: pagina 17 (mide 15,8 sola; sobre el encabezado suma ~7,5), con «hace todo» de Aquiles; motion-kit 80
 // (era 70; con los relatos y la biblioteca mide 72,7), elegido por Aquiles.
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 12, escena: 16, receta: 10 };
+// 24-11-2026: momentos 13 (era 12; con la segunda tanda mide 12,5: nueve piezas que se bajan aparte, y lo que queda al
+// cargar son sus nueve cargadores). Aquiles aprobó hasta 14 como máximo en el diseño de la segunda tanda; se sube solo
+// lo que hace falta.
+export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;

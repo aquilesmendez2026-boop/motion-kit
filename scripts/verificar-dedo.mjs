@@ -1,7 +1,7 @@
 // Verifica los efectos de «dedo y física»: cartas apiladas, texto que se descifra, letras con imán, letrero colgante,
 // inclinación por velocidad, objetos que caen, constelación, estela y chispas, y que nada quede vivo al salir.
 // Uso: npm run dev (en otra terminal) y después `node scripts/verificar-dedo.mjs [http://localhost:5173] [parte]`,
-// donde la parte (opcional) es pila, descifrar, iman, colgante, impulso, caida, constelacion, estela, limpieza,
+// donde la parte (opcional) es pila, descifrar, iman, colgante, impulso, caida, constelacion, fondos, estela, limpieza,
 // sinlienzo o angosto.
 import { chromium } from "playwright";
 
@@ -608,11 +608,13 @@ const espiarLienzo2d = () => {
     for (const f of falsos) for (const el of f.mios) f.aviso([{ isIntersecting: si, intersectionRatio: si ? 1 : 0, target: el }], f);
   };
 };
-async function dibujosPorSegundo(pagina) {
-  const a = await pagina.evaluate(() => window.__dibujos2d);
+async function dibujosPorSegundo(pagina, cuenta = "__dibujos2d") {
+  const a = await pagina.evaluate((c) => window[c], cuenta);
   await pagina.waitForTimeout(1000);
-  return (await pagina.evaluate(() => window.__dibujos2d)) - a;
+  return (await pagina.evaluate((c) => window[c], cuenta)) - a;
 }
+/** Los fondos vivos de lienzo de la segunda tanda (todos se prueban igual). */
+const FONDOS = ["bandada", "luciernagas", "corrientes", "gotas", "relieve"];
 /** Cuántos píxeles pintados tiene un lienzo 2D en una franja (de 0 a 1 de su alto). */
 const pintados = (pagina, selector, desde = 0, hasta = 1) =>
   pagina.evaluate(
@@ -790,6 +792,95 @@ if (parte("constelacion")) {
     const quieta = await dibujosPorSegundo(pagina);
     revisar(n > 100 && quieta <= 1, `con movimiento reducido la constelación queda dibujada y quieta (${n} píxeles, ${quieta} dibujos/s)`);
     await ctx.close();
+  }
+}
+
+// --- 8. Fondos vivos de lienzo (segunda tanda) ---
+if (parte("fondos")) {
+  const LIENZO = ".mk-enc .mk-capa canvas";
+  /** Cuántos píxeles pintados hay en un cuadro de `lado` px en torno a un punto del lienzo (en px de CSS). */
+  const cerca = (pagina, x, y, lado = 70) =>
+    pagina.evaluate(
+      ([q, px, py, l]) => {
+        const c = document.querySelector(q);
+        const k = c.width / c.clientWidth;
+        const d = c.getContext("2d").getImageData(Math.round((px - l / 2) * k), Math.round((py - l / 2) * k), Math.round(l * k), Math.round(l * k)).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+        return n;
+      },
+      [LIENZO, x, y, lado],
+    );
+  for (const id of FONDOS) {
+    const cuenta = "__dibujos2d";
+    {
+      const { ctx, pagina, errores } = await abrir(vista({ efecto: id, variante: 2 }), { antes: [() => (window.__fingirVista = true), espiarLienzo2d] });
+      await pagina.waitForSelector(LIENZO, { timeout: 8000 }).catch(() => {});
+      const antesDeVerse = await pagina.locator(LIENZO).getAttribute("data-estado").catch(() => null);
+      await pagina.evaluate(() => window.__vista(true));
+      await pagina.waitForTimeout(700);
+      const n = await pintados(pagina, LIENZO);
+      const corriendo = await dibujosPorSegundo(pagina, cuenta);
+      revisar(antesDeVerse === "pausa" && n > 100 && corriendo > 20 && corriendo < 42, `${id}: espera en pausa, dibuja y se mueve a unos 30 dibujos por segundo (${antesDeVerse}, ${n} píxeles, ${corriendo} dibujos/s)`);
+      // El dedo o el cursor: no rompe nada y el fondo sigue corriendo.
+      const caja = await pagina.locator(".mk-enc").boundingBox();
+      const lienzo = await pagina.locator(LIENZO).boundingBox();
+      const [px, py] = [Math.round(lienzo.width * 0.3), Math.round(lienzo.height * 0.7)];
+      if (id === "gotas") {
+        // Un toque suelta una gota ahí mismo.
+        const antes = Math.max(await cerca(pagina, px, py), await cerca(pagina, px, py));
+        await pagina.mouse.click(lienzo.x + px, lienzo.y + py);
+        await pagina.waitForTimeout(300);
+        const despues = await cerca(pagina, px, py);
+        revisar(despues > antes + 80, `gotas: un toque suelta una gota en ese punto (${antes} → ${despues} píxeles cerca)`);
+      }
+      await pagina.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2, { steps: 8 });
+      await pagina.waitForTimeout(300);
+      const conDedo = await dibujosPorSegundo(pagina, cuenta);
+      revisar(conDedo > 20 && conDedo < 42 && (await pintados(pagina, LIENZO)) > 100, `${id}: con el cursor encima sigue dibujando (${conDedo} dibujos/s)`);
+      await pagina.evaluate(() => window.__vista(false));
+      await pagina.waitForTimeout(200);
+      const fuera = await dibujosPorSegundo(pagina, cuenta);
+      const alSalir = await pagina.locator(LIENZO).getAttribute("data-estado").catch(() => null);
+      revisar(fuera <= 1 && alSalir === "pausa", `${id}: fuera de la vista no dibuja y queda en pausa (${fuera}/s, ${alSalir})`);
+      revisar(errores.length === 0, `${id}: sin errores${errores.length ? `: ${errores.join(" | ")}` : ""}`);
+      await ctx.close();
+    }
+    {
+      // Un teléfono que no da abasto (nivel liviano): queda un cuadro dibujado y deja de moverse.
+      const telefonoLento = () => {
+        window.requestAnimationFrame = (f) => setTimeout(() => f(performance.now()), 50);
+        window.cancelAnimationFrame = (n) => clearTimeout(n);
+      };
+      const { ctx, pagina } = await abrir(vista({ efecto: id, variante: 3 }), { antes: [telefonoLento, espiarLienzo2d] });
+      await pagina.waitForSelector('.mk-enc[data-nivel="liviano"]', { timeout: 12000 }).catch(() => {});
+      await pagina.waitForTimeout(500);
+      const nivel = await pagina.locator(".mk-enc").getAttribute("data-nivel");
+      const n = await pintados(pagina, LIENZO);
+      const dibujos = await dibujosPorSegundo(pagina, "__dibujos2d");
+      const estado = await pagina.locator(LIENZO).getAttribute("data-estado").catch(() => null);
+      revisar(nivel === "liviano" && n > 100 && dibujos <= 1 && estado === "quieto", `${id}: en nivel liviano queda dibujado y quieto (nivel ${nivel}, ${estado}, ${n} píxeles, ${dibujos} dibujos/s)`);
+      // Quieto, el cursor no lo despierta.
+      const caja = await pagina.locator(".mk-enc").boundingBox();
+      await pagina.mouse.move(caja.x + 200, caja.y + 200, { steps: 6 });
+      await pagina.mouse.click(caja.x + 220, caja.y + 220);
+      await pagina.waitForTimeout(200);
+      const despierto = await dibujosPorSegundo(pagina, "__dibujos2d");
+      revisar(despierto <= 1 && (await pagina.locator(LIENZO).getAttribute("data-estado")) === "quieto", `${id}: quieto, el cursor y un toque no lo despiertan (${despierto} dibujos)`);
+      await ctx.close();
+    }
+    {
+      // En la vitrina, con movimiento reducido queda un cuadro quieto (como los demás fondos).
+      const { ctx, pagina } = await abrir("#efectos", { antes: espiarLienzo2d, opciones: { reducedMotion: "reduce" } });
+      const sel = `[data-efecto="${id}"] .mk-capa canvas`;
+      await pagina.waitForSelector(sel, { timeout: 8000 }).catch(() => {});
+      await pagina.locator(sel).scrollIntoViewIfNeeded().catch(() => {});
+      await pagina.waitForTimeout(700);
+      const n = await pintados(pagina, sel);
+      const quieta = await dibujosPorSegundo(pagina, "__dibujos2d");
+      revisar(n > 100 && quieta <= 1, `${id}: con movimiento reducido queda dibujado y quieto (${n} píxeles, ${quieta} dibujos)`);
+      await ctx.close();
+    }
   }
 }
 
@@ -981,6 +1072,7 @@ if (parte("limpieza")) {
     ["letrero colgante y constelación", vista({ composicion: "letrero", colgante: true, efecto: "constelacion" }), 1],
     ["lámpara de lava", vista({ shader: "lava", ahorro: "nunca" }), 1],
     ["página con pila, inclinación y estela", sola, 1],
+    ...FONDOS.map((id) => [`fondo «${id}»`, vista({ efecto: id, variante: 2 }), 1]),
   ];
   for (const [nombre, ruta, lienzos] of casos) {
     // Parte en la vista quieta, entra al caso, vuelve a la quieta, y otra vez: al volver todo tiene que quedar como al partir.
@@ -1027,6 +1119,7 @@ if (parte("sinlienzo")) {
     ["constelación", vista({ efecto: "constelacion" })],
     ["lámpara de lava", vista({ shader: "lava", ahorro: "nunca" })],
     ["página con estela, inclinación y pila", paginaSola({ relato: "pila", relatoPagina: "impulso", estela: true })],
+    ...FONDOS.map((id) => [`fondo «${id}»`, vista({ efecto: id })]),
   ];
   for (const [nombre, ruta] of casos) {
     const { ctx, pagina, errores } = await abrir(ruta, { antes: sinLienzo });
@@ -1055,6 +1148,7 @@ if (parte("angosto")) {
     ["constelación", vista({ efecto: "constelacion", variante: 3 })],
     ["lámpara de lava", vista({ shader: "lava", ahorro: "nunca" })],
     ["página con pila, inclinación y estela", paginaSola({ relato: "pila", relatoPagina: "impulso", estela: true })],
+    ...FONDOS.map((id) => [`fondo «${id}»`, vista({ efecto: id, variante: 3 })]),
   ];
   for (const [nombre, ruta] of casos) {
     const { ctx, pagina, errores } = await abrir(ruta, { opciones: telefono });

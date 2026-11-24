@@ -29,7 +29,7 @@ writeFileSync(join(P, "pagina.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEstilos, type RecetaEncabezado } from "motion-kit/encabezado";
 import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
-import { SellosEstampa, CuentaRegresiva } from "motion-kit/momentos";
+import { SellosEstampa, CuentaRegresiva, FechasQueVienen, LlamadoConVida, type FechaQueViene, type EscenaLlamado } from "motion-kit/momentos";
 import "motion-kit/estilos-encabezado.css";
 import "motion-kit/estilos-pagina.css";
 import "motion-kit/estilos-momentos.css";
@@ -37,14 +37,19 @@ import "motion-kit/estilos-momentos.css";
 sinInyectarEstilos();
 const r = validarReceta({ version: 1, estilo: "neon", titulo: "Smash *burgers*", botones: [{ texto: "Pedir", href: "#pedir" }], efecto: "constelacion", iman: true });
 const receta: RecetaEncabezado | null = r.ok ? r.receta : null;
+const fondo = validarReceta({ version: 2, estilo: "neon", titulo: "Hola", efecto: "bandada" });
+const fechas: FechaQueViene[] = [{ fecha: "2026-12-24", titulo: "Cerramos a las 14:00", tipo: "cerrado" }];
+const escena: EscenaLlamado = "agenda";
 const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "impulso", estela: true });
-if (receta && p.ok) createRoot(document.getElementById("raiz")!).render(
+if (receta && p.ok && fondo.ok) createRoot(document.getElementById("raiz")!).render(
   <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
     <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela}>
       <Encabezado {...recetaAProps(receta)} />
       <Relato modo="cuento"><p data-mk-parte="linea">Había una vez…</p></Relato>
       <SellosEstampa total={10} llenos={3} premio="Café gratis" semilla="cafe" />
       <CuentaRegresiva titulo="Noche de vinilos" fecha="2026-12-01" hora="20:00" />
+      <FechasQueVienen fechas={fechas} hoy="2026-11-24" respaldo={<p>Fechas</p>} />
+      <LlamadoConVida escena={escena} />
     </PaginaRelato>
   </EstiloLaMente>
 );

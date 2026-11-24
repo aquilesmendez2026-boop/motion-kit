@@ -1,5 +1,74 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.3.0)
+
+Segunda tanda de momentos (los bloques que faltaban) y cinco fondos vivos de lienzo. Sin etiqueta todavía.
+
+### Momentos, segunda tanda
+
+- **Nueve piezas nuevas en `motion-kit/momentos`**, todas se bajan aparte y aceptan `respaldo` (lo que se ve mientras
+  llega su archivo, y si no llega): `FechasQueVienen` (calendario), `ClasesDeHoy`, `NovedadesQueLlegan`,
+  `EnlacesDomino`, `EpisodiosOnda`, `SeccionesVivas`, `AvisoQueSeDespliega`, `CintaConImpulso` y `LlamadoConVida`.
+- **`LlamadoConVida`** es para los seis bloques que son solo un botón a otra página: una escena chica en SVG por
+  bloque (`agenda`, `pedidos`, `buzon`, `cotizaciones`, `encuestas`, `contacto`). Es decoración: no recibe toques ni la
+  lee el lector de pantalla.
+- Reglas de siempre: el texto real se lee desde el primer cuadro, los enlaces y botones no se mueven al apuntarles ni
+  al apretarlos, tres niveles, y los datos raros (listas vacías, fechas malas, enlaces inseguros) no rompen nada.
+- **Tope de `momentos`: de 12 a 13 KB** (mide 12,6; lo que suma son los nueve cargadores). Aquiles aprobó hasta 14
+  como máximo el 24-11; se subió solo lo necesario.
+- Prueba nueva: `scripts/verificar-momentos2.mjs [url] [parte]`. Su parte `cierre` revisa que al salir no queden
+  bucles, oyentes ni observadores, que a 360 px nada se salga y que todo el texto se lea antes de bajar.
+
+### Fondos vivos de lienzo
+
+- **Receta del encabezado (v2, sin versión nueva):** `efecto` suma `bandada`, `luciernagas`, `corrientes`, `gotas` y
+  `relieve`. El contrato está regenerado: La Mente tiene que copiarlo antes de que el Estudio mande esos valores.
+- Los cinco siguen al dedo o al cursor, corren a 30 dibujos por segundo, se detienen fuera de la vista y con la
+  pestaña oculta, y con movimiento reducido o en nivel liviano dejan un solo cuadro quieto. Sin azar: todo sale de una
+  semilla.
+- `src/efectos/fondos/fondo.ts` (`montarFondo`) junta lo común; `cantidadFondo` en `src/efectos/lienzo.ts`.
+- `scripts/verificar-dedo.mjs` suma la parte `fondos`, y los cinco entran a `limpieza`, `sinlienzo` y `angosto`.
+
+### Arreglos
+
+- **Título del encabezado (`TextoCinetico`): los efectos por palabra no movían nada.** «Revelar» (el que viene por
+  defecto), «impacto» y «trailer» animan cada palabra con una transformación, pero cada palabra era un elemento en
+  línea, y el navegador no transforma elementos en línea. Estaba así desde el primer commit. Ahora cada palabra es un
+  bloque en línea: **el título sí entra palabra por palabra.** De paso, en «revelar» la palabra parte más abajo, para
+  que no asome la tilde de una Ñ. Lo destapó la prueba de la fase 0 del motor de animación, al comparar parte por
+  parte en instantes fijos. Prueba nueva en `scripts/verificar-estilos.mjs`.
+- **Momentos (base):** la medición de fluidez seguía pidiendo cuadros 4 segundos con «reducir movimiento» activado.
+  Ahora se corta cuando ya nadie espera el resultado.
+- **Momentos (base):** el observador común de los momentos quedaba vivo al salir de la página, aunque ya no miraba
+  nada. Ahora se suelta.
+- `descifrar`, `cuadroDescifrar` y `duracionDescifrar` aceptan un tope de duración opcional (el aviso usa 800 ms).
+- **Enlaces (`esEnlaceSeguro`):** un `javascript:` disfrazado con saltos de línea, tabuladores o caracteres de control
+  («java\nscript:») pasaba por ruta de la misma página. Ahora se mira lo que va a ver el navegador. También se
+  rechazan las dos barras invertidas al comienzo.
+- **Emoji compuestos:** el título (`TextoCinetico`) y el aviso partían por código una bandera 🇨🇱, un ❤️ o una familia,
+  y quedaban rotos. Ahora se parte por letra visible (`Intl.Segmenter`; `src/utils/grafemas.ts`).
+- **Revisión final de esta tanda** (1 crítico, 5 importantes y 15 menores, todos resueltos):
+  - el texto del aviso va para lectores en un span aparte (un `aria-label` sobre un párrafo no se lee);
+  - los enlaces del dominó y las tarjetas de novedades ahora sí se detienen bajo el cursor (la regla anterior perdía
+    por especificidad), con pausa y no quitando la animación;
+  - la cinta suma copias del lema hasta cubrir el bloque (con un lema corto asomaba un hueco) y tiene respaldo de
+    recorte para Safari antes de la 16;
+  - «cerrado» en el calendario va tachado con una raya que se dibuja;
+  - «Hoy», «Mañana» y «Próxima» se ponen al día si la página queda abierta (`src/momentos/reloj.ts`);
+  - cada reproductor de episodio lleva su nombre para lectores, y la onda funciona sin `IntersectionObserver`;
+  - el sobre del buzón queda abierto también en liviano y con movimiento reducido, y el punto de «pedidos abierto»
+    aparece antes de latir;
+  - las secciones ya no ponen `id` (los pone quien arma la página) ni aceptan tipos como «constructor»;
+  - «corrientes» dibuja la estela de nuevo en cada cuadro (antes iba borrando y dejaba un velo con el tiempo); las
+    luciérnagas serpentean en vez de girar en círculo; la bandada y las luciérnagas reponen lo que sacaron al volver
+    de la versión quieta;
+  - una palabra más ancha que la franja del aviso se parte; una fecha sin hora en los episodios ya no se corre un día.
+- **Regla precisa de los fotogramas** (aislada con un experimento): lo que hace caer la pestaña en Chromium es la
+  propiedad `scale` suelta con `calc()` dentro de un `@keyframes`. `transform: scale(…)`, `translate` y `rotate` con
+  variables no fallan. Hay una prueba unitaria que lo vigila en todo `src/`.
+- Pesos al cargar (gzip): principal 79,1 KB (tope 80), encabezado 33,7 (35), página 15,4 (17), momentos 12,6 (13),
+  escena 14,4 (16) y receta 9,6 (10).
+
 ## 0.3.0 (24-11-2026)
 
 Receta del encabezado v2, relatos y receta de página, momentos por bloque, fotos vivas y dedo y física. La Mente

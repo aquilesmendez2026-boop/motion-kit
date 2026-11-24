@@ -30,7 +30,7 @@ export const CSS_BASE =
 /** Latido suave (premio de los sellos, punto «Abierto ahora»). */
 export const CSS_LATE = "@keyframes mk-m-late{50%{transform:scale(1.08)}}";
 
-/** Un observador para todos los momentos de la página. */
+/** Un observador para todos los momentos de la página. Cuando ya no mira a ninguno, se suelta (y el próximo lo crea de nuevo). */
 let observador: { io: IntersectionObserver; avisos: Map<Element, () => void> } | null = null;
 // Varios cortes: así un bloque muy alto (que nunca llega al 35 %) también avisa mientras va entrando.
 const CORTES = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35];
@@ -48,6 +48,7 @@ function observarUnaVez(el: Element, aviso: () => void): () => void {
           avisos.delete(e.target);
           io.unobserve(e.target);
         }
+        soltarSiSobra(io, avisos);
       },
       { threshold: CORTES },
     );
@@ -60,7 +61,14 @@ function observarUnaVez(el: Element, aviso: () => void): () => void {
   return () => {
     actual.avisos.delete(el);
     actual.io.unobserve(el);
+    soltarSiSobra(actual.io, actual.avisos);
   };
+}
+
+function soltarSiSobra(io: IntersectionObserver, avisos: Map<Element, () => void>) {
+  if (avisos.size) return;
+  io.disconnect();
+  if (observador?.io === io) observador = null;
 }
 
 /**
@@ -77,6 +85,11 @@ function medirPagina() {
   let ventana = 0;
   let n = 0;
   const paso = (t: number) => {
+    // Si ya nadie espera el resultado (movimiento reducido, ahorro o la página cambió), no se sigue midiendo.
+    if (!fluidez.oyentes.size) {
+      fluidez.empezo = false;
+      return;
+    }
     if (!inicio) inicio = ventana = t;
     n++;
     if (t - ventana >= 1000) {

@@ -145,6 +145,44 @@ for (const id of IDS) {
   await ctx.close();
 }
 
+// Los efectos de texto por palabra mueven de verdad cada palabra (una transformación no se aplica a un elemento en
+// línea: cada palabra tiene que ser un bloque en línea). Se mira el primer instante de la animación.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await page.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+  for (const efecto of ["revelar", "impacto", "trailer"]) {
+    const d = Buffer.from(JSON.stringify({ estilo: "pelicula", titulo: "Café de *especialidad* en Ñuñoa", efectoTexto: efecto, entrada: "ninguna" })).toString("base64url");
+    await page.goto(`${base}/#vista?d=${d}`);
+    await page.reload();
+    await page.waitForSelector(".mk-enc-titulo .mk-tc-l");
+    const v = await page.evaluate(() => {
+      const palabras = [...document.querySelectorAll(".mk-enc-titulo .mk-tc-l")];
+      /** Lleva las animaciones de las palabras a un instante y dice dónde quedó cada palabra. */
+      const en = (ms) => {
+        for (const a of document.getAnimations()) {
+          if (!palabras.includes(a.effect?.target)) continue;
+          a.pause();
+          a.currentTime = ms;
+        }
+        return palabras.map((l) => l.getBoundingClientRect());
+      };
+      const reposo = en(20000);
+      const alPartir = en(0);
+      return {
+        palabras: palabras.length,
+        enBloque: palabras.every((l) => getComputedStyle(l).display === "inline-block"),
+        movidas: palabras.filter((l, i) => Math.abs(alPartir[i].y - reposo[i].y) > 2 || Math.abs(alPartir[i].width - reposo[i].width) > 2).length,
+        // «Revelar»: antes de subir, la palabra queda entera bajo su máscara (ni la tilde de una Ñ asoma).
+        escondidas: palabras.filter((l, i) => !l.parentElement.classList.contains("mk-tc-mascara") || alPartir[i].top - alPartir[i].height * 0.15 >= l.parentElement.getBoundingClientRect().bottom - 1).length,
+      };
+    });
+    ok(v.palabras >= 5 && v.enBloque && v.movidas === v.palabras, `texto «${efecto}»: al partir, cada palabra está movida de su lugar (${v.movidas} de ${v.palabras}; en bloque: ${v.enBloque})`);
+    if (efecto === "revelar") ok(v.escondidas === v.palabras, `texto «revelar»: al partir, cada palabra está escondida bajo su máscara, con holgura para tildes (${v.escondidas} de ${v.palabras})`);
+  }
+  await ctx.close();
+}
+
 await browser.close();
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);

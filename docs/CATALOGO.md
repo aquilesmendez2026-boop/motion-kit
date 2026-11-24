@@ -241,8 +241,8 @@ Demo `#biblioteca` y editor `#encabezados?id=…`. Pruebas: `pruebas/biblioteca.
 
 ## Momentos por bloque (23-11-2026)
 
-El efecto propio de cada bloque de La Mente, con los datos del bloque. Entrada `motion-kit/momentos` (11,9 KB gzip,
-tope 12; sorteo, antes y después, confeti y lo de las fotos vivas se bajan aparte). Diseño `docs/superpowers/specs/2026-11-23-momentos-por-bloque-design.md`,
+El efecto propio de cada bloque de La Mente, con los datos del bloque. Entrada `motion-kit/momentos` (11,9 KB gzip
+con esta tanda y tope 12; desde la segunda tanda, 12,6 y tope 13; sorteo, antes y después, confeti y lo de las fotos vivas se bajan aparte). Diseño `docs/superpowers/specs/2026-11-23-momentos-por-bloque-design.md`,
 plan `docs/superpowers/plans/2026-11-23-momentos.md`. Vitrina `#momentos`; prueba `scripts/verificar-momentos.mjs`.
 
 | Bloque | Pieza | Qué hace |
@@ -256,8 +256,8 @@ plan `docs/superpowers/plans/2026-11-23-momentos.md`. Vitrina `#momentos`; prueb
 | Sorteos | `SorteoRaspe`, `Confeti` | Raspar para ver el premio (o «Ver premio»); confeti si hay ganador |
 
 Base: `resorte` (curva `linear()` por estilo; retro por pasos), `useMomento` (arranca al verse, tres niveles).
-Pendiente: segunda tanda (agenda, calendario, clases, pedidos, contacto, novedades, enlaces, episodios, avisos, cinta,
-buzón, cotizaciones, secciones, encuestas), B (resorte en `Movimiento` y repaso de movimientos) y C (lista pendiente).
+La segunda tanda (los catorce bloques que faltaban) está más abajo. Pendiente: B (resorte en `Movimiento` y repaso de
+movimientos) y C (lista pendiente).
 `AntesDespues` espera que La Mente decida cómo marca pares de fotos.
 
 ## Fotos vivas (23-11-2026)
@@ -326,6 +326,74 @@ Pendiente: la tanda que sigue es «escenas por capas» (motor de escenas, dioram
 holográfica; anotada en `docs/superpowers/plans/2026-11-23-de-sencillo-a-potente.md`, «Por diseñar»). Después: carta
 que se abre como libro, carrusel 3D, fuegos artificiales y ecualizador con sonido real. Y sugerir la lava y los objetos
 que caen en `encabezadoPorRubro`.
+
+## Momentos, segunda tanda, y fondos vivos de lienzo (24-11-2026)
+
+Los catorce bloques de La Mente que no tenían momento, y cinco fondos del tipo de la constelación. Diseño
+`docs/superpowers/specs/2026-11-24-momentos-2-y-fondos-design.md`, plan
+`docs/superpowers/plans/2026-11-24-momentos-2-y-fondos.md`. Vitrinas `#momentos` («Segunda tanda») y `#efectos`.
+Sin etiqueta todavía: está en `dev`, después de `v0.3.0`.
+
+Los ocho bloques con datos. Todas las piezas salen de `motion-kit/momentos`, se bajan aparte y aceptan `respaldo`
+(lo que se ve mientras llega el archivo, y si no llega):
+
+| Bloque | Pieza | Qué hace |
+|---|---|---|
+| Calendario | `FechasQueVienen` | Hojas de calendario que se voltean una tras otra; la de hoy encendida; «cerrado» tachado |
+| Clases | `ClasesDeHoy` | Hoy y mañana; cupos en texto («Queda 1» late); barra si viene el total; la próxima clase resaltada |
+| Novedades | `NovedadesQueLlegan` | Tarjetas que caen como correo; «Nuevo» si tiene 7 días o menos |
+| Enlaces | `EnlacesDomino` | Botones que se levantan como fichas de dominó; solo `http` y `https` |
+| Episodios | `EpisodiosOnda` | Onda de barras que se mueve solo mientras suena ese audio (`<audio controls>` del navegador) |
+| Secciones | `SeccionesVivas` | Acordeón con `<details>`, pasos que se estampan, equipo en cascada, texto |
+| Avisos | `AvisoQueSeDespliega` | La franja se despliega y el texto se descifra en menos de un segundo; confeti en «celebración» |
+| Cinta | `CintaConImpulso` | El lema corre de lado y sigue la velocidad del scroll; con `quieta`, centrado y sin moverse |
+
+Los seis bloques que son solo un botón a otra página usan una pieza común, `LlamadoConVida`, con la prop `escena`:
+`agenda` (hoja que se voltea), `pedidos` (bolsa; con `abierto`, un punto que late), `buzon` (sobre que se abre),
+`cotizaciones` (hoja que se escribe), `encuestas` (casilla que se marca) y `contacto` (burbuja que «escribe»). Es
+decoración (`aria-hidden`, sin toques): el título, el texto y el botón siguen siendo los de La Mente.
+
+Los cinco fondos, elegibles con `efecto` en la receta del encabezado (v2, sin versión nueva):
+
+| `efecto` | Qué se ve | Con el dedo o el cursor |
+|---|---|---|
+| `bandada` | Aves chicas que vuelan juntas y giran | La bandada lo esquiva |
+| `luciernagas` | Luces que derivan y se encienden y apagan a su ritmo | Las cercanas se encienden |
+| `corrientes` | Trazos finos que siguen corrientes y dejan estela | Las corrientes lo rodean |
+| `gotas` | Ondas que se abren y se apagan, como gotas en el agua | Cada toque o movimiento suelta una |
+| `relieve` | Líneas que dibujan un terreno que ondula | Se levanta un cerro |
+
+Archivos: `src/momentos/` (una pieza por archivo, `aparte.tsx`, `perezosos-2.tsx`, `calculos-2.ts`,
+`escenas-llamado.tsx`) y `src/efectos/fondos/` (`fondo.ts` con lo común, y un `calculo-*.ts` más su componente por
+fondo). Pruebas: `pruebas/momentos2.test.ts`, `pruebas/fondos.test.ts`, `scripts/verificar-momentos2.mjs [url] [parte]`
+(partes `base`, `fechas`, `clases`, `novedades`, `enlaces`, `episodios`, `secciones`, `aviso`, `cinta`, `llamado` y
+`cierre`) y la parte `fondos` de `scripts/verificar-dedo.mjs`.
+
+Regla de los fotogramas (aislada con un experimento el 24-11): dentro de un `@keyframes` no va la propiedad `scale`
+suelta con `calc()` (por ejemplo `scale:1 calc(var(--h)*.35)`): hace caer la pestaña en Chromium. Sí se puede
+`transform: scale(…)`, y `translate` o `rotate` sueltos con variables. La vigila una prueba unitaria en todo `src/`. Los fondos corren a 30
+dibujos por segundo, quedan en pausa fuera de la vista y con la pestaña oculta, y con movimiento reducido o en nivel
+liviano dejan un solo cuadro.
+
+Pesos al cargar (gzip, 24-11-2026): principal 79,1 KB (tope 80), encabezado 33,7 (35), página 15,4 (17), momentos 12,6
+(**13**, era 12; Aquiles aprobó hasta 14 como máximo), escena 14,4 (16) y receta 9,6 (10). La entrada principal quedó
+a menos de 1 KB de su tope: lo próximo que sume ahí tiene que bajarse aparte.
+
+Cosas que conviene saber:
+
+- **Sorpréndeme:** con cinco fondos más en el registro hay más candidatos por rubro, así que una misma semilla puede
+  dar un encabezado distinto que en `v0.3.0`.
+- **Prueba inestable conocida:** `scripts/verificar-biblioteca.mjs` falló una vez («su miniatura muestra el título
+  nuevo») al final de la batería completa y pasó 25 de 25 las dos veces que se corrió sola. Es anterior a esta tanda y
+  parece de tiempos (lee la miniatura a los 500 ms de guardar). Pendiente: esperar a la miniatura en vez de un tiempo fijo.
+- **Las piezas con hora** (`FechasQueVienen`, `ClasesDeHoy`) se vuelven a dibujar cada medio minuto con la pestaña a la
+  vista. Si se les pasa `hoy`, ese valor lo pone al día quien arma la página.
+- **`SeccionesVivas` no pone `id`** en sus secciones: las anclas son de quien arma la página.
+- **Contraste del aviso «importante»:** usa el color «sobre acento» del estilo; con paletas de La Mente de acento claro
+  hay que revisar que llegue a 4,5:1 (no se midió con las paletas reales).
+
+Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_momentos-2-y-fondos.md` (qué pieza va en cada bloque y con
+qué datos). `ClasesDeHoy` dibuja la barra de cupos solo si La Mente manda el total (`cupos`), que hoy no manda.
 
 ## Mejoras a lo que ya existe
 

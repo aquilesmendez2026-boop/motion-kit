@@ -3,7 +3,7 @@
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:4173";
-const IDS = ["cafe","petalos","pulso","abecedario","letrero","cometas","niebla","burbujas","olas","puntos","lluvia","estrellas","rejilla","tubo","ecualizador","velocidad","grano","granos","tijeras","huellas","pesas","lapices","constelacion"];
+const IDS = ["cafe","petalos","pulso","abecedario","letrero","cometas","niebla","burbujas","olas","puntos","lluvia","estrellas","rejilla","tubo","ecualizador","velocidad","grano","granos","tijeras","huellas","pesas","lapices","constelacion","bandada","luciernagas","corrientes","gotas","relieve"];
 const browser = await chromium.launch();
 let fallos = 0;
 const ok = (c, m) => { console.log((c ? "ok   " : "FALLA") + " " + m); if (!c) fallos++; };
