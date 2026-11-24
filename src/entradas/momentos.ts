@@ -51,3 +51,9 @@ export type { OpcionesResorte, Resorte } from "../momentos/resorte";
 export { faltaPara, formatoPesos, formatoDecimal } from "../momentos/calculos";
 export type { Falta } from "../momentos/calculos";
 export { sinInyectarEstilos } from "../utils/styles";
+
+// Efectos vistosos: se bajan aparte y aceptan `respaldo`.
+export { FuegosArtificiales, CarruselGiratorio, LibroQueSeAbre } from "../momentos/perezosos-3";
+export type { LibroQueSeAbreProps } from "../momentos/LibroQueSeAbre";
+export type { FuegosArtificialesProps } from "../momentos/FuegosArtificiales";
+export type { CarruselGiratorioProps } from "../momentos/CarruselGiratorio";

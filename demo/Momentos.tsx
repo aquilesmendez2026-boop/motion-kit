@@ -15,12 +15,14 @@ import { imagenGenerada } from "../src/plantillas/imagenes";
 import {
   AvisoQueSeDespliega, CintaConImpulso, ClasesDeHoy, EnlacesDomino, EpisodiosOnda, FechasQueVienen, LlamadoConVida, NovedadesQueLlegan, SeccionesVivas,
 } from "../src/momentos/perezosos-2";
+// Los efectos vistosos, como en el paquete: cada pieza se baja aparte.
+import { CarruselGiratorio, FuegosArtificiales, LibroQueSeAbre } from "../src/momentos/perezosos-3";
 import type { EscenaLlamado } from "../src/momentos/escenas-llamado";
 import type { SeccionViva } from "../src/momentos/SeccionesVivas";
 
 /** Lo que recibe cada sección: el nivel elegido (o automático) y la semilla del negocio de ejemplo. */
 type Datos = { nivel?: NivelEscena; semilla: string };
-type Seccion = { id: string; titulo: string; dibujar: (d: Datos) => ReactNode };
+type Seccion = { id: string; titulo: string; dibujar: (d: Datos) => ReactNode; /** Ocupa toda la fila de la vitrina. */ ancha?: boolean };
 
 // Cada momento suma aquí su sección.
 const SELLOS: Seccion = {
@@ -286,6 +288,95 @@ const SECCIONES_2: Seccion[] = [
     ),
   },
 ];
+/** Los fuegos, con un botón para celebrar y otro para quitarlos a medias. Cuenta las veces que avisaron que terminaron. */
+function FuegosDemo() {
+  const [semilla, setSemilla] = useState<number | null>(null);
+  const [fines, setFines] = useState(0);
+  return (
+    <div>
+      <div style={{ position: "relative", height: 320, borderRadius: 14, overflow: "hidden", background: "#12121a" }} data-prueba="fuegos-caja">
+        {semilla !== null && <FuegosArtificiales semilla={semilla} alTerminar={() => setFines((n) => n + 1)} />}
+      </div>
+      <p style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button type="button" className="mom-repetir" data-prueba="celebrar" onClick={() => setSemilla((s) => (s ?? 6) + 1)}>Celebrar</button>
+        <button type="button" className="mom-repetir" data-prueba="quitar" onClick={() => setSemilla(null)}>Quitar</button>
+        <span>Terminaron: <output data-prueba="fuegos-fin">{fines}</output></span>
+      </p>
+    </div>
+  );
+}
+
+const PLATOS = [
+  { titulo: "Cortado doble", pie: "Con leche de avena, si quieres", precio: "$2.800", tono: 20 },
+  { titulo: "Tostada con palta", pie: "Pan de masa madre", precio: "$4.500", tono: 110 },
+  { titulo: "Kuchen de frambuesa", pie: "Receta de la casa", precio: "$3.200", tono: 330 },
+  { titulo: "Jugo de naranja", pie: "Exprimido al momento", precio: "$2.500", tono: 40 },
+  { titulo: "Sándwich de la casa", pie: "Con queso de campo", precio: "$5.900", tono: 200 },
+  { titulo: "Té en hoja", pie: "Seis variedades", precio: "$2.200", tono: 150 },
+];
+const fichasDemo = (n: number) => PLATOS.slice(0, n).map((p, i) => ({ url: imagenGenerada("neon", p.tono), titulo: p.titulo, pie: p.pie, precio: p.precio, href: i % 2 ? undefined : "#momentos" }));
+const FICHAS_RARAS = [
+  { titulo: "Una foto que no carga", url: "/__no-existe.jpg", precio: "$1.000" },
+  { titulo: "Un enlace que no se puede usar", href: "javascript:alert(1)", url: imagenGenerada("rock", 10) },
+  { titulo: "Agotado por hoy", precio: "$3.000", agotado: true, url: imagenGenerada("anime", 280) },
+  { titulo: `Un título larguísimo ${"que sigue y sigue ".repeat(40)}`, pie: "palabrasinespaciosquenotermina".repeat(12) },
+  ...Array.from({ length: 40 }, (_, i) => ({ titulo: `Plato ${i + 1}`, precio: "$1.990" })),
+  null,
+  { pie: "sin título ni foto" },
+] as unknown as { titulo?: string }[];
+
+/** Un carrusel cuya primera foto parte con una dirección mala y, con el botón, pasa a una buena (como al corregirla en el editor). */
+function CarruselCambia({ nivel }: { nivel?: NivelEscena }) {
+  const [buena, setBuena] = useState(false);
+  const fichas = fichasDemo(4).map((f, i) => (i === 0 && !buena ? { ...f, url: "/__no-existe.jpg" } : f));
+  return (
+    <div>
+      <CarruselGiratorio nivel={nivel} etiqueta="Foto corregida" fichas={fichas} />
+      <button type="button" className="mom-repetir" data-prueba="corregir-foto" onClick={() => setBuena(true)}>Corregir la foto</button>
+    </div>
+  );
+}
+
+const CARTA = [
+  { titulo: "Cafés", lineas: [{ texto: "Espresso", precio: "$1.900" }, { texto: "Cortado", detalle: "Simple o doble", precio: "$2.400" }, { texto: "Capuchino", precio: "$2.900" }, { texto: "Latte", detalle: "Con leche de avena, si quieres", precio: "$3.100" }, { texto: "Mocaccino", precio: "$3.300" }] },
+  { titulo: "Para comer", lineas: [{ texto: "Tostada con palta", detalle: "Pan de masa madre", precio: "$4.500" }, { texto: "Sándwich de la casa", detalle: "Con queso de campo", precio: "$5.900" }, { texto: "Ensalada de estación", precio: "$5.200" }, { texto: "Quiche del día", precio: "$4.800", agotado: true }] },
+  { titulo: "Dulces", lineas: [{ texto: "Kuchen de frambuesa", precio: "$3.200" }, { texto: "Brownie", detalle: "Con nueces", precio: "$2.600" }, { texto: "Galletas de avena", precio: "$1.500" }] },
+  { titulo: "Para tomar", lineas: [{ texto: "Jugo de naranja", detalle: "Exprimido al momento", precio: "$2.500" }, { texto: "Limonada con menta", precio: "$2.700" }, { texto: "Té en hoja", detalle: "Seis variedades", precio: "$2.200" }] },
+];
+const CARTA_LARGA = [{ titulo: "Sándwiches", lineas: Array.from({ length: 23 }, (_, i) => ({ texto: `Sándwich número ${i + 1}`, precio: `$${4 + (i % 4)}.${i % 2 ? "9" : "5"}00` })) }];
+const CARTA_RARA = [
+  { titulo: `Un grupo con un nombre larguísimo ${"que sigue y sigue ".repeat(30)}`, lineas: [{ texto: `Plato ${"con un nombre enorme ".repeat(30)}`, detalle: "palabrasinespaciosquenotermina".repeat(12), precio: "$999.999.999.999.999.999.999" }, { texto: "   " }, null, 7] },
+  { titulo: "Sin líneas" },
+  null,
+  "no es una hoja",
+  ...Array.from({ length: 30 }, (_, i) => ({ titulo: `Grupo ${i + 1}`, lineas: [{ texto: "Único plato", precio: "$1.000" }] })),
+] as unknown as typeof CARTA;
+
+/** Los efectos vistosos (tanda del 24-11). */
+const VISTOSOS: Seccion[] = [
+  {
+    id: "libro", titulo: "Libro que se abre (la carta de precios)", ancha: true,
+    dibujar: (d) => <LibroQueSeAbre nivel={d.nivel} tapa={{ titulo: "La carta", bajada: "Café Luna" }} hojas={CARTA} respaldo={<Respaldo>La carta del café.</Respaldo>} />,
+  },
+  { id: "libro-una", titulo: "Libro: una sola hoja", ancha: true, dibujar: (d) => <LibroQueSeAbre nivel={d.nivel} tapa={{ titulo: "Promociones", imagen: imagenGenerada("neon", 30) }} hojas={CARTA.slice(0, 1)} /> },
+  { id: "libro-largo", titulo: "Libro: un grupo de 23 platos (sigue en la hoja siguiente)", dibujar: (d) => <LibroQueSeAbre nivel={d.nivel} tapa={{ titulo: "Sándwiches" }} hojas={CARTA_LARGA} /> },
+  { id: "libro-bordes", titulo: "Libro: datos raros", dibujar: (d) => <LibroQueSeAbre nivel={d.nivel} tapa={{ titulo: `Una tapa ${"larguísima ".repeat(30)}` }} hojas={CARTA_RARA} /> },
+  { id: "libro-vacio", titulo: "Libro: sin hojas", dibujar: (d) => <LibroQueSeAbre nivel={d.nivel} tapa={{ titulo: "Vacío" }} hojas={[]} /> },
+  {
+    id: "carrusel", titulo: "Carrusel giratorio (galería o carta con fotos)",
+    dibujar: (d) => <CarruselGiratorio nivel={d.nivel} etiqueta="Lo más pedido" fichas={fichasDemo(6)} respaldo={<Respaldo>Lo más pedido.</Respaldo>} />,
+  },
+  { id: "carrusel-3", titulo: "Carrusel: tres fichas (el anillo las repite)", dibujar: (d) => <CarruselGiratorio nivel={d.nivel} etiqueta="Destacados" fichas={fichasDemo(3)} /> },
+  { id: "carrusel-2", titulo: "Carrusel: dos fichas (van en fila)", dibujar: (d) => <CarruselGiratorio nivel={d.nivel} fichas={fichasDemo(2)} /> },
+  { id: "carrusel-bordes", titulo: "Carrusel: datos raros", dibujar: (d) => <CarruselGiratorio nivel={d.nivel} etiqueta="Datos raros" fichas={FICHAS_RARAS} /> },
+  { id: "carrusel-cambia", titulo: "Carrusel: una foto que se corrige", dibujar: (d) => <CarruselCambia nivel={d.nivel} /> },
+  { id: "carrusel-vacio", titulo: "Carrusel: sin fichas", dibujar: (d) => <CarruselGiratorio nivel={d.nivel} fichas={[]} /> },
+  { id: "fuegos", titulo: "Fuegos artificiales", dibujar: () => <FuegosDemo /> },
+  {
+    id: "sorteo-fuegos", titulo: "Sorteo con ganador, celebrado con fuegos",
+    dibujar: (d) => <SorteoRaspe titulo="Sorteo de aniversario" premio="Desayuno para dos" ganador="Camila R." celebracion="fuegos" semilla={d.semilla} nivel={d.nivel} />,
+  },
+];
 /** Lo que se repite en la sección «suelto» (solo con las variables de La Mente, sin Estilo). */
 const SUELTOS: Seccion[] = [{ ...SELLOS, id: "sellos-suelto" }];
 
@@ -325,7 +416,7 @@ const EVENTO = eventoDemo();
 function Tarjeta({ seccion, datos }: { seccion: Seccion; datos: Datos }) {
   const [vez, setVez] = useState(0);
   return (
-    <section className="mom-seccion" data-prueba={seccion.id}>
+    <section className="mom-seccion" data-prueba={seccion.id} style={seccion.ancha ? { gridColumn: "1 / -1" } : undefined}>
       <header>
         <h2>{seccion.titulo}</h2>
         <button type="button" className="mom-repetir" onClick={() => setVez((v) => v + 1)}>Repetir</button>
@@ -352,6 +443,10 @@ export function Momentos() {
           </div>
         </>
       )}
+      <h2 className="mom-tanda">Efectos vistosos</h2>
+      <div className="mom-grilla" data-prueba="vistosos">
+        {VISTOSOS.map((s) => <Tarjeta key={s.id} seccion={s} datos={datos} />)}
+      </div>
     </>
   );
   return (
@@ -387,5 +482,5 @@ export function Momentos() {
   );
 }
 
-export { SECCIONES, SECCIONES_2, SUELTOS };
+export { SECCIONES, SECCIONES_2, SUELTOS, VISTOSOS };
 export type { Seccion, Datos };

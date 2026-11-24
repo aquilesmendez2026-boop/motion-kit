@@ -2,6 +2,28 @@
 
 ## Sin publicar (en `dev`, después de 0.3.0)
 
+### Efectos vistosos: fuegos artificiales, carrusel giratorio y libro que se abre
+
+- **Tres piezas nuevas en `motion-kit/momentos`**, que se bajan aparte y aceptan `respaldo`:
+  - `FuegosArtificiales` (`semilla`, `rafagas?`, `alTerminar?`): ráfagas de chispas en un lienzo que cubre a su
+    contenedor; dura unos 3 segundos y se quita sola.
+  - `CarruselGiratorio` (`fichas`, `etiqueta?`): fichas con foto en un anillo que gira con el dedo, con impulso, y se
+    detiene justo en una; botones y flechas del teclado. En liviano o quieto, una fila que desliza el navegador.
+  - `LibroQueSeAbre` (`tapa`, `hojas`): la carta de precios como un libro; dos páginas en pantalla ancha y una en el
+    teléfono. En liviano o quieto, la carta plana.
+- **`SorteoRaspe` suma `celebracion?: "confeti" | "fuegos"`** (por defecto `confeti`, como antes). Los fuegos se bajan
+  solo si se piden.
+- Fichas y líneas aceptan `agotado`. Una carta larga se parte en hojas de 10 líneas (hasta 16 hojas).
+- **Revisión final (24-11), arreglada entera** (5 importantes y 10 menores): el libro dibuja en 3D solo las hojas
+  cercanas (memoria en teléfonos) y lleva el texto completo aparte para lectores; los fuegos usan un color festivo si
+  el del tema no tiene color; en el carrusel, un arrastre con el dedo ya no se traga el Enter que sigue, una foto
+  corregida vuelve a verse, y el foco espera en el carrusel mientras gira; los botones del libro no se corren; las
+  pruebas de «nada se sale de lado» ahora miden de verdad.
+- Vitrina `#momentos`, sección «Efectos vistosos». Prueba nueva `scripts/verificar-momentos3.mjs` (66 revisiones,
+  también en Safari/WebKit) y `pruebas/momentos3.test.ts` (18).
+- Pesos al cargar (gzip): `momentos` 12,9 KB (tope 13); las demás entradas no cambian. Aparte: fuegos 2,4 KB, libro 4,3
+  y carrusel 5,2.
+
 ### Foto profunda: profundidad real en la foto del encabezado
 
 - **Receta del encabezado (v2, sin versión nueva): campo `fotoProfunda`.** Solo en las composiciones con foto. Si la

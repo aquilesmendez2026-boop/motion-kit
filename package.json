@@ -69,6 +69,7 @@
     "test": "node scripts/generar-contrato.mjs --revisar && node scripts/pruebas.mjs",
     "contrato": "node scripts/generar-contrato.mjs",
     "peso": "node scripts/medir-paquete.mjs --revisar",
+    "verificar": "node scripts/verificar-cambios.mjs",
     "probar-paquete": "node scripts/probar-paquete.mjs"
   },
   "peerDependencies": {

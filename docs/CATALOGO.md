@@ -435,6 +435,56 @@ Cosas que conviene saber:
 Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_momentos-2-y-fondos.md` (qué pieza va en cada bloque y con
 qué datos). `ClasesDeHoy` dibuja la barra de cupos solo si La Mente manda el total (`cupos`), que hoy no manda.
 
+## Efectos vistosos: fuegos artificiales, carrusel giratorio y libro que se abre (24-11-2026)
+
+Tres piezas más de `motion-kit/momentos`: alternativas más vistosas para bloques que ya tenían su momento. Se bajan
+aparte y aceptan `respaldo`. Diseño `docs/superpowers/specs/2026-11-24-efectos-vistosos-design.md`, plan
+`docs/superpowers/plans/2026-11-24-efectos-vistosos.md`. Vitrina `#momentos` («Efectos vistosos»). Prueba:
+`scripts/verificar-momentos3.mjs [url] [fuegos|carrusel|libro|cierre]` (la parte `cierre` las prueba en Safari/WebKit).
+
+| Pieza | Para qué bloque | Qué hace |
+|---|---|---|
+| `FuegosArtificiales` | Sorteos y otras celebraciones | Ráfagas de chispas que suben, revientan y caen (lienzo 2D). Dura unos 3 segundos y se quita sola. `SorteoRaspe` la usa con `celebracion: "fuegos"` (por defecto sigue el confeti) |
+| `CarruselGiratorio` | Galería, o carta con fotos | Fichas con foto en un anillo que gira con el dedo, con impulso, y se detiene justo en una. Botones y flechas del teclado |
+| `LibroQueSeAbre` | Carta de precios | La tapa se abre sola una vez al verse y las hojas se pasan. Dos páginas en pantalla ancha; una en el teléfono |
+
+Qué reciben:
+
+| Pieza | Props |
+|---|---|
+| `FuegosArtificiales` | `semilla` (número; si cambia, parte de nuevo), `rafagas?` (1 a 5; 3), `alTerminar?` |
+| `CarruselGiratorio` | `fichas: { url?, alt?, titulo?, pie?, precio?, href?, agotado? }[]` (las primeras 12), `etiqueta?` (el nombre para lectores), y las comunes (`nivel`, `ahorro`, `className`) |
+| `LibroQueSeAbre` | `tapa: { titulo, bajada?, imagen? }`, `hojas: { titulo, lineas: { texto, detalle?, precio?, agotado? }[] }[]`, y las comunes |
+
+Reglas que cuidar:
+
+- **Niveles.** En liviano, quieto (movimiento reducido) o sin 3D: el carrusel es una fila que desliza el navegador y el
+  libro es la carta plana, una hoja debajo de otra. Los fuegos, con movimiento reducido, no dibujan y avisan de inmediato.
+- **Todo se puede leer siempre.** Las fichas y las hojas están en la página aunque no se vean. En el carrusel solo el
+  enlace de la ficha del frente está en el orden del teclado; tocar una ficha de lado la trae al frente. En el libro,
+  el texto completo va en una capa que no se ve (`.mk-m-libro-texto`, que también da el alto del libro) y las hojas
+  que se ven son decoración (`aria-hidden`).
+- **Memoria en teléfonos.** El libro dibuja en 3D solo las hojas cercanas a la que se lee (cuatro a lo más): cada
+  hoja es una capa en la tarjeta gráfica y una carta de dieciséis no cabría. Sin comprobar en un iPhone real.
+- **Colores de los fuegos.** Los del tema (`acento`, `acento-2`); si el del tema no tiene color (negro, gris, blanco),
+  uno festivo: dorado, rojo o celeste.
+- **Lectores de pantalla.** Que el carrusel entre girando o que el libro se abra solo no se anuncia; desde que alguien
+  los mueve, sí. Mientras el carrusel gira, el foco espera en el carrusel y al detenerse pasa a la ficha del frente.
+- **Pocas fichas.** Con 3, 4 o 5 el anillo las repite (6, 8 o 10 puestos); las copias son decoración. Con menos de 3 van
+  en fila.
+- **Carta larga.** Un grupo con más de 10 líneas sigue en la hoja siguiente («Cafés (sigue)»). Tope: 16 hojas.
+- **Nada queda corriendo.** El carrusel duerme al detenerse; el libro solo usa transiciones; los fuegos se detienen
+  fuera de la vista o con la pestaña oculta y siguen donde iban.
+- **Peso.** La entrada `momentos` quedó en 12,9 KB de 13: la próxima pieza necesita subir el tope o ir en otra entrada.
+  Aparte: fuegos 2,4 KB, libro 4,3 y carrusel 5,2.
+- **Safari antes de la 16** no tiene medidas de contenedor (`cqi`): el ancho de la ficha y el título de la tapa
+  tienen un valor de respaldo.
+
+No entraron: **título con volumen** y **tarjeta holográfica**. Por la decisión del 24-11 pasan a ser partituras del
+Director, y el modelo de la partitura (versión 0) todavía no inclina en 3D: van con la fase 2 del Director.
+Pendiente también: fuegos en sellos completos y en la cuenta regresiva en cero (dos props); ecualizador con sonido real.
+Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_efectos-vistosos.md`.
+
 ## Director: el motor de animación propio (fase 1, 24-11-2026)
 
 Un movimiento deja de ser una pieza escrita a mano y pasa a ser un **dato**: una partitura. El Director la hace correr

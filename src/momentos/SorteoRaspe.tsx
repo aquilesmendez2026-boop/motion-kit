@@ -1,12 +1,16 @@
 // Sorteos: una capa del color del acento tapa el premio; se raspa con el dedo o el mouse y, pasada la mitad, se
 // desvanece. «Ver premio» hace lo mismo con teclado. El premio está siempre en el texto. Nunca dice «ganaste»:
 // muestra el premio que se sortea. Si ya hay ganador, se anuncia y salta confeti una vez.
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { useStyles } from "../utils/styles";
 import { useMomento, type ComunesMomento } from "./base";
 import { numeroDe } from "./calculos";
 import { cuantoRaspado, UMBRAL_RASPE } from "./calculos-aparte";
 import { Confeti } from "./Confeti";
+import { Limite } from "./aparte";
+
+// Los fuegos se bajan aparte, y solo si se piden. Si su archivo no llega, el sorteo sigue sin celebración.
+const Fuegos = lazy(() => import("./FuegosArtificiales"));
 
 export interface SorteoRaspeProps extends ComunesMomento {
   titulo: string;
@@ -14,6 +18,8 @@ export interface SorteoRaspeProps extends ComunesMomento {
   ganador?: string;
   /** El `slug` del negocio: decide el confeti. */
   semilla?: string;
+  /** Cómo se celebra cuando hay ganador: confeti (lo de siempre) o fuegos artificiales. */
+  celebracion?: "confeti" | "fuegos";
 }
 
 export const CSS_SORTEO =
@@ -30,7 +36,7 @@ export const CSS_SORTEO =
   ".mk-m-sorteo .mk-m-boton{margin-top:.75rem}" +
   ".mk-m-sorteo-ganador{margin:.75rem 0 0;font-weight:700}";
 
-export function SorteoRaspe({ titulo, premio, ganador, semilla = "", nivel: forzado, ahorro, className }: SorteoRaspeProps) {
+export function SorteoRaspe({ titulo, premio, ganador, semilla = "", celebracion = "confeti", nivel: forzado, ahorro, className }: SorteoRaspeProps) {
   useStyles("momento-sorteo", CSS_SORTEO);
   const { ref, nivel, activo } = useMomento<HTMLDivElement>({ nivel: forzado, ahorro });
   const [revelado, setRevelado] = useState(false);
@@ -143,7 +149,14 @@ export function SorteoRaspe({ titulo, premio, ganador, semilla = "", nivel: forz
       </div>
       {conCapa && <button type="button" className="mk-m-boton" onClick={revelar}>Ver premio</button>}
       {ganador && <p className="mk-m-sorteo-ganador">Ganador: {ganador}</p>}
-      {ganador && activo && nivel === "completo" && <Confeti semilla={numeroDe(semilla)} />}
+      {ganador && activo && nivel === "completo" &&
+        (celebracion === "fuegos" ? (
+          <Limite siFalla={null}>
+            <Suspense fallback={null}><Fuegos semilla={numeroDe(semilla)} /></Suspense>
+          </Limite>
+        ) : (
+          <Confeti semilla={numeroDe(semilla)} />
+        ))}
     </div>
   );
 }

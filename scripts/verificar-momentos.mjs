@@ -39,7 +39,9 @@ async function recorrer(pagina) {
 const opacidadTextos = (pagina) =>
   pagina.evaluate(() =>
     [...document.querySelectorAll(".mk-momento :is(p, a, blockquote, figcaption, strong)")]
-      .filter((e) => !e.closest("[aria-hidden=true]") && !e.classList.contains("mk-m-lector"))
+      // El carrusel y el libro atenúan o esconden a propósito lo que no está al frente (las fichas de los lados, la tapa
+      // ya abierta): su regla (lo que está al frente se lee a plena opacidad) se revisa en verificar-momentos3.
+      .filter((e) => !e.closest("[aria-hidden=true]") && !e.classList.contains("mk-m-lector") && !e.closest("[data-momento=carrusel], [data-momento=libro]"))
       .map((e) => {
         let o = 1;
         for (let n = e; n && n !== document.body; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
