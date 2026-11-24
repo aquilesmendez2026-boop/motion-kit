@@ -3,7 +3,7 @@
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:4173";
-const IDS = ["cafe","petalos","pulso","abecedario","letrero","cometas","niebla","burbujas","olas","puntos","lluvia","estrellas","rejilla","tubo","ecualizador","velocidad","grano"];
+const IDS = ["cafe","petalos","pulso","abecedario","letrero","cometas","niebla","burbujas","olas","puntos","lluvia","estrellas","rejilla","tubo","ecualizador","velocidad","grano","granos","tijeras","huellas","pesas","lapices","constelacion"];
 const browser = await chromium.launch();
 let fallos = 0;
 const ok = (c, m) => { console.log((c ? "ok   " : "FALLA") + " " + m); if (!c) fallos++; };
@@ -90,7 +90,8 @@ await ctx.close();
   for (const pal of ["clásica", "noche", "terracota", "océano"]) {
     await page.getByRole("button", { name: pal }).click();
     await page.waitForTimeout(200);
-    const d = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    // Contra el ancho del teléfono y no contra innerWidth: en modo teléfono, innerWidth crece con lo que se sale y la resta da siempre cero.
+    const d = await page.evaluate(() => document.documentElement.scrollWidth - 360);
     ok(d <= 0, `360 px, paleta ${pal}: sin scroll horizontal (${d})`);
   }
   await ctx.close();

@@ -562,3 +562,14 @@ h2 {
 .bib-vacia{padding:2rem;border-radius:14px;background:#fff;text-align:center;color:#5d5a6b}
 .bib-cargando{padding:2rem;font:15px system-ui,sans-serif}
 .enc-bib{display:grid;gap:.5rem}
+
+/* Vitrina de momentos (#momentos) */
+.mom-demo{padding:24px 16px 64px;max-width:1200px;margin:0 auto}
+.mom-controles{display:flex;flex-wrap:wrap;gap:16px;margin:12px 0 20px}
+.mom-controles select{min-height:44px;padding:0 10px;font:inherit}
+.mom-marco{border-radius:20px;padding:16px}
+.mom-grilla{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.mom-seccion{padding:16px;border-radius:16px;background:color-mix(in srgb,currentColor 6%,transparent);min-width:0}
+.mom-seccion header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.mom-seccion h2{margin:0;font-size:1.1rem}
+.mom-repetir{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;font:inherit;cursor:pointer}

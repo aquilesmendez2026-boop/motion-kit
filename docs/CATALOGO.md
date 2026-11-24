@@ -93,12 +93,10 @@ Ordenado por cuánto aportan a una plantilla.
 | `Modal` | Diálogos en escritorio | Compartir lógica con `BottomSheet` |
 | `SwipeRow` | Deslizar una fila para ver acciones | Con alternativa por botón |
 | `BentoGrid` | Grilla de características de tamaños mixtos | Solo CSS grid |
-| `StickyScroll` | Texto que avanza con una imagen fija | |
 | `ScrollReveal` por CSS | `Reveal` sin JavaScript | `animation-timeline: view()` con respaldo |
 | `Dock` | Barra de íconos que crecen al acercarse | Solo escritorio |
-| `Confetti` | Celebrar una compra o registro | Canvas |
-| Fondos: grilla, puntos, partículas | Variedad de portadas | Canvas o SVG |
-| `TextScramble` | Texto que se "descifra" | |
+| `Confetti` suelto | Celebrar una compra o registro | Ya existe `Confeti` en `motion-kit/momentos` (lo usa el sorteo) |
+| Fondos: grilla y partículas sueltas | Variedad de portadas | Ya están la rejilla, los puntos y la constelación |
 | `ImageCompare` | Antes y después con deslizador | |
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
@@ -234,6 +232,94 @@ Paso 4 del plan. `src/biblioteca/biblioteca.ts`, sin React. Misma forma que la t
 | `almacenLocal()` / `AlmacenBiblioteca` | `localStorage` con respaldo en memoria (`persistente: false`); tope de 500 diseños |
 
 Demo `#biblioteca` y editor `#encabezados?id=…`. Pruebas: `pruebas/biblioteca.test.ts` y `scripts/verificar-biblioteca.mjs`.
+
+## Momentos por bloque (23-11-2026)
+
+El efecto propio de cada bloque de La Mente, con los datos del bloque. Entrada `motion-kit/momentos` (11,9 KB gzip,
+tope 12; sorteo, antes y después, confeti y lo de las fotos vivas se bajan aparte). Diseño `docs/superpowers/specs/2026-11-23-momentos-por-bloque-design.md`,
+plan `docs/superpowers/plans/2026-11-23-momentos.md`. Vitrina `#momentos`; prueba `scripts/verificar-momentos.mjs`.
+
+| Bloque | Pieza | Qué hace |
+|---|---|---|
+| Sellos | `SellosEstampa` | Los sellos se estampan uno tras otro; el del premio late |
+| Reseñas | `ResenasPila` | Estrellas que se llenan (fracciones), promedio que cuenta, pila que se pasa con el dedo |
+| Precios | `CartaQueSeAbre`, `PrecioQueRueda` | Listas en abanico con la destacada iluminada; cifras como cuentakilómetros |
+| Eventos | `CuentaRegresiva` | Cifras que se voltean, con la hora del negocio (cambio de hora incluido) |
+| Ubicación | `MapaDibujado` | Plano inventado que aparece por capas y pin que cae; «Abierto ahora» |
+| Galería | `MosaicoQueSeArma`, `AntesDespues` | Fotos impresas que caen a su lugar al bajar; deslizador antes y después |
+| Sorteos | `SorteoRaspe`, `Confeti` | Raspar para ver el premio (o «Ver premio»); confeti si hay ganador |
+
+Base: `resorte` (curva `linear()` por estilo; retro por pasos), `useMomento` (arranca al verse, tres niveles).
+Pendiente: segunda tanda (agenda, calendario, clases, pedidos, contacto, novedades, enlaces, episodios, avisos, cinta,
+buzón, cotizaciones, secciones, encuestas), B (resorte en `Movimiento` y repaso de movimientos) y C (lista pendiente).
+`AntesDespues` espera que La Mente decida cómo marca pares de fotos.
+
+## Fotos vivas (23-11-2026)
+
+Las fotos de la página se sienten vivas, con WebGL escrito a mano y cargado aparte. Diseño
+`docs/superpowers/specs/2026-11-23-fotos-vivas-design.md`, plan `docs/superpowers/plans/2026-11-23-fotos-vivas.md`,
+prueba `scripts/verificar-fotos.mjs [url] [encabezado|galeria|visor]`.
+
+| Dónde | Cómo se prende | Qué hace |
+|---|---|---|
+| Encabezado | `fotoViva` en la receta v2 (casilla «Foto viva» en `#encabezados`) | La foto se arma desde partículas (una vez por carga; no con apertura), ondula bajo el dedo y cambia de toma con un borde líquido |
+| Galería | `viva` en `MosaicoQueSeArma` | La foto que se toca ondula; un solo lienzo pasa de foto en foto |
+| Galería | `visor` en `MosaicoQueSeArma` | Un toque abre la foto, que crece hasta llenar la pantalla (View Transitions o animación propia); diálogo con teclado y gestos |
+
+Archivos en `src/fotos/`: `motor.ts` (ondas, partículas y líquido), `FotoVivaEncabezado.tsx`, `galeria.ts` (lienzo
+itinerante), `gestos.tsx` (qué hacer con cada toque del mosaico), `VisorFotos.tsx` y `calculos.ts`.
+
+Reglas: a lo más dos lienzos WebGL por página; solo en nivel completo (el visor también en liviano); la `<img>` real
+sigue en la página y, si algo falla (sin WebGL, foto caída, contexto perdido), queda la foto normal. Fotos de otros
+sitios: solo si su origen está en `origenesFotos` y el servidor da permiso CORS. Para las fotos de los dueños falta el
+encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-23_permiso-fotos-webgl.md`.
+
+Pendiente: cartas o tarjetas que crecen y llevan a otra página (depende de las rutas de La Mente); fotos vivas en otros
+bloques.
+
+## Dedo y física (23-11-2026)
+
+Nueve efectos que responden al dedo o al cursor, o que tienen física propia. Se eligen desde las recetas, se bajan
+aparte cuando se usan y solo corren en nivel completo. Diseño
+`docs/superpowers/specs/2026-11-23-dedo-y-fisica-design.md`, plan `docs/superpowers/plans/2026-11-23-dedo-y-fisica.md`,
+prueba `scripts/verificar-dedo.mjs [url] [parte]`, con las partes `pila`, `descifrar`, `iman`, `colgante`, `impulso`, `caida`,
+`constelacion`, `estela`, `limpieza` (al salir no queda nada vivo), `sinlienzo` (sin Canvas ni WebGL) y `angosto` (360 px).
+
+| Efecto | Cómo se prende | Qué hace |
+|---|---|---|
+| Cartas apiladas | `relato: "pila"` (página o bloque) | Cada bloque queda pegado arriba y el siguiente sube y lo tapa; el tapado se achica un poco |
+| Texto que se descifra | `efectoTexto: "descifrar"` | El título parte en signos y se aclara letra por letra; el lector de pantalla lee siempre el texto real |
+| Letras con imán | `iman: true` en el encabezado | Las letras del título se apartan del dedo o del cursor y vuelven con rebote |
+| Letrero colgante | `colgante: true` (solo con la composición `letrero`) | El marco cuelga de dos cuerdas y se balancea al abrir y al tocarlo; al bajar la página se ladea apenas. Con el cursor encima queda quieto, para que sus botones no se muevan |
+| Inclinación por velocidad | `relatoPagina: "impulso"` | Mientras más rápido se baja, más se inclinan los bloques (hasta 1,5°); al parar se asientan con un rebote corto |
+| Objetos del rubro que caen | `efecto`: `granos`, `tijeras`, `huellas`, `pesas` o `lapices` | Caen, se apilan al fondo del encabezado y el dedo o el cursor los empuja; un toque los dispersa |
+| Constelación | `efecto: "constelacion"` | Puntos que derivan y se unen con líneas; el cursor los atrae y se suma a la red |
+| Lámpara de lava | `shader: "lava"` | Manchas de color que suben, bajan y se funden; el dedo suma una |
+| Estela y chispas | `estela: true` en la receta de página | El cursor deja una estela sobre la página; un toque (dedo o lápiz) suelta chispas. Empezar a bajar la página no cuenta como toque |
+
+Archivos: `src/dedo/` (imán, letrero, inclinación, estela y sus cálculos), `src/relatos/Pila.tsx`,
+`src/estilos/descifrar.ts`, `src/efectos/caida/` (física, dibujos y lienzo), `src/efectos/fondos/Constelacion.tsx`,
+`src/efectos/lienzo.ts` (lo común de los lienzos 2D) y el fragmento `lava` de `src/escena/ShaderFondo.tsx`.
+`useAparte` (`src/utils/aparte.ts`) monta una pieza que se baja con `import()`; si no baja, la página sigue.
+
+Reglas: sin librerías (la física es propia: gravedad, choques entre círculos, roce que agarra y cuerpos que se
+duermen) y sin azar (todo sale de una semilla). Los lienzos dejan su estado en `data-estado` (`vivo`, `pausa` o
+`quieto`), se detienen fuera de la vista y con la pestaña oculta, y al salir no dejan bucles, oyentes ni lienzos (parte
+`limpieza` de la prueba). En liviano o con movimiento reducido, los objetos quedan como una pila en reposo y la
+constelación como un cuadro quieto con menos puntos; imán, letrero, inclinación y estela no se montan.
+
+Para quien arma la página: las cartas apiladas necesitan que los bloques vayan seguidos (hermanos directos) y un fondo
+en `--mk-fondo` o `--lm-fondo`; una carta se despega solo con el foco del teclado, nunca con un clic. `TextoCinetico`
+tiene la prop `letras`, que deja cada letra en su span también en los efectos por palabra (la usa el imán).
+
+Pesos al cargar (gzip, 24-11-2026): principal 78,8 KB (tope 80), encabezado 33,4 (35), página 15,4 (17), momentos 11,9
+(12), escena 14,4 (16) y receta 9,5 (10). No se subió ningún tope: los medidores del editor salieron de la entrada
+principal y la página dejó de cargar el componente `Estilo` (solo lee su contexto, `src/estilos/contexto.ts`).
+
+Pendiente: la tanda que sigue es «escenas por capas» (motor de escenas, diorama, título con volumen y tarjeta
+holográfica; anotada en `docs/superpowers/plans/2026-11-23-de-sencillo-a-potente.md`, «Por diseñar»). Después: carta
+que se abre como libro, carrusel 3D, fuegos artificiales y ecualizador con sonido real. Y sugerir la lava y los objetos
+que caen en `encabezadoPorRubro`.
 
 ## Mejoras a lo que ya existe
 

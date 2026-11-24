@@ -31,10 +31,13 @@
     "ahorro",
     "apertura",
     "tomas",
+    "fotoViva",
     "fotoEnLetras",
     "tratamiento",
     "estado",
     "palabras",
+    "iman",
+    "colgante",
     "horaDelDia",
     "shader",
     "objeto",
@@ -88,7 +91,8 @@
       "temblor",
       "caer",
       "trailer",
-      "onda"
+      "onda",
+      "descifrar"
     ],
     "pack": [
       "clasico",
@@ -128,7 +132,13 @@
       "tubo",
       "ecualizador",
       "velocidad",
-      "grano"
+      "grano",
+      "granos",
+      "tijeras",
+      "huellas",
+      "pesas",
+      "lapices",
+      "constelacion"
     ],
     "variante": [
       1,
@@ -167,7 +177,8 @@
       "aurora",
       "liquido",
       "humo",
-      "luz"
+      "luz",
+      "lava"
     ],
     "forma": [
       "caja",

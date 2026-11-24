@@ -80,6 +80,7 @@ export function Pagina({ d }: { d?: string }) {
   const [lmPaleta, setLmPaleta] = useState<PaletaLaMente>("clasica");
   const [relato, setRelato] = useState<RelatoBloqueId | "">(inicial?.relato ?? "");
   const [relatoPagina, setRelatoPagina] = useState<RelatoPaginaId | "">(inicial?.relatoPagina ?? "");
+  const [estela, setEstela] = useState(Boolean(inicial?.estela));
   const [porBloque, setPorBloque] = useState<Record<IdBloque, RelatoBloqueId | "ninguno" | "">>(() =>
     Object.fromEntries(BLOQUES.map((id) => [id, inicial?.bloques?.find((b) => b.id === id)?.relato ?? ""])) as Record<IdBloque, RelatoBloqueId | "ninguno" | "">);
 
@@ -89,7 +90,7 @@ export function Pagina({ d }: { d?: string }) {
     datos: ["Jue a dom", "Hasta las 00:00"], alto: "grande",
   };
   const cruda = {
-    version: 1, encabezado, ...(relato ? { relato } : {}), ...(relatoPagina ? { relatoPagina } : {}),
+    version: 1, encabezado, ...(relato ? { relato } : {}), ...(relatoPagina ? { relatoPagina } : {}), ...(estela ? { estela: true } : {}),
     bloques: BLOQUES.filter((id) => porBloque[id]).map((id) => ({ id, relato: porBloque[id] })),
   };
   const resultado = validarPagina(cruda);
@@ -100,7 +101,7 @@ export function Pagina({ d }: { d?: string }) {
     const e = elige(ESTILO_IDS);
     setEstilo(e);
     setRelato(Math.random() < 0.5 ? "" : elige(RELATOS_DE_BLOQUE));
-    setRelatoPagina(elige(["", "", "hilo", "luz"] as const));
+    setRelatoPagina(elige(["", "", "hilo", "luz", "impulso"] as const));
     setPorBloque(Object.fromEntries(BLOQUES.map((id) => {
       const quedan = RELATOS_DE_BLOQUE.filter((r) => RELATOS[r].para.includes(id) || RELATOS[r].para.includes("cualquiera"));
       return [id, Math.random() < 0.4 ? "" : elige(quedan)];
@@ -109,7 +110,7 @@ export function Pagina({ d }: { d?: string }) {
 
   const vista = (
     <Marco tema={lmTema} paleta={lmPaleta} estilo={estilo}>
-      <PaginaRelato relato={pagina.relato} relatoPagina={pagina.relatoPagina}>
+      <PaginaRelato relato={pagina.relato} relatoPagina={pagina.relatoPagina} estela={pagina.estela}>
         <Encabezado {...recetaAProps(pagina.encabezado)} />
         {BLOQUES.map((id) => (
           <Relato key={id} modo={relatoDeBloque(pagina, id)} className="pag-blq" data-bloque={id}>{contenido(id)}</Relato>
@@ -157,8 +158,10 @@ export function Pagina({ d }: { d?: string }) {
               <option value="">Nada</option>
               <option value="hilo">{RELATOS.hilo.nombre}</option>
               <option value="luz">{RELATOS.luz.nombre}</option>
+              <option value="impulso">{RELATOS.impulso.nombre}</option>
             </select>
           </label>
+          <label className="estudio-check"><input type="checkbox" checked={estela} onChange={(e) => setEstela(e.target.checked)} data-prueba="estela" /> Estela y chispas (el cursor deja estela; un toque suelta chispas)</label>
           {BLOQUES.map((id) => (
             <label key={id}>{NOMBRES[id]}
               <select value={porBloque[id]} onChange={(e) => setPorBloque({ ...porBloque, [id]: e.target.value as RelatoBloqueId | "ninguno" | "" })} data-prueba={`relato-${id}`}>

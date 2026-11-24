@@ -1,11 +1,12 @@
 {
-  "$comentario": "Receta de página de motion-kit, v1. Generado por scripts/generar-contrato.mjs desde src/relatos: no editar a mano. El encabezado sigue contrato/encabezado-motionkit.json. relato: el de la página (de bloque); sin él, se usa relatoDeEstilo del estilo del encabezado. relatoPagina: relato de fondo para toda la página. bloques[].id: minúsculas, números y guiones; en La Mente, el tipo del bloque. Marcas: cada bloque marca sus partes con data-mk-parte (partes); un relato que requiere marcas que el bloque no trae se dibuja como «escenas». carrete necesita una tira: un contenedor (no el bloque entero) con dos o más fotos o tarjetas; si la tira cabe entera, se cuenta como «escenas». subtitulos necesita la frase con cada palabra en <span data-mk-palabra> (FraseRelato lo hace); el relato no toca el HTML del bloque. Los relatos no cuentan como protagonista: solo se mueven con el scroll de la persona.",
+  "$comentario": "Receta de página de motion-kit, v1. Generado por scripts/generar-contrato.mjs desde src/relatos: no editar a mano. El encabezado sigue contrato/encabezado-motionkit.json. relato: el de la página (de bloque); sin él, se usa relatoDeEstilo del estilo del encabezado. relatoPagina: relato de fondo para toda la página. estela: true prende la estela del cursor y las chispas al tocar (solo en nivel completo). bloques[].id: minúsculas, números y guiones; en La Mente, el tipo del bloque. Marcas: cada bloque marca sus partes con data-mk-parte (partes); un relato que requiere marcas que el bloque no trae se dibuja como «escenas». carrete necesita una tira: un contenedor (no el bloque entero) con dos o más fotos o tarjetas; si la tira cabe entera, se cuenta como «escenas». pila necesita que los bloques vayan seguidos, como hermanos directos (si cada uno va envuelto en otro elemento, se ven como cartas pero no se pegan) y un fondo de página en --mk-fondo o --lm-fondo (sin él, las cartas van blancas). subtitulos necesita la frase con cada palabra en <span data-mk-palabra> (FraseRelato lo hace); el relato no toca el HTML del bloque. Los relatos no cuentan como protagonista: solo se mueven con el scroll de la persona.",
   "version": 1,
   "campos": [
     "version",
     "encabezado",
     "relato",
     "relatoPagina",
+    "estela",
     "bloques"
   ],
   "obligatorios": [
@@ -20,11 +21,13 @@
       "profundidad",
       "iris",
       "carrete",
-      "subtitulos"
+      "subtitulos",
+      "pila"
     ],
     "relatoPagina": [
       "hilo",
-      "luz"
+      "luz",
+      "impulso"
     ],
     "relatoBloque": [
       "escenas",
@@ -34,6 +37,7 @@
       "iris",
       "carrete",
       "subtitulos",
+      "pila",
       "ninguno"
     ]
   },
@@ -70,6 +74,7 @@
     ],
     "subtitulos": [
       "frase"
-    ]
+    ],
+    "pila": []
   }
 }

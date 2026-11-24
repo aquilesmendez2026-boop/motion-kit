@@ -11,7 +11,7 @@ const COMO_ESCENAS = [
   `${ACTIVO} .mk-relato[data-modo=escenas]`,
   `${ACTIVO} .mk-relato[data-modo=cuento][data-capitulo-largo]`,
   `${ACTIVO} .mk-relato[data-modo=carrete][data-tira-corta]`,
-  `${ACTIVO}[data-nivel=liviano] .mk-relato:is([data-modo=pelicula],[data-modo=cuento],[data-modo=iris],[data-modo=subtitulos])`,
+  `${ACTIVO}[data-nivel=liviano] .mk-relato:is([data-modo=pelicula],[data-modo=cuento],[data-modo=iris],[data-modo=subtitulos],[data-modo=pila])`,
 ].join(",");
 
 /** Escenas y el sabor de entrada de cada estilo (movimiento base heredado). */

@@ -72,6 +72,8 @@ async function idsDe(entrada) {
 const idsEncabezado = await idsDe("src/entradas/encabezado.ts");
 // La página va siempre con el encabezado: su CSS no repite lo que ya trae estilos-encabezado.css.
 const idsPagina = new Set([...(await idsDe("src/entradas/pagina.ts"))].filter((id) => !idsEncabezado.has(id)));
+// Los momentos van también sueltos (en una página de La Mente sin el encabezado del kit): su CSS completo.
+const idsMomentos = await idsDe("src/entradas/momentos.ts");
 
 // Un bloque por id (el mismo CSS se pide desde varios componentes). Primero la base de estilos, como en la página.
 const bloques = new Map();
@@ -92,3 +94,4 @@ function escribir(ruta, ids, que) {
 escribir(SALIDA, ordenar([...bloques.keys()]), "todo el CSS que la librería inserta como <style>");
 escribir(join(dirname(SALIDA), "estilos-encabezado.css"), ordenar([...idsEncabezado]), "el CSS de motion-kit/encabezado");
 escribir(join(dirname(SALIDA), "estilos-pagina.css"), ordenar([...idsPagina]), "el CSS de motion-kit/pagina");
+escribir(join(dirname(SALIDA), "estilos-momentos.css"), ordenar([...idsMomentos]), "el CSS de motion-kit/momentos");

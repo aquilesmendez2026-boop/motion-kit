@@ -3,20 +3,26 @@ import { useStyles } from "../utils/styles";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { CSS_ESCENA } from "./css";
 
-export type ShaderId = "aurora" | "liquido" | "humo" | "luz";
+export type ShaderId = "aurora" | "liquido" | "humo" | "luz" | "lava";
 
 export const SHADERS: Record<ShaderId, { nombre: string; descripcion: string }> = {
   aurora: { nombre: "Aurora", descripcion: "Cortinas de luz que ondulan y se corren hacia el dedo." },
   liquido: { nombre: "Líquido", descripcion: "Colores que se mezclan como tinta en agua; el dedo los revuelve." },
   humo: { nombre: "Humo", descripcion: "Humo lento que sube, con el color del estilo." },
   luz: { nombre: "Foco de luz", descripcion: "Un foco con rayos que sigue al dedo o al cursor." },
+  lava: { nombre: "Lámpara de lava", descripcion: "Manchas de color que suben, bajan y se funden; el dedo suma una." },
 };
 export const SHADER_IDS = Object.keys(SHADERS) as ShaderId[];
 
 const VERTICE = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 
-// Ruido y fbm cortos, comunes a todos.
-const COMUN = `precision mediump float;
+// Ruido y fbm cortos, comunes a todos. Se pide precisión alta cuando el teléfono la tiene: con la media (16 bits en
+// muchos teléfonos) el tiempo avanza a saltos al poco rato y el fondo se ve trabado.
+const COMUN = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
 uniform vec2 r;uniform float t;uniform vec2 m;uniform vec3 c0;uniform vec3 c1;uniform vec3 c2;uniform float k;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
@@ -44,6 +50,16 @@ vec2 f=vec2(m.x*.4+.5,.62-m.y*.3);vec2 d=(u-f)*a;float l=length(d);
 float ang=atan(d.y,d.x);float rayos=.5+.5*sin(ang*9.+t*.4+fbm(vec2(ang*2.,t*.2))*3.);
 float g=exp(-l*3.)*(.55+.45*rayos)+exp(-l*l*30.)*.35;
 vec3 col=mix(c0,mix(c2,c1,clamp(l*1.6,0.,1.)),clamp(g*.85*k,0.,.8));gl_FragColor=vec4(col,1.);}`,
+  // Seis manchas que suben y bajan a su ritmo (y una más donde está el dedo): se suma lo que aporta cada una y, donde
+  // la suma pasa el umbral, hay lava. Por eso se funden al acercarse. Hacia el centro, cada mancha vira de a poco al
+  // segundo color. Son un poco más altas que anchas y, en pantallas angostas, más chicas (para no tapar todo).
+  lava: `${COMUN}void main(){vec2 u=gl_FragCoord.xy/r;float a=r.x/r.y;vec2 q=vec2(u.x*a,u.y);float f=0.,s=min(1.,.55+.45*a);
+for(int i=0;i<6;i++){float fi=float(i);
+vec2 c=vec2(a*(.5+.4*sin(t*(.07+.013*fi)+fi*2.4)+.1*sin(fi*5.1)),.5+.46*sin(t*(.16+.031*fi)+fi*1.7));
+float w=(.11+.035*sin(fi*3.7))*s;vec2 d=q-c;d.x*=1.12;f+=w*w/(dot(d,d)+.0001);}
+vec2 e=q-vec2((m.x*.5+.5)*a,.5-m.y*.5);f+=.012*s*s/(dot(e,e)+.0001);
+float g=smoothstep(.45,1.,f),v=smoothstep(1.,1.3,f),o=smoothstep(1.,6.,f);
+vec3 col=mix(c0,c1,clamp((g*.16+v*.5)*k,0.,.7));col=mix(col,c2,clamp(o*.5*k,0.,.6));gl_FragColor=vec4(col,1.);}`,
 };
 
 /** Convierte cualquier color CSS a [r, g, b] de 0 a 1 (el canvas 2D lo resuelve por nosotros). */
@@ -136,9 +152,11 @@ export function ShaderFondo({ tipo = "aurora", velocidad = 1, intensidad = 1, qu
       if (cv.width !== w || cv.height !== h) {
         cv.width = w;
         cv.height = h;
-        gl.viewport(0, 0, w, h);
-        gl.uniform2f(uR, w, h);
       }
+      // El tamaño va siempre al programa: cuando esto se vuelve a montar (otro shader, o el modo estricto de React), el
+      // lienzo ya mide lo mismo, pero el programa es nuevo y sin su tamaño pintaría un color parejo.
+      gl.viewport(0, 0, w, h);
+      gl.uniform2f(uR, w, h);
     };
     medir();
     let mx = 0, my = 0;

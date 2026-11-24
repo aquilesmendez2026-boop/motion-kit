@@ -65,3 +65,35 @@ Aquiles.
   fotos grandes); la versión completa es para computador.
 - **Después, la app móvil:** `lamente-app` es Kotlin Multiplatform, no React. Decidir entre mostrar la página web
   dentro de la app (rápido, igual que la web) o rehacer en Compose los efectos más usados (más fluido, más trabajo).
+- **Tanda que sigue: escenas por capas** (pedido de Aquiles, 24-11: «sí, anótalo»). Va apenas cierre «dedo y física»:
+  - **Motor de escenas por capas:** una «receta de escena» (la lista de capas; qué mueve a cada una: dedo,
+    inclinación, scroll o tiempo; con qué fuerza; su foco y su sombra) y un solo motor que la dibuja. «Sorpréndeme»
+    arma escenas con una semilla. Se apoya en lo que ya existe: `CapasProfundidad`, la luz, el resorte, el péndulo, la
+    física y el lienzo.
+  - **Dónde vive cada parte** (decisión de Aquiles, 24-11: «el motor de escena en La Mente y aquí solo los
+    efectos»; «sí, déjalo así»; anotada en `cerebro-aquiles/DECISIONES.md`): en **La Mente**, el motor que arma escenas (elegir capas, «Sorpréndeme», guardar,
+    permisos), dentro del Estudio común. En **motion-kit**, los efectos (las capas y lo que las mueve), la receta de
+    escena con su contrato (La Mente la copia y la valida, como hoy) y el componente que dibuja una receta. Aquí quedan
+    recetas de ejemplo fijas para la demo y las pruebas. La parte de La Mente va como encargo en el cerebro (sus repos
+    no se tocan desde motion-kit).
+  - **Tres efectos para partir:** diorama (una escena en capas con foco, sombra y aire, que se mueve con el teléfono),
+    título con volumen (letras 3D con copias del texto apiladas) y tarjeta holográfica (brillo que cambia con la
+    inclinación).
+  - **Después:** foto con relieve (una sola foto que gira en 3D; necesita un mapa de profundidad por foto, que habría
+    que generar al subirla: sería un servicio en La Mente, con costo, y se ve aparte), vidrio esmerilado, ventana o
+    portal y libro pop-up. Y cruces de lo que ya hay: física con foto (la foto se rompe en pedazos que caen),
+    partículas con texto (título de arena), sensores con capas y sonido con shader.
+  - **Criterio:** el realismo sale de cinco cosas (cada capa se mueve distinto; lo lejano y lo muy cercano van
+    desenfocados; la luz y las sombras calzan; lo lejano pierde contraste; algo pasa por delante del texto), no de
+    sumar capas. De 4 a 7 capas: cada capa a pantalla completa ocupa unos 12 MB de memoria gráfica en un teléfono. Para
+    más volumen, un solo lienzo WebGL que haga las capas por dentro.
+  - Siguen anotados para después de esa tanda: carta que se abre como libro, carrusel 3D, fuegos artificiales y
+    ecualizador con sonido real.
+- **Más adelante: creador de personajes y de foto a plantilla** (anotado el 23-11, sin fecha):
+  - Personajes en estilo propio (recorte de papel o anime, sin copiar obras de otros) como receta de partes, colores y
+    gestos; motion-kit los dibuja en SVG y los anima con `transform` y `opacity`. Claude arma la receta, no dibuja.
+  - De una foto, un flyer o una captura a una receta de encabezado o de página (Claude con visión; los colores ya
+    salen de `paletaDeFoto`).
+  - Antes de partir: choca con «no usamos modelos remotos» (llamar a Claude desde La Mente es un modelo remoto y
+    cuesta por uso: Opus 5.5 unos US$0,04 a 0,08 por creación, Haiku 5.5 menos de US$0,005) y las fotos de los
+    negocios saldrían a Anthropic (ley de datos: transferencia internacional y consentimiento). Son dos proyectos.

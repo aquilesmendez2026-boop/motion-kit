@@ -93,10 +93,58 @@ revisar((await enc.getAttribute("data-nivel")) === "quieto", "con ahorro de dato
 await pagina.locator("[data-prueba=ahorro]").selectOption("nunca");
 
 // Punto 2: shader, objeto 3D y salida
+/** Copia el lienzo WebGL a uno 2D justo después de que el shader dibuja su cuadro y mira cuánto varía el brillo. */
+const muestraShader = () =>
+  pagina.locator(".enc-vista header.mk-enc .mk-shader canvas").first().evaluate(
+    (cv) =>
+      new Promise((ok) =>
+        requestAnimationFrame(() => {
+          const c = document.createElement("canvas");
+          c.width = 64;
+          c.height = 64;
+          const x = c.getContext("2d");
+          x.drawImage(cv, 0, 0, 64, 64);
+          const d = x.getImageData(0, 0, 64, 64).data;
+          let minimo = 255;
+          let maximo = 0;
+          const firma = [];
+          for (let i = 0; i < d.length; i += 4) {
+            const brillo = (d[i] + d[i + 1] + d[i + 2]) / 3;
+            minimo = Math.min(minimo, brillo);
+            maximo = Math.max(maximo, brillo);
+            if (i % 64 === 0) firma.push(Math.round(brillo / 4));
+          }
+          ok({ contraste: Math.round(maximo - minimo), firma: firma.join(",") });
+        }),
+      ),
+  ).catch(() => ({ contraste: 0, firma: "" }));
 await pagina.locator("[data-prueba=shader]").selectOption("aurora");
+await enc.scrollIntoViewIfNeeded();
 await pagina.waitForTimeout(2000);
 const sh = await pagina.locator(".enc-vista header.mk-enc .mk-shader").first().evaluate((e) => ({ listo: e.hasAttribute("data-listo"), sin: e.hasAttribute("data-sin-webgl") }));
 revisar(sh.listo || sh.sin, `el shader dibuja (o cae al degradado sin WebGL): ${JSON.stringify(sh)}`);
+if (!sh.sin) {
+  // En la demo (modo estricto de React) el shader se monta dos veces: la segunda vez también tiene que saber su tamaño.
+  const aurora = await muestraShader();
+  revisar(aurora.contraste > 20, `la aurora se ve, no un color parejo (contraste ${aurora.contraste})`);
+}
+// Lámpara de lava: compila, dibuja manchas (no un color parejo) y se mueve.
+await pagina.locator("[data-prueba=shader]").selectOption("lava", { timeout: 3000 }).catch(() => {});
+const elegida = (await pagina.locator("[data-prueba=shader]").inputValue()) === "lava";
+revisar(elegida, "la lámpara de lava se puede elegir en el editor");
+// El shader solo dibuja con el encabezado a la vista.
+await enc.scrollIntoViewIfNeeded();
+await pagina.waitForTimeout(1500);
+const lava = await pagina.locator(".enc-vista header.mk-enc .mk-shader").first().evaluate((e) => ({ listo: e.hasAttribute("data-listo"), sin: e.hasAttribute("data-sin-webgl") })).catch(() => ({ listo: false, sin: false }));
+if (sh.sin) revisar(true, "sin WebGL en esta máquina: la lava cae al degradado, como los demás shaders");
+else if (elegida) {
+  const una = await muestraShader();
+  await pagina.waitForTimeout(1500);
+  const otra = await muestraShader();
+  revisar(lava.listo && !lava.sin, `la lámpara de lava compila y dibuja (${JSON.stringify(lava)})`);
+  revisar(una.contraste > 20, `la lava dibuja manchas sobre el fondo, no un color parejo (contraste ${una.contraste})`);
+  revisar(una.firma !== "" && una.firma !== otra.firma, "las manchas de la lava se mueven");
+}
 await pagina.locator("[data-prueba=objeto]").selectOption("lata");
 await pagina.waitForTimeout(500);
 revisar((await pagina.locator(".enc-vista header.mk-enc .mk-obj-tira").count()) === 20, "la lata 3D tiene 20 caras");

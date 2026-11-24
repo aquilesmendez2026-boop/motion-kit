@@ -2,8 +2,8 @@
 // Sumar uno nuevo es escribir su CSS (src/relatos/css.ts) y su ficha aquí. Sin React: lo usan la receta y el contrato.
 import type { EstiloId } from "../estilos/estilos";
 
-export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos";
-export type RelatoPaginaId = "hilo" | "luz";
+export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos" | "pila";
+export type RelatoPaginaId = "hilo" | "luz" | "impulso";
 export type RelatoId = RelatoBloqueId | RelatoPaginaId;
 
 /** Marcas que un bloque pone en sus partes (`data-mk-parte`) para que un relato las encuentre. */
@@ -66,6 +66,12 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
     descripcion: "Una frase grande se enciende palabra por palabra mientras bajas.",
     completo: "La frase se enciende palabra por palabra.", liviano: "Frase entera con entrada de escenas.", quieto: "Frase entera visible.",
   },
+  pila: {
+    id: "pila", nombre: "Cartas apiladas", alcance: "bloque", para: ["cualquiera"], requiere: [], largo: false,
+    descripcion: "Cada bloque queda pegado arriba y el siguiente sube y lo tapa, como cartas que se apilan.",
+    completo: "Cada bloque queda pegado mientras el siguiente lo tapa; el tapado se achica un poco.", liviano: "Entrada de escenas.",
+    quieto: "Visible, sin pegarse.",
+  },
   hilo: {
     id: "hilo", nombre: "Hilo", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
     descripcion: "Una línea une los bloques mientras bajas y una luz viaja contigo.",
@@ -75,6 +81,11 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
     id: "luz", nombre: "Luz que cambia", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
     descripcion: "El cielo de la página pasa por las horas del día mientras bajas y el sol se pone.",
     completo: "El cielo cambia de hora y el sol baja.", liviano: "Cielo fijo.", quieto: "Cielo fijo.",
+  },
+  impulso: {
+    id: "impulso", nombre: "Inclinación por velocidad", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
+    descripcion: "Mientras más rápido bajas, más se inclinan los bloques; al parar vuelven a quedar derechos.",
+    completo: "Los bloques se inclinan con la velocidad al bajar.", liviano: "Sin inclinación.", quieto: "Sin inclinación.",
   },
 };
 

@@ -18,6 +18,13 @@ export const EFECTOS: Record<EfectoId, EfectoDef> = {
   velocidad: { id: "velocidad", nombre: "Líneas de velocidad", familia: "estilo", rubros: ["clases", "otro"], animo: "vistoso", cargar: () => import("./estilos/Velocidad") },
   grano: { id: "grano", nombre: "Grano de película", familia: "estilo", rubros: ["comida", "otro"], animo: "sobrio", cargar: () => import("./estilos/Grano") },
   estrellas: { id: "estrellas", nombre: "Estrellas", familia: "fondo", rubros: ["otro"], animo: "sobrio", cargar: () => import("./fondos/Estrellas") },
+  // Objetos del rubro que caen y se apilan (lienzo 2D con física propia).
+  granos: { id: "granos", nombre: "Granos que caen", familia: "escena", rubros: ["comida"], animo: "vistoso", cargar: () => import("./escenas/Granos") },
+  tijeras: { id: "tijeras", nombre: "Tijeras que caen", familia: "escena", rubros: ["belleza"], animo: "vistoso", cargar: () => import("./escenas/Tijeras") },
+  huellas: { id: "huellas", nombre: "Huellas que caen", familia: "escena", rubros: ["otro"], animo: "vistoso", cargar: () => import("./escenas/Huellas") },
+  pesas: { id: "pesas", nombre: "Pesas que caen", familia: "escena", rubros: ["salud"], animo: "vistoso", cargar: () => import("./escenas/Pesas") },
+  lapices: { id: "lapices", nombre: "Lápices que caen", familia: "escena", rubros: ["clases"], animo: "vistoso", cargar: () => import("./escenas/Lapices") },
+  constelacion: { id: "constelacion", nombre: "Constelación", familia: "fondo", rubros: ["otro"], animo: "sobrio", cargar: () => import("./fondos/Constelacion") },
 };
 
 export const ids = Object.keys(EFECTOS) as EfectoId[];

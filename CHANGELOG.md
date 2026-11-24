@@ -2,6 +2,69 @@
 
 ## Sin publicar
 
+### Dedo y física (nueve efectos)
+
+- **Receta del encabezado (v2, sin versión nueva):** campos `iman` y `colgante` (este solo con la composición
+  `letrero`; con otra queda apagado y avisa); `efectoTexto` suma `descifrar`; `efecto` suma `granos`, `tijeras`,
+  `huellas`, `pesas`, `lapices` y `constelacion`; `shader` suma `lava`. `Encabezado` suma las props `iman` y `colgante`.
+- **Receta de página (v1, sin versión nueva):** `relato` suma `pila`, `relatoPagina` suma `impulso` y hay un campo
+  nuevo, `estela`. `PaginaRelato` suma la prop `estela`. Los dos contratos están regenerados.
+- **Cartas apiladas**, **texto que se descifra**, **letras con imán**, **letrero colgante**, **inclinación por
+  velocidad**, **objetos del rubro que caen** (con física propia), **constelación**, **lámpara de lava** y **estela y
+  chispas**. Todos se bajan aparte y solo corren en nivel completo; en liviano o con movimiento reducido quedan
+  quietos o no se montan.
+- Para sitios con CSP, el CSS de lo nuevo viaja en `estilos-encabezado.css` y `estilos-pagina.css`.
+- Prueba nueva: `scripts/verificar-dedo.mjs [url] [parte]`. Su parte `limpieza` revisa que al salir no queden bucles,
+  oyentes ni lienzos.
+- Pesos al cargar (gzip): principal 78,8 KB, encabezado 33,4, página 15,4, momentos 11,9, escena 14,4 y receta 9,5.
+  Ningún tope cambió.
+
+### Arreglos
+
+- **Shaders (`ShaderFondo`):** al volver a montarse (al cambiar de shader, o siempre en el modo estricto de React en
+  desarrollo) el fondo quedaba de un color parejo, porque el programa nuevo no recibía el tamaño del lienzo.
+- **Shaders:** piden precisión alta cuando el teléfono la tiene. Con la media, en muchos teléfonos el fondo se veía
+  trabado al poco rato.
+- **Peso:** `motion-kit/pagina` ya no carga el componente `Estilo` solo por leer su contexto (queda en 15,4 KB aun
+  con lo nuevo; antes medía 16,6).
+- **Revisión final de «dedo y física»** (2 críticos, 4 importantes y 11 menores, todos resueltos): las cartas apiladas
+  ya no saltan al hacer clic con el mouse (se despegan solo con el foco del teclado); apretar un botón del letrero
+  colgante no lo balancea, y el letrero queda quieto con el cursor encima; el scroll lo ladea con tope y solo si se ve;
+  el imán deja de calcular con el cursor quieto, mueve letras también en los títulos por palabra y mide de nuevo al
+  despertar; un título que cambia a mitad del descifrado queda con el texto nuevo; las chispas salen con un toque y no
+  al empezar a bajar; la constelación dibuja a 30 por segundo; los lienzos sueltan su memoria al salir.
+- **Pruebas:** la medida de «sin scroll horizontal» a 360 px estaba ciega en modo teléfono (restaba `innerWidth`, que
+  crece junto con lo que se sale) en `verificar-efectos`, `-encabezados`, `-estilos` y `-piezas`. Ahora mide contra el
+  ancho fijo del teléfono.
+
+### Fotos vivas
+
+- **Receta v2: campo nuevo `fotoViva`** (y en el contrato). Solo en las composiciones con foto; no cuenta como
+  protagonista. `Encabezado` suma las props `fotoViva` y `origenesFotos`.
+- **Foto viva del encabezado** (WebGL a mano, se baja aparte): la foto se arma desde partículas al entrar (una vez por
+  carga, y no si hay apertura), ondula bajo el dedo o el cursor y, con varias tomas, cambia con un borde líquido.
+  Respeta el tratamiento de foto y la profundidad. Solo en nivel completo.
+- **Galería (`MosaicoQueSeArma`)**: `viva` (la foto que se toca ondula, con un solo lienzo que pasa de foto en foto) y
+  `visor` (un toque abre la foto, que crece hasta llenar la pantalla; diálogo con Anterior, Siguiente y Cerrar, flechas,
+  Escape y gestos). Los gestos, el motor y el visor se bajan aparte con el primer toque.
+- **Fotos de otros sitios:** el motor solo pide la textura al mismo sitio, a `data:`/`blob:` y a los orígenes de
+  `origenesFotos`; si el servidor no da permiso CORS, queda la foto normal. A lo más dos lienzos WebGL por página.
+- Prueba nueva: `scripts/verificar-fotos.mjs`.
+
+### Momentos por bloque (primera tanda)
+
+- Entrada nueva **`motion-kit/momentos`** (11,9 KB gzip al cargar, tope 12; el sorteo, el antes y después, el confeti
+  y lo de las fotos vivas se bajan aparte, y si no bajan la página sigue) y su CSS en archivo,
+  `motion-kit/estilos-momentos.css`. La entrada exporta las piezas, `useMomento`, el resorte, `faltaPara` y los
+  formatos de Chile; los cálculos internos no son parte del paquete.
+- El efecto propio de cada bloque de La Mente, con los datos del bloque: `SellosEstampa`, `ResenasPila`,
+  `CartaQueSeAbre`, `PrecioQueRueda`, `CuentaRegresiva` (hora del negocio, cambio de hora incluido), `MapaDibujado`,
+  `MosaicoQueSeArma`, `AntesDespues` y `SorteoRaspe` (con `Confeti`).
+- **Resorte** con curva CSS `linear()` y uno por estilo (`resorte`, `RESORTES_DE_ESTILO`); retro va por pasos.
+- Tres niveles (completo, liviano, quieto), texto legible desde el primer cuadro y colores de La Mente (`--lm-*`)
+  cuando no hay `Estilo` alrededor.
+- **No se exportan desde la entrada principal** `motion-kit` (está en su tope): se importan de `motion-kit/momentos`.
+
 ### Encabezado de película (receta v2)
 
 - **Receta v2** (acepta la v1 y la guarda como v2; contrato con `versiones: [1, 2]`): apertura, tomas, foto en las
@@ -19,6 +82,9 @@
 
 ### Cambios que pueden romper
 
+- Los medidores del editor (`MedidorPeso`, `MedidorFluidez`, `MedidorCarga`, `SemaforoContraste` y lo de `peso` y
+  `calidad`) ya no salen por la entrada principal `motion-kit`: se importan de `motion-kit/escena`, donde ya estaban.
+  Libera espacio en la entrada principal (decisión de Aquiles, 23-11).
 - `contratoEncabezado`/`textoContrato` ya no salen de `motion-kit/receta` ni de `motion-kit/encabezado`, y
   `contratoPagina`/`textoContratoPagina` no salen de `motion-kit/pagina`: son herramientas de desarrollo y quedan solo en
   `motion-kit`. Lo que usa La Mente son los archivos `contrato/*.json`.

@@ -21,6 +21,7 @@ export default defineConfig(({ command }) => ({
               encabezado: fileURLToPath(new URL("./src/entradas/encabezado.ts", import.meta.url)),
               escena: fileURLToPath(new URL("./src/entradas/escena.ts", import.meta.url)),
               pagina: fileURLToPath(new URL("./src/entradas/pagina.ts", import.meta.url)),
+              momentos: fileURLToPath(new URL("./src/entradas/momentos.ts", import.meta.url)),
               receta: fileURLToPath(new URL("./src/receta/index.ts", import.meta.url)),
             },
             formats: ["es", "cjs"],

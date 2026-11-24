@@ -12,6 +12,11 @@ export interface TextoCineticoProps extends HTMLAttributes<HTMLElement> {
   retraso?: number;
   /** Reemplaza el contenido de la palabra resaltada (por ejemplo, palabras que rotan). El `aria-label` no cambia. */
   resaltado?: ReactNode;
+  /**
+   * Deja cada letra en su propio span (`.mk-tc-g`) también en los efectos que van por palabra, para quien las mueve
+   * una por una (las letras con imán). El efecto del título no cambia.
+   */
+  letras?: boolean;
 }
 
 const CSS = `
@@ -66,7 +71,7 @@ const POR_PALABRA: TextoEfecto[] = ["impacto", "trailer", "revelar"];
  * Una palabra entre asteriscos (`*Smash* burgers`) se resalta con el color de acento.
  * El lector de pantalla lee el texto completo; si el JS no carga, el texto se ve quieto.
  */
-export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", retraso = 0, resaltado, className, style, ...resto }: TextoCineticoProps) {
+export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", retraso = 0, resaltado, letras = false, className, style, ...resto }: TextoCineticoProps) {
   useStyles("texto-cinetico", CSS);
   const ref = useRef<HTMLElement>(null);
   const [fase, setFase] = useState<"inicial" | "esperando" | "jugando">("inicial");
@@ -85,13 +90,38 @@ export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", r
     return () => o.disconnect();
   }, [cuando, texto, efecto]);
 
+  // «descifrar» corre por JS (cada letra pasa por unos signos): su archivo se baja aparte cuando el título entra. El
+  // texto está visible desde el inicio; si el archivo no baja, queda quieto.
+  useEffect(() => {
+    const el = ref.current;
+    if (efecto !== "descifrar" || fase !== "jugando" || !el) return;
+    let vivo = true;
+    let cancelar = () => {};
+    const espera = window.setTimeout(() => {
+      void import("./descifrar")
+        .then((m) => {
+          if (vivo) cancelar = m.descifrar(el, texto.length);
+        })
+        .catch(() => {});
+    }, retraso);
+    return () => {
+      vivo = false;
+      window.clearTimeout(espera);
+      cancelar();
+    };
+  }, [efecto, fase, retraso, texto]);
+
   // *palabra* = destacada (se resalta con el color de acento)
   const limpio = texto.replace(/\*/g, "");
   const segmentos = texto.split(/(\*[^*]+\*[^\s*]*)/).filter(Boolean).map((t) => (/^\*[^*]+\*[^\s*]*$/.test(t) ? { t: t.replace(/\*/g, ""), d: true } : { t, d: false }));
   let i = 0;
   const palabra = (p: string, k: string) => {
     if (POR_PALABRA.includes(efecto)) {
-      const l = <span key={k} className="mk-tc-l mk-tc-palabra" style={{ "--i": i++ } as CSSProperties}>{p}</span>;
+      const l = (
+        <span key={k} className="mk-tc-l mk-tc-palabra" style={{ "--i": i++ } as CSSProperties}>
+          {letras ? Array.from(p).map((ch, j) => <span key={j} className="mk-tc-g" style={{ display: "inline-block" }}>{ch}</span>) : p}
+        </span>
+      );
       return efecto === "revelar" ? <span key={k} className="mk-tc-mascara">{l}</span> : l;
     }
     return (
@@ -120,7 +150,8 @@ export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", r
       aria-label={limpio}
       style={{ "--r": `${retraso}ms`, ...style } as CSSProperties}
     >
-      <span aria-hidden="true">{partes}</span>
+      {/* Al descifrar, el efecto escribe en las letras: con un texto nuevo van letras nuevas, no las que estaba cambiando. */}
+      <span aria-hidden="true" key={efecto === "descifrar" ? texto : undefined}>{partes}</span>
     </Etiqueta>
   );
 }

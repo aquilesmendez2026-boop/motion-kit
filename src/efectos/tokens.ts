@@ -5,7 +5,8 @@ export type Variante = 1 | 2 | 3;
 export type EfectoId =
   | "cafe" | "petalos" | "pulso" | "abecedario" | "letrero" | "cometas"
   | "niebla" | "burbujas" | "olas" | "puntos" | "lluvia" | "estrellas"
-  | "rejilla" | "tubo" | "ecualizador" | "velocidad" | "grano";
+  | "rejilla" | "tubo" | "ecualizador" | "velocidad" | "grano"
+  | "granos" | "tijeras" | "huellas" | "pesas" | "lapices" | "constelacion";
 
 export interface EfectoProps extends HTMLAttributes<HTMLDivElement> {
   /** 1, 2 o 3: cambia densidad, velocidad o forma. */

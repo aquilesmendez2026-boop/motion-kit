@@ -1,4 +1,5 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes } from "react";
+import { useAparte } from "../utils/aparte";
 import { useStyles } from "../utils/styles";
 import { PARTES_RELATO, RELATOS, type RelatoBloqueId } from "./catalogo";
 import { ContextoRelato } from "./PaginaRelato";
@@ -129,12 +130,17 @@ export function Relato({ modo, className, children, ...resto }: RelatoProps) {
   const observar = ctx?.observar;
   useEffect(() => observar?.(ref.current), [observar]);
 
+  // Cartas apiladas: su archivo se baja aparte, y solo con scroll nativo y en nivel completo. Sin él (o mientras
+  // llega), el bloque queda como cualquier otro.
+  const Pila = useAparte(efectivo === "pila" && ctx?.nivel === "completo" && !ctx.sinScroll, () => import("./Pila"));
+
   return (
     <div {...resto} ref={ref} className={`mk-relato${className ? " " + className : ""}`} data-modo={efectivo} data-pedido={pedido}>
       {efectivo === "profundidad" && (
         <span className="mk-capas" aria-hidden="true"><i /><i /><i /></span>
       )}
       <div className="mk-relato-in" ref={interior}>{children}</div>
+      {Pila && <Pila bloque={ref} />}
     </div>
   );
 }

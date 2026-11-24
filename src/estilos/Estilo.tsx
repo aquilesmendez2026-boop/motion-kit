@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, type CSSProperties, type HTMLAttributes, type PointerEvent } from "react";
+import { useEffect, type CSSProperties, type HTMLAttributes, type PointerEvent } from "react";
 import { useStyles } from "../utils/styles";
-import { ESTILOS, type EstiloDef, type EstiloId } from "./estilos";
+import { ESTILOS, type EstiloId } from "./estilos";
+import { ContextoEstilo, useEstilo } from "./contexto";
 import { CSS_ESTILOS } from "./css";
 import { CURSORES } from "./texturas";
 import { sonar, vibrar } from "./sonidos";
@@ -21,12 +22,7 @@ export interface EstiloProps extends HTMLAttributes<HTMLDivElement> {
   colores?: Record<string, string>;
 }
 
-const Contexto = createContext<EstiloDef | null>(null);
-
-/** El estilo vigente (o null fuera de un `<Estilo>`). */
-export function useEstilo() {
-  return useContext(Contexto);
-}
+export { useEstilo };
 
 const fuentesCargadas = new Set<string>();
 
@@ -58,7 +54,7 @@ export function Estilo({ nombre, textura = true, cursor, sonidos, vibracion, fue
 
   const vars = { ...def.vars, ...colores, ...(cursor ? { "--mk-cursor": CURSORES[nombre] } : null), ...style } as CSSProperties;
   return (
-    <Contexto.Provider value={def}>
+    <ContextoEstilo.Provider value={def}>
       <div
         {...resto}
         className={`mk-estilo${className ? " " + className : ""}`}
@@ -70,6 +66,6 @@ export function Estilo({ nombre, textura = true, cursor, sonidos, vibracion, fue
         {children}
         {textura && <div className="mk-estilo-textura" aria-hidden="true" />}
       </div>
-    </Contexto.Provider>
+    </ContextoEstilo.Provider>
   );
 }

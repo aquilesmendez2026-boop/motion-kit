@@ -7,7 +7,7 @@ import type { PackBotonId } from "../piezas/packs";
 export type EstiloId = "neon" | "retro" | "rock" | "anime" | "pelicula";
 export type SonidoId = "zumbido" | "pitido" | "golpe" | "destello" | "proyector";
 export type VistaId = "fundido" | "deslizar" | "apagon" | "canal" | "corte" | "barrido" | "cine";
-export type TextoEfecto = "encender" | "glitch" | "maquina" | "impacto" | "temblor" | "caer" | "trailer" | "onda" | "revelar" | "voltear" | "rebote";
+export type TextoEfecto = "encender" | "glitch" | "maquina" | "impacto" | "temblor" | "caer" | "trailer" | "onda" | "revelar" | "voltear" | "rebote" | "descifrar";
 
 export interface EstiloDef {
   id: EstiloId;

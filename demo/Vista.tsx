@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Encabezado, Estilo, EstiloLaMente, MedidorCarga, MedidorFluidez, MedidorPeso, type NivelEscena } from "../src";
+import { Encabezado, Estilo, EstiloLaMente, type NivelEscena } from "../src";
+import { MedidorCarga, MedidorFluidez, MedidorPeso } from "../src/entradas/escena";
 import { decodificar } from "./compartir";
 
 /** La vista que abre el QR: solo el encabezado, a pantalla completa, y abajo cómo anda en este teléfono. */

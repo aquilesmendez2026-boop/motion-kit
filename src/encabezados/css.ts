@@ -7,7 +7,7 @@ export const CSS_ENCABEZADO = `
 .mk-enc[data-alto=compacto]>.mk-enc-in{padding-top:clamp(3rem,7cqi,4.5rem);padding-bottom:clamp(2rem,5cqi,3rem)}
 /* Profundidad: el texto y la foto se mueven poco y al revés que las capas */
 .mk-enc[data-profundidad] .mk-enc-caja{translate:calc(var(--mk-cx,0) * -8px) calc(var(--mk-cy,0) * -6px)}
-.mk-enc[data-profundidad] .mk-enc-media img{translate:calc(var(--mk-cx,0) * -12px) calc(var(--mk-cy,0) * -10px);scale:1.05}
+.mk-enc[data-profundidad] .mk-enc-media :is(img,canvas){translate:calc(var(--mk-cx,0) * -12px) calc(var(--mk-cy,0) * -10px);scale:1.05}
 .mk-enc-caja{position:relative;z-index:2;display:flex;flex-direction:column;gap:1.1rem;max-width:780px;min-width:0}
 .mk-enc-ante{margin:0;font-size:.85rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mk-acento-texto,var(--mk-acento))}
 .mk-enc-titulo{margin:0;align-self:stretch;font-size:clamp(2.3rem,8cqi,5.6rem);line-height:1.04;overflow-wrap:anywhere}
@@ -202,11 +202,11 @@ export const CSS_ENCABEZADO = `
 @keyframes mk-p-letras-entra{from{opacity:0;scale:.96}to{opacity:1;scale:1}}
 /* La capa del tratamiento va en ::before: ::after es el degradado que hace legible el texto sobre la foto. */
 .mk-enc[data-tratamiento] .mk-enc-media::before{position:absolute;inset:0;z-index:1;pointer-events:none}
-.mk-enc[data-tratamiento=duotono] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.1)}
+.mk-enc[data-tratamiento=duotono] :is(.mk-enc-media :is(img,canvas),.mk-enc-poster){filter:grayscale(1) contrast(1.1)}
 .mk-enc[data-tratamiento=duotono] .mk-enc-media::before{content:"";background:var(--mk-acento,#7c5cff);mix-blend-mode:color}
 .mk-enc[data-tratamiento=grano] .mk-enc-media::before{content:"";background-image:${RUIDO};opacity:.35;mix-blend-mode:overlay}
 .mk-enc[data-tratamiento=trama] .mk-enc-media::before{content:"";background:radial-gradient(circle,rgba(0,0,0,.4) 1px,transparent 1.7px) 0 0/6px 6px;mix-blend-mode:multiply}
-.mk-enc[data-tratamiento=bn] :is(.mk-enc-media img,.mk-enc-poster){filter:grayscale(1) contrast(1.15)}
+.mk-enc[data-tratamiento=bn] :is(.mk-enc-media :is(img,canvas),.mk-enc-poster){filter:grayscale(1) contrast(1.15)}
 .mk-enc-hora{position:absolute;inset:0;z-index:1;pointer-events:none}
 .mk-enc[data-hora=manana] .mk-enc-hora{background:linear-gradient(to bottom,rgba(255,214,150,.22),transparent 60%)}
 .mk-enc[data-hora=tarde] .mk-enc-hora{background:linear-gradient(to bottom,rgba(255,150,80,.2),transparent 65%)}

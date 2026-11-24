@@ -28,6 +28,11 @@
       "import": "./dist/pagina.js",
       "require": "./dist/pagina.cjs"
     },
+    "./momentos": {
+      "types": "./dist/entradas/momentos.d.ts",
+      "import": "./dist/momentos.js",
+      "require": "./dist/momentos.cjs"
+    },
     "./receta": {
       "types": "./dist/receta/index.d.ts",
       "import": "./dist/receta.js",
@@ -36,6 +41,7 @@
     "./estilos.css": "./dist/estilos.css",
     "./estilos-encabezado.css": "./dist/estilos-encabezado.css",
     "./estilos-pagina.css": "./dist/estilos-pagina.css",
+    "./estilos-momentos.css": "./dist/estilos-momentos.css",
     "./contrato/encabezado-motionkit.json": "./contrato/encabezado-motionkit.json",
     "./contrato/pagina-motionkit.json": "./contrato/pagina-motionkit.json",
     "./package.json": "./package.json"

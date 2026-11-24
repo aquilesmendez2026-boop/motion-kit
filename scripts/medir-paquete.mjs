@@ -10,8 +10,8 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "escena", "receta"];
-const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta"];
+const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css"];
 
 /**
  * Topes en KB gzip de lo que baja al cargar (todas las exportaciones; la app que usa menos baja menos). Medido el
@@ -19,9 +19,10 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css"];
  * encabezado al cargar en el celular: 250 KB (cerebro-aquiles/investigaciones/2026-11-23-pesos-web-y-movil.md).
  * Confirmados por Aquiles el 23-11-2026.
  */
+// 23-11-2026: momentos 12 (diseño de momentos por bloque, aprobado por Aquiles).
 // 23-11-2026: pagina 17 (mide 15,8 sola; sobre el encabezado suma ~7,5), con «hace todo» de Aquiles; motion-kit 80
 // (era 70; con los relatos y la biblioteca mide 72,7), elegido por Aquiles.
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, escena: 16, receta: 10 };
+export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 12, escena: 16, receta: 10 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;

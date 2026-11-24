@@ -130,7 +130,8 @@ await ctx.close();
   const { ctx, page } = await abrir({ viewport: { width: 360, height: 780 }, hasTouch: true, isMobile: true });
   for (const pal of ["clásica", "noche", "terracota", "océano"]) {
     await page.getByRole("button", { name: pal }).click();
-    const d = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    // Contra el ancho del teléfono y no contra innerWidth: en modo teléfono, innerWidth crece con lo que se sale y la resta da siempre cero.
+    const d = await page.evaluate(() => document.documentElement.scrollWidth - 360);
     ok(d <= 0, `360 px, paleta ${pal}: sin scroll horizontal (${d})`);
   }
   const rev = page.locator(".mk-card-revelar").first();

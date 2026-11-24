@@ -306,3 +306,59 @@ test("el aviso de calmar el título no dice «fondo» cuando lo que se mueve son
   const aviso = r.avisos.find((a) => /título/.test(a))!;
   assert.ok(aviso && !/fondo/.test(aviso), aviso);
 });
+
+test("fotoViva: campo de la v2, pide composición con foto", () => {
+  const r = normalizarReceta({ ...base, version: 2, composicion: "imagen", imagenes: ["a.jpg"], fotoViva: true });
+  assert.equal(r.fotoViva, true);
+  assert.equal(recetaAProps(r).fotoViva, true);
+  const sin = validarReceta({ ...base, version: 2, composicion: "gigante", fotoViva: true });
+  assert.ok(sin.ok);
+  assert.ok(sin.avisos.includes("La foto viva solo se ve en las composiciones con foto: queda apagada."));
+  assert.ok(!("fotoViva" in sin.receta));
+  const conObjeto = validarReceta({ ...base, version: 2, composicion: "dividido", objeto: { forma: "lata" }, fotoViva: true });
+  assert.ok(conObjeto.ok && !("fotoViva" in conObjeto.receta));
+  assert.ok(errores({ ...base, fotoViva: "si" }).some((e) => e.campo === "fotoViva"));
+  assert.ok(JSON.parse(textoContrato()).campos.includes("fotoViva"));
+  assert.notEqual(protagonistaDe(r), "fotoViva");
+});
+
+test("efectoTexto «descifrar» entra a la receta y al contrato", () => {
+  const r = validarReceta({ ...base, efectoTexto: "descifrar" });
+  assert.ok(r.ok && r.receta.efectoTexto === "descifrar");
+  assert.ok(JSON.parse(textoContrato()).listas.efectoTexto.includes("descifrar"));
+});
+
+test("iman: campo de la v2; se apaga con la foto en las letras", () => {
+  const r = validarReceta({ ...base, version: 2, iman: true });
+  assert.ok(r.ok);
+  assert.equal(r.receta.iman, true);
+  assert.equal(recetaAProps(r.receta).iman, true);
+  assert.notEqual(protagonistaDe(r.receta), "iman");
+  const conFoto = validarReceta({ ...base, version: 2, iman: true, fotoEnLetras: true, imagenes: ["a.jpg"] });
+  assert.ok(conFoto.ok);
+  assert.ok(!("iman" in conFoto.receta) && conFoto.receta.fotoEnLetras === true);
+  assert.ok(conFoto.avisos.includes("Con la foto en las letras, el imán queda apagado."));
+  assert.ok(errores({ ...base, iman: "si" }).some((e) => e.campo === "iman"));
+  assert.ok(JSON.parse(textoContrato()).campos.includes("iman"));
+});
+
+test("colgante: solo con la composición «letrero»", () => {
+  const r = validarReceta({ ...base, version: 2, composicion: "letrero", colgante: true });
+  assert.ok(r.ok);
+  assert.equal(r.receta.colgante, true);
+  assert.equal(recetaAProps(r.receta).colgante, true);
+  assert.notEqual(protagonistaDe(r.receta), "colgante");
+  const otra = validarReceta({ ...base, version: 2, composicion: "gigante", colgante: true });
+  assert.ok(otra.ok);
+  assert.ok(!("colgante" in otra.receta));
+  assert.ok(otra.avisos.includes("El letrero colgante va con la composición «letrero»: queda apagado."));
+  assert.ok(errores({ ...base, colgante: "si" }).some((e) => e.campo === "colgante"));
+  assert.ok(JSON.parse(textoContrato()).campos.includes("colgante"));
+});
+
+test("shader «lava» entra a la receta y al contrato", () => {
+  assert.ok(validarReceta({ ...base, shader: "lava" }).ok);
+  assert.ok(JSON.parse(textoContrato()).listas.shader.includes("lava"));
+  // Sigue siendo un solo fondo animado: con un efecto de fondo, el shader queda apagado.
+  assert.ok(!("shader" in normalizarReceta({ ...base, efecto: "constelacion", shader: "lava" })));
+});

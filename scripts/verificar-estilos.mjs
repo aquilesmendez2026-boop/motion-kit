@@ -94,7 +94,8 @@ for (const id of IDS) {
     await page.goto(`${base}/#plantilla/${id}`);
     await page.waitForSelector(".mk-pag");
     await page.waitForTimeout(300);
-    const d = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    // Contra el ancho del teléfono y no contra innerWidth: en modo teléfono, innerWidth crece con lo que se sale y la resta da siempre cero.
+    const d = await page.evaluate(() => document.documentElement.scrollWidth - 360);
     ok(d <= 0, `360 px ${id}: sin scroll horizontal (${d})`);
   }
   const malos = await page.evaluate(() => {
@@ -103,10 +104,11 @@ for (const id of IDS) {
       for (const m of s.textContent.matchAll(/@keyframes\s+(mk-[\w-]+)\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g))
         for (const d of m[2].matchAll(/\{([^}]*)\}/g))
           for (const prop of d[1].split(";").map((x) => x.split(":")[0].trim()).filter(Boolean))
-            if (!["transform", "opacity"].includes(prop)) r.push(m[1] + ":" + prop);
+            // La regla del repo: transform (o sus propiedades sueltas translate, scale y rotate) y opacity.
+            if (!["transform", "translate", "scale", "rotate", "opacity"].includes(prop)) r.push(m[1] + ":" + prop);
     return r;
   });
-  ok(malos.length === 0, "keyframes mk- solo con transform y opacity" + (malos.length ? " -> " + malos.join(",") : ""));
+  ok(malos.length === 0, "keyframes mk- solo con transform (o translate, scale, rotate) y opacity" + (malos.length ? " -> " + malos.join(",") : ""));
   await ctx.close();
 }
 

@@ -1,6 +1,7 @@
 import { createContext, useLayoutEffect, useMemo, useRef, useState, type HTMLAttributes } from "react";
 import { useStyles } from "../utils/styles";
-import { useEstilo } from "../estilos/Estilo";
+import { useAparte } from "../utils/aparte";
+import { useEstilo } from "../estilos/contexto";
 import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/nivel";
 import { RELATO_DE_ESTILO, type RelatoBloqueId, type RelatoPaginaId } from "./catalogo";
 import { useRespaldo } from "./respaldo";
@@ -22,6 +23,8 @@ export interface PaginaRelatoProps extends HTMLAttributes<HTMLDivElement> {
   relato?: RelatoBloqueId;
   /** Relato de fondo para toda la página. */
   relatoPagina?: RelatoPaginaId;
+  /** Estela y chispas: el cursor deja una estela sobre la página y un toque suelta chispas. Solo en nivel completo. */
+  estela?: boolean;
   ahorro?: ModoAhorro;
   /** Fuerza el respaldo sin scroll nativo (pruebas y demo). */
   respaldo?: boolean;
@@ -59,10 +62,10 @@ function useMedidas(ref: React.RefObject<HTMLDivElement | null>, activo: boolean
 
 /**
  * La página que se cuenta al bajar: pone el relato por defecto, el nivel (completo, liviano, quieto), el respaldo para
- * navegadores sin scroll nativo y, si hay, el relato de página (hilo o luz) por detrás de los bloques. Cada bloque va
- * dentro de un `<Relato>`.
+ * navegadores sin scroll nativo y, si hay, el relato de página (hilo, luz o impulso). Cada bloque va dentro de un
+ * `<Relato>`.
  */
-export function PaginaRelato({ relato, relatoPagina, ahorro = "auto", respaldo = false, className, children, ...resto }: PaginaRelatoProps) {
+export function PaginaRelato({ relato, relatoPagina, estela, ahorro = "auto", respaldo = false, className, children, ...resto }: PaginaRelatoProps) {
   useStyles("relatos", CSS_RELATOS);
   const estilo = useEstilo();
   const nivel = useNivelEscena({ ahorro });
@@ -76,6 +79,10 @@ export function PaginaRelato({ relato, relatoPagina, ahorro = "auto", respaldo =
     [relato, estilo, nivel, sinScroll, observar],
   );
   const camino = relatoPagina === "hilo" && w > 0 && h > 0 ? caminoHilo(w, h) : "";
+  // Inclinación por velocidad: su archivo se baja aparte y solo en nivel completo.
+  const Impulso = useAparte(relatoPagina === "impulso" && nivel === "completo", () => import("../dedo/Impulso"));
+  // Estela y chispas: igual, aparte y solo en completo.
+  const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (
     <ContextoRelato.Provider value={valor}>
       <div
@@ -102,6 +109,8 @@ export function PaginaRelato({ relato, relatoPagina, ahorro = "auto", respaldo =
         )}
         {valor.relato === "pelicula" && <div className="mk-cinta" aria-hidden="true"><i /></div>}
         {children}
+        {Impulso && <Impulso pagina={ref} />}
+        {Estela && <Estela pagina={ref} />}
       </div>
     </ContextoRelato.Provider>
   );

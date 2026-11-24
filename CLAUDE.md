@@ -24,6 +24,7 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 
 - `npm run dev` (demo en `http://localhost:5173`), `npm run dev:red` (abierto a la Wi-Fi, para el QR del editor).
 - `npm run typecheck`, `npm run build` (mide el peso), `npm test` (receta, contrato y puente con La Mente), `npm run contrato`,
-  `npm run peso` (topes por entrada) y `npm run probar-paquete` (instala el paquete e importa solo el encabezado).
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula>.mjs [url]` con el servidor
+  `npm run peso` (topes por entrada, también `momentos`) y `npm run probar-paquete` (instala el paquete e importa el
+  encabezado, la página y los momentos).
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|fotos|dedo>.mjs [url]` con el servidor
   arriba (usan Playwright).

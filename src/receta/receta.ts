@@ -26,18 +26,19 @@ export type Tratamiento = "duotono" | "grano" | "trama" | "bn";
 // suma o pierde un valor, el typecheck falla hasta que esta lista lo siga.
 const TEXTOS: Record<TextoEfecto, true> = {
   revelar: true, voltear: true, rebote: true, encender: true, glitch: true, maquina: true,
-  impacto: true, temblor: true, caer: true, trailer: true, onda: true,
+  impacto: true, temblor: true, caer: true, trailer: true, onda: true, descifrar: true,
 };
 const EFECTOS: Record<EfectoId, true> = {
   cafe: true, petalos: true, pulso: true, abecedario: true, letrero: true, cometas: true,
   niebla: true, burbujas: true, olas: true, puntos: true, lluvia: true, estrellas: true,
   rejilla: true, tubo: true, ecualizador: true, velocidad: true, grano: true,
+  granos: true, tijeras: true, huellas: true, pesas: true, lapices: true, constelacion: true,
 };
 const LUCES: Record<ModoLuz, true> = { puntero: true, barrido: true };
 const MOVIMIENTOS: Record<FuenteMovimiento, true> = { puntero: true, scroll: true, inclinacion: true };
 const AHORROS: Record<ModoAhorro, true> = { auto: true, siempre: true, nunca: true };
 const TRATAMIENTOS: Record<Tratamiento, true> = { duotono: true, grano: true, trama: true, bn: true };
-const SHADERS: Record<ShaderId, true> = { aurora: true, liquido: true, humo: true, luz: true };
+const SHADERS: Record<ShaderId, true> = { aurora: true, liquido: true, humo: true, luz: true, lava: true };
 const FORMAS: Record<FormaObjeto, true> = { caja: true, lata: true, tarjeta: true };
 
 export const LISTAS_RECETA = {
@@ -145,6 +146,8 @@ export interface RecetaEncabezado {
   apertura?: { presenta?: string };
   /** Las fotos se suceden con un acercamiento lento (necesita dos o más). */
   tomas?: boolean;
+  /** Foto viva: se arma desde partículas, ondula bajo el dedo y cambia de toma con un borde líquido. */
+  fotoViva?: boolean;
   /** El título relleno con la primera foto (o el póster). */
   fotoEnLetras?: boolean;
   tratamiento?: Tratamiento;
@@ -152,6 +155,10 @@ export interface RecetaEncabezado {
   estado?: boolean;
   /** Palabras que rotan en la palabra resaltada del título. */
   palabras?: string[];
+  /** Letras con imán: las letras del título se apartan del dedo o del cursor y vuelven con rebote. */
+  iman?: boolean;
+  /** Letrero colgante: en la composición «letrero», el marco cuelga de dos cuerdas y se balancea. */
+  colgante?: boolean;
   /** Tinte según la hora del teléfono (mañana, tarde, noche). */
   horaDelDia?: boolean;
   shader?: ShaderId;
@@ -165,7 +172,7 @@ export interface RecetaEncabezado {
 export const CAMPOS_RECETA = [
   "version", "estilo", "composicion", "entrada", "efectoTexto", "pack", "antetitulo", "titulo", "bajada", "datos",
   "botones", "alto", "altoCelular", "imagenes", "alt", "poster", "efecto", "variante", "profundidad", "luz", "mover",
-  "salida", "ahorro", "apertura", "tomas", "fotoEnLetras", "tratamiento", "estado", "palabras", "horaDelDia", "shader",
+  "salida", "ahorro", "apertura", "tomas", "fotoViva", "fotoEnLetras", "tratamiento", "estado", "palabras", "iman", "colgante", "horaDelDia", "shader",
   "objeto", "logo", "nombre",
 ] as const satisfies readonly (keyof RecetaEncabezado)[];
 
@@ -330,7 +337,7 @@ export function validarReceta(x: unknown): ResultadoReceta {
   }
 
   // --- v2 ---
-  for (const k of ["tomas", "fotoEnLetras", "estado", "horaDelDia"] as const) {
+  for (const k of ["tomas", "fotoViva", "fotoEnLetras", "estado", "horaDelDia", "iman", "colgante"] as const) {
     if (x[k] !== undefined && typeof x[k] !== "boolean") mal(k, `«${k}» va prendido (true) o apagado (false).`);
   }
   if (x.apertura !== undefined) {
@@ -434,7 +441,24 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     avisos.push("Las tomas solo se ven en las composiciones con foto (imagen, tarjeta, viñetas o dividido sin objeto): quedan apagadas.");
     tomas = false;
   }
+  // La foto viva vive en la misma foto que las tomas: sin foto a la vista, se apaga.
+  let fotoViva = x.fotoViva === true;
+  if (fotoViva && !(COMPOSICIONES_CON_FOTO.includes(composicion) && !(composicion === "dividido" && conObjeto))) {
+    avisos.push("La foto viva solo se ve en las composiciones con foto: queda apagada.");
+    fotoViva = false;
+  }
   const fotoEnLetras = x.fotoEnLetras === true && (imagenes.length > 0 || Boolean(poster));
+  // El imán mueve letra por letra, y la foto en las letras necesita el título en una sola pieza.
+  let iman = x.iman === true;
+  if (iman && fotoEnLetras) {
+    avisos.push("Con la foto en las letras, el imán queda apagado.");
+    iman = false;
+  }
+  let colgante = x.colgante === true;
+  if (colgante && composicion !== "letrero") {
+    avisos.push("El letrero colgante va con la composición «letrero»: queda apagado.");
+    colgante = false;
+  }
   // Las palabras son alternativas a la resaltada del título: sin repetirla ni repetirse.
   const destacada = titulo.match(RESALTADO)?.[0].replace(/\*/g, "").trim().toLowerCase();
   let palabras = Array.isArray(x.palabras) && destacada
@@ -513,10 +537,13 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     ahorro: deLista("ahorro") ?? DEFECTOS_RECETA.ahorro,
     apertura: apertura && (apertura.presenta ? apertura : {}),
     tomas: tomas || undefined,
+    fotoViva: fotoViva || undefined,
     fotoEnLetras: fotoEnLetras || undefined,
     tratamiento: deLista("tratamiento"),
     estado: x.estado === true || undefined,
     palabras: palabras.length ? palabras : undefined,
+    iman: iman || undefined,
+    colgante: colgante || undefined,
     horaDelDia: x.horaDelDia === true || undefined,
     shader,
     objeto: objeto && (objeto.texto ? objeto : { forma: objeto.forma }),
@@ -580,6 +607,9 @@ export function recetaAProps(r: RecetaEncabezado, { urlImagen }: OpcionesProps =
     objeto: r.objeto && { tipo: "3d", forma: r.objeto.forma, texto: r.objeto.texto },
     apertura: r.apertura,
     tomas: r.tomas,
+    fotoViva: r.fotoViva,
+    iman: r.iman,
+    colgante: r.colgante,
     palabras: r.palabras,
     logo: r.logo && url(r.logo),
     nombre: r.nombre,

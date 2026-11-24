@@ -13,10 +13,13 @@ import { ALTOS, type AltoEncabezado, type ComposicionId, type EntradaId, type Sa
 import { CapasEscena, CAPAS_POR_DEFECTO, type Capa } from "../escena/CapasProfundidad";
 import { LuzEscena, type ModoLuz } from "../escena/LuzYReflejo";
 import { useMovimientoEscena, type FuenteMovimiento } from "../escena/movimiento";
+import { useAparte } from "../utils/aparte";
 import type { ShaderId } from "../escena/ShaderFondo";
 import type { FormaObjeto } from "../escena/Objeto3DCss";
 
 // Lo pesado y opcional se carga aparte, solo si el encabezado lo usa (peso de motion-kit/encabezado).
+const SIN_ORIGENES: string[] = [];
+
 const ShaderFondo = lazy(() => import("../escena/ShaderFondo").then((m) => ({ default: m.ShaderFondo })));
 const Objeto3DCss = lazy(() => import("../escena/Objeto3DCss").then((m) => ({ default: m.Objeto3DCss })));
 const EscenaVideo = lazy(() => import("../escena/EscenaVideo").then((m) => ({ default: m.EscenaVideo })));
@@ -89,6 +92,14 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   apertura?: { presenta?: string };
   /** Las fotos (dos o más) se suceden con un acercamiento lento, donde la composición usa foto. */
   tomas?: boolean;
+  /** Foto viva: partículas al entrar (sin apertura), ondas bajo el dedo y cambio líquido entre tomas. Solo en completo. */
+  fotoViva?: boolean;
+  /** Orígenes cuyas fotos permiten CORS (el motor pide la textura solo a estos, al mismo sitio, data: y blob:). */
+  origenesFotos?: string[];
+  /** Letras con imán: las letras del título se apartan del dedo o del cursor y vuelven con rebote. Solo en completo. */
+  iman?: boolean;
+  /** Letrero colgante: en la composición «letrero», el marco cuelga y se balancea. Solo en completo. */
+  colgante?: boolean;
   /** Palabras que rotan en la palabra resaltada del título (la del título va primero). */
   palabras?: string[];
   /** Con salida «barra»: la página ya tiene su barra (La Mente); el encabezado solo se achica. */
@@ -116,7 +127,7 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function Encabezado({
   composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
-  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, palabras,
+  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, fotoViva, origenesFotos, iman, colgante, palabras,
   barraPropia, logo, nombre, estado, estadoNegocio, fotoEnLetras, tratamiento, horaDelDia, ahora, className, style, ...resto
 }: EncabezadoProps) {
   useStyles("encabezado", CSS_ENCABEZADO);
@@ -129,7 +140,7 @@ export function Encabezado({
   useEffect(() => alCambiarNivel?.(nivel), [nivel, alCambiarNivel]);
   const quieto = nivel === "quieto";
   const liviano = nivel !== "completo";
-  useMovimientoEscena(ref, { mover, apagado: quieto || (!capas && luz !== "puntero" && !shader && objeto?.tipo !== "3d") });
+  useMovimientoEscena(ref, { mover, apagado: quieto || (!capas && luz !== "puntero" && !shader && objeto?.tipo !== "3d" && !(colgante && composicion === "letrero")) });
   const protagonista = objeto && (
     <div className="mk-enc-objeto">
       {objeto.tipo === "video" ? (
@@ -191,14 +202,25 @@ export function Encabezado({
 
   const foto = (k: number) => imagenes?.[k] ?? imagenGenerada(estilo?.id ?? "neon", [300, 40, 190][k % 3]);
   const conTomas = Boolean(tomas && imagenes && imagenes.length >= 2);
+  // Foto viva: solo en completo. Su archivo se baja aparte y pone un lienzo encima de la foto; la foto de siempre se
+  // sigue dibujando aquí, en su mismo lugar (no se vuelve a montar cuando el lienzo llega o se va).
+  const FotoViva = useAparte(Boolean(fotoViva) && nivel === "completo", () => import("../fotos/FotoVivaEncabezado"));
+  const [tomaViva, setTomaViva] = useState<number | undefined>(undefined);
+  // Letras con imán: solo en completo, y no con la foto en las letras (ahí el título va en una sola pieza).
+  const Iman = useAparte(Boolean(iman) && !fotoEnLetras && nivel === "completo", () => import("../dedo/Iman"));
+  // Letrero colgante: solo en la composición «letrero» y en completo.
+  const Colgante = useAparte(Boolean(colgante) && composicion === "letrero" && nivel === "completo", () => import("../dedo/Colgante"));
   const media = (k = 0) => (
     <div className="mk-enc-media" key={k}>
-      {k === 0 && conTomas ? <Tomas fotos={imagenes!} alt={alt} quieto={liviano} /> : <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />}
+      {k === 0 && conTomas ? <Tomas fotos={imagenes!} alt={alt} quieto={liviano} activa={tomaViva} /> : <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />}
+      {k === 0 && FotoViva && (
+        <FotoViva fotos={conTomas ? imagenes! : [foto(0)]} tomas={conTomas} particulas={!apertura} origenes={origenesFotos ?? SIN_ORIGENES} alCambiarToma={setTomaViva} />
+      )}
     </div>
   );
   const ante = antetitulo && <p className="mk-enc-ante">{antetitulo}</p>;
   const tit = (
-    <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre"
+    <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre" letras={Boolean(iman) && !fotoEnLetras}
       retraso={entrada === "telon" ? 900 : entrada === "foco" ? 600 : 150} resaltado={rotacion && <PalabrasRotan palabras={rotacion} quieto={quieto} />} />
   );
   const est = estado && estadoNegocio && <EstadoNegocio datos={estadoNegocio} />;
@@ -281,6 +303,8 @@ export function Encabezado({
       {hora && <i className="mk-enc-hora" aria-hidden="true" />}
       {salida === "telon" && <div className="mk-enc-cortinas" aria-hidden="true"><i /><i /></div>}
       {abriendo && <Apertura presenta={apertura?.presenta} titulo={titulo.replace(/\*/g, "")} alTerminar={terminarApertura} />}
+      {Iman && <Iman raiz={ref} />}
+      {Colgante && <Colgante raiz={ref} />}
     </header>
     {salida === "barra" && !barraPropia && (
       <BarraEncabezado objetivo={ref} logo={logo} nombre={nombre ?? titulo.replace(/\*/g, "")} boton={boton} pack={pack ?? estilo?.pack ?? "clasico"} />

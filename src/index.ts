@@ -139,8 +139,26 @@ export { PACKS_BOTONES, PACK_IDS } from "./piezas/packs";
 export type { PackBotonId, PackBoton } from "./piezas/packs";
 export type { BotonForma } from "./piezas/Boton";
 
-// Escena: encabezados vivos sin dependencias y medidores (también en motion-kit/escena)
-export * from "./entradas/escena";
+// Escena: encabezados vivos sin dependencias (también en motion-kit/escena). Las herramientas del editor (peso,
+// fluidez, carga y contraste) salen solo por motion-kit/escena, para no pesar en esta entrada.
+export { CapasProfundidad, CapasEscena, CAPAS_POR_DEFECTO } from "./escena/CapasProfundidad";
+export type { Capa, FormaCapa, CapasProfundidadProps } from "./escena/CapasProfundidad";
+export { LuzYReflejo, LuzEscena } from "./escena/LuzYReflejo";
+export type { ModoLuz, LuzYReflejoProps } from "./escena/LuzYReflejo";
+export { useMovimientoEscena } from "./escena/movimiento";
+export type { FuenteMovimiento, OpcionesMovimiento } from "./escena/movimiento";
+export { ShaderFondo, SHADERS, SHADER_IDS } from "./escena/ShaderFondo";
+export type { ShaderId, ShaderFondoProps } from "./escena/ShaderFondo";
+export { Objeto3DCss, FORMAS_OBJETO } from "./escena/Objeto3DCss";
+export type { FormaObjeto, Objeto3DCssProps } from "./escena/Objeto3DCss";
+export { EscenaVideo } from "./escena/EscenaVideo";
+export type { EscenaVideoProps } from "./escena/EscenaVideo";
+export { SecuenciaScroll, cuadrosDe } from "./escena/SecuenciaScroll";
+export type { SecuenciaScrollProps } from "./escena/SecuenciaScroll";
+export { comprimirFoto } from "./escena/comprimir";
+export type { OpcionesComprimir, FotoComprimida } from "./escena/comprimir";
+export { useNivelEscena, useModoAhorro, useFluidez, senalesAhorro, hayQueAhorrar } from "./escena/nivel";
+export type { NivelEscena, ModoAhorro, SenalesAhorro, Fluidez } from "./escena/nivel";
 
 // Código QR propio (sin librerías)
 export { CodigoQR } from "./piezas/CodigoQR";

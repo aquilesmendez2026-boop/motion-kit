@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+// Las herramientas del editor salen por motion-kit/escena (no por la entrada principal).
+import { MedidorPeso, MedidorFluidez, MedidorCarga, SemaforoContraste } from "../src/entradas/escena";
 import {
   COMPOSICIONES, COMPOSICION_IDS, EFECTOS, ENTRADAS, ENTRADA_IDS, ESTILOS, ESTILO_IDS, Encabezado, Estilo,
-  PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS, MedidorPeso,
+  PACKS_BOTONES, PACK_IDS, encabezadoAlAzar, transicionVista, ALTOS, ALTO_IDS,
   SHADERS, SHADER_IDS, SALIDAS, SALIDA_IDS, FORMAS_OBJETO, RUBROS, RUBRO_IDS, encabezadoPorRubro, semillaAzar, comprimirFoto,
-  MedidorFluidez, MedidorCarga, SemaforoContraste, CodigoQR, validarReceta, normalizarReceta, recetaAProps, imagenGenerada, olvidarApertura, paletaDeFoto,
+  CodigoQR, validarReceta, normalizarReceta, recetaAProps, imagenGenerada, olvidarApertura, paletaDeFoto,
   EstiloLaMente, TEMAS_LAMENTE, PALETAS_LAMENTE, TEMA_LAMENTE_IDS, PALETA_LAMENTE_IDS, BASE_DE_TEMA, type TemaLaMente, type PaletaLaMente,
   type FormaObjeto, type ModoAhorro, type NivelEscena, type ObjetoEncabezado, type RubroId, type SalidaEncabezado, type ShaderId,
   crearDiseno, editarDiseno, type DisenoBiblioteca, type RecetaEncabezado,
@@ -13,7 +15,7 @@ import {
 import { enlaceVista, type ConfigVista } from "./compartir";
 import { almacen } from "./Biblioteca";
 
-const TEXTOS: TextoEfecto[] = ["revelar", "voltear", "rebote", "encender", "glitch", "maquina", "impacto", "temblor", "caer", "trailer", "onda"];
+const TEXTOS: TextoEfecto[] = ["revelar", "voltear", "rebote", "encender", "glitch", "maquina", "impacto", "temblor", "caer", "trailer", "onda", "descifrar"];
 const EJEMPLO = { antetitulo: "Barrio Italia · desde 2019", titulo: "Café de *especialidad*, tostado aquí", bajada: "Granos de origen, pan de masa madre y un rincón tranquilo para quedarse.", boton: "Ver la carta", secundario: "Cómo llegar", datos: "Lun a sáb, 8:00 a 20:00, Santiago" };
 
 /** El editor. Con `id`, abre ese diseño de la biblioteca. */
@@ -62,6 +64,9 @@ export function Encabezados({ id }: { id?: string } = {}) {
   const [presenta, setPresenta] = useState("");
   const [fotosEjemplo, setFotosEjemplo] = useState(false);
   const [tomas, setTomas] = useState(false);
+  const [fotoViva, setFotoViva] = useState(false);
+  const [iman, setIman] = useState(false);
+  const [colgante, setColgante] = useState(false);
   const [palabras, setPalabras] = useState("");
   const [nombreNegocio, setNombreNegocio] = useState("");
   const [barraPropia, setBarraPropia] = useState(false);
@@ -137,7 +142,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     profundidad, ...(luz ? { luz } : {}), ...((profundidad || luz === "puntero") && mover !== "puntero,scroll" ? { mover: mover.split(",") as FuenteMovimiento[] } : {}),
     salida, ahorro, ...(shader ? { shader } : {}), ...(forma ? { objeto: { forma, texto: (t.titulo.match(/\*([^*]+)\*/)?.[1] ?? t.titulo).slice(0, 24) } } : {}),
     ...(fotosEjemplo ? { imagenes: ["ejemplo/1", "ejemplo/2", "ejemplo/3"], alt: "Foto de ejemplo" } : {}),
-    ...(apertura ? { apertura: presenta.trim() ? { presenta } : {} } : {}), ...(tomas ? { tomas: true } : {}),
+    ...(apertura ? { apertura: presenta.trim() ? { presenta } : {} } : {}), ...(tomas ? { tomas: true } : {}), ...(fotoViva ? { fotoViva: true } : {}), ...(iman ? { iman: true } : {}), ...(colgante ? { colgante: true } : {}),
     ...(palabras.trim() ? { palabras: palabras.split(",").map((w) => w.trim()).filter(Boolean) } : {}),
     ...(nombreNegocio.trim() ? { nombre: nombreNegocio } : {}), ...(estadoDemo ? { estado: true } : {}),
     ...(fotoLetras ? { fotoEnLetras: true } : {}), ...(tratamiento ? { tratamiento } : {}), ...(horaDemo ? { horaDelDia: true } : {}),
@@ -160,7 +165,7 @@ export function Encabezados({ id }: { id?: string } = {}) {
     setAlto(r.alto); setAltoCelular(r.altoCelular ?? ""); setProfundidad(r.profundidad); setLuz(r.luz ?? "");
     setMover((r.mover ?? ["puntero", "scroll"]).join(",")); setSalida(r.salida); setAhorro(r.ahorro);
     setShader(r.shader ?? ""); setForma(r.objeto?.forma ?? "");
-    setApertura(Boolean(r.apertura)); setPresenta(r.apertura?.presenta ?? ""); setTomas(Boolean(r.tomas));
+    setApertura(Boolean(r.apertura)); setPresenta(r.apertura?.presenta ?? ""); setTomas(Boolean(r.tomas)); setFotoViva(Boolean(r.fotoViva)); setIman(Boolean(r.iman)); setColgante(Boolean(r.colgante));
     setFotosEjemplo(Boolean(r.imagenes?.length && r.imagenes.every((k) => k.startsWith("ejemplo/")))); setPalabras((r.palabras ?? []).join(", "));
     setNombreNegocio(r.nombre ?? ""); setEstadoDemo(r.estado ? "abierto" : "");
     setFotoLetras(Boolean(r.fotoEnLetras)); setTratamiento(r.tratamiento ?? ""); setHoraDemo(r.horaDelDia ? "auto" : "");
@@ -311,9 +316,12 @@ export function Encabezados({ id }: { id?: string } = {}) {
           <label>Presenta
             <input value={presenta} onChange={(e) => setPresenta(e.target.value)} placeholder="Café Vinilo presenta" data-prueba="presenta" />
           </label>
-          <button className="enc-repetir" onClick={() => { olvidarApertura(); otra(); }} data-prueba="apertura-otra-vez">↻ Ver la apertura otra vez</button>
+          <button className="enc-repetir" onClick={() => { olvidarApertura(); void import("../src/fotos/FotoVivaEncabezado").then((m) => m.olvidarParticulas()).then(otra); }} data-prueba="apertura-otra-vez">↻ Ver la apertura otra vez</button>
           <label className="estudio-check"><input type="checkbox" checked={fotosEjemplo} onChange={(e) => setFotosEjemplo(e.target.checked)} data-prueba="fotos-ejemplo" /> Fotos de ejemplo (tres)</label>
           <label className="estudio-check"><input type="checkbox" checked={tomas} onChange={(e) => setTomas(e.target.checked)} data-prueba="tomas" /> Varias tomas (necesita dos o más fotos)</label>
+          <label className="estudio-check"><input type="checkbox" checked={fotoViva} onChange={(e) => setFotoViva(e.target.checked)} data-prueba="foto-viva" /> Foto viva (ondas, partículas y cambio líquido)</label>
+          <label className="estudio-check"><input type="checkbox" checked={iman} onChange={(e) => setIman(e.target.checked)} data-prueba="iman" /> Letras con imán (se apartan del dedo)</label>
+          <label className="estudio-check"><input type="checkbox" checked={colgante} onChange={(e) => setColgante(e.target.checked)} data-prueba="colgante" /> Letrero colgante (con la composición «letrero»)</label>
           <label>Nombre del negocio (para la barra al bajar)
             <input value={nombreNegocio} onChange={(e) => setNombreNegocio(e.target.value)} placeholder="Café Vinilo" data-prueba="nombre" />
           </label>

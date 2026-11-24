@@ -65,6 +65,19 @@ const todoVisible = (raiz) => {
   const telon = [...r0.querySelectorAll(".mk-enc-telon")].some((t) => getComputedStyle(t).display !== "none" && [...t.children].some((i) => { const r = i.getBoundingClientRect(), c = t.getBoundingClientRect(); return r.right > c.left + 2 && r.left < c.right - 2 && getComputedStyle(i).display !== "none"; }) && +getComputedStyle(t).opacity > 0.02);
   return { ocultos: ocultos.length, telon };
 };
+/**
+ * Lo mismo, pero dando tiempo a que la entrada termine: con el computador cargado las entradas parten tarde y un
+ * tiempo fijo falla a veces. Si algo sigue oculto, se vuelve a mirar cada medio segundo, hasta 6 s más. Lo que queda
+ * oculto para siempre sigue fallando.
+ */
+async function visibleAlFinal(page) {
+  let v = await page.evaluate(todoVisible, VISTA);
+  for (let k = 0; k < 12 && (v.ocultos || v.telon); k++) {
+    await page.waitForTimeout(500);
+    v = await page.evaluate(todoVisible, VISTA);
+  }
+  return v;
+}
 
 // Por estilo y composición: visible, sin desborde, contraste, botones de 44 px
 for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, false], ["360 px", { width: 360, height: 780 }, true]]) {
@@ -76,9 +89,10 @@ for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, fa
     for (const c of COMPOS) {
       await page.locator('[data-prueba="composicion"]').selectOption(c);
       await page.waitForTimeout(3000);
-      const v = await page.evaluate(todoVisible, VISTA);
+      const v = await visibleAlFinal(page);
       if (v.ocultos || v.telon) problemas.push(`${c}: ${v.ocultos} ocultos${v.telon ? ", telón tapando" : ""}`);
-      const d = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      // Contra el ancho del teléfono y no contra innerWidth: en modo teléfono, innerWidth crece con lo que se sale y la resta da siempre cero.
+      const d = await page.evaluate((ancho) => document.documentElement.scrollWidth - ancho, vp.width);
       if (d > 0) problemas.push(`${c}: scroll horizontal ${d}`);
       const enc = await page.locator(`${VISTA} .mk-enc`).evaluate((e) => {
         const r = e.getBoundingClientRect();
@@ -110,7 +124,7 @@ for (const [nombre, vp, mob] of [["escritorio", { width: 1280, height: 860 }, fa
       await page.waitForTimeout(150);
       const durante = await page.evaluate(() => document.querySelector('[data-prueba="vista"] .mk-enc')?.dataset.entrada);
       await page.waitForTimeout(2800);
-      const v = await page.evaluate(todoVisible, VISTA);
+      const v = await visibleAlFinal(page);
       ok(durante === e && v.ocultos === 0 && !v.telon, `${c} + ${e}: termina con todo visible`);
     }
   }

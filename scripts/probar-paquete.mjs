@@ -29,18 +29,22 @@ writeFileSync(join(P, "pagina.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEstilos, type RecetaEncabezado } from "motion-kit/encabezado";
 import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
+import { SellosEstampa, CuentaRegresiva } from "motion-kit/momentos";
 import "motion-kit/estilos-encabezado.css";
 import "motion-kit/estilos-pagina.css";
+import "motion-kit/estilos-momentos.css";
 
 sinInyectarEstilos();
-const r = validarReceta({ version: 1, estilo: "neon", titulo: "Smash *burgers*", botones: [{ texto: "Pedir", href: "#pedir" }] });
+const r = validarReceta({ version: 1, estilo: "neon", titulo: "Smash *burgers*", botones: [{ texto: "Pedir", href: "#pedir" }], efecto: "constelacion", iman: true });
 const receta: RecetaEncabezado | null = r.ok ? r.receta : null;
-const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete" });
+const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "impulso", estela: true });
 if (receta && p.ok) createRoot(document.getElementById("raiz")!).render(
   <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
-    <PaginaRelato relato={p.pagina.relato}>
+    <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela}>
       <Encabezado {...recetaAProps(receta)} />
       <Relato modo="cuento"><p data-mk-parte="linea">Había una vez…</p></Relato>
+      <SellosEstampa total={10} llenos={3} premio="Café gratis" semilla="cafe" />
+      <CuentaRegresiva titulo="Noche de vinilos" fecha="2026-12-01" hora="20:00" />
     </PaginaRelato>
   </EstiloLaMente>
 );
@@ -56,9 +60,9 @@ const ok = (c, m) => { console.log((c ? "ok   " : "FALLA") + " " + m); if (!c) f
 // 3. Tipos: el proyecto compila contra los .d.ts publicados.
 try {
   execFileSync(resolve("node_modules/.bin/tsc"), ["-p", P], { encoding: "utf8", stdio: "pipe" });
-  ok(true, "los tipos de motion-kit/encabezado y motion-kit/pagina resuelven");
+  ok(true, "los tipos de motion-kit/encabezado, motion-kit/pagina y motion-kit/momentos resuelven");
 } catch (e) {
-  ok(false, "los tipos de motion-kit/encabezado y motion-kit/pagina resuelven:\n" + (e.stdout || e.message));
+  ok(false, "los tipos de motion-kit/encabezado, motion-kit/pagina y motion-kit/momentos resuelven:\n" + (e.stdout || e.message));
 }
 
 // 4. Empaquetar como lo haría la app (react afuera) y revisar qué entró.
@@ -76,6 +80,7 @@ console.log("     archivos del kit que entran: " + delKit.map((f) => f.split("/"
 const css = Object.keys(r.metafile.outputs).find((f) => f.endsWith(".css"));
 ok(Boolean(css) && r.metafile.outputs[css].bytes > 10_000, "el CSS del encabezado viaja como archivo");
 ok(Boolean(css) && readFileSync(join(P, css), "utf8").includes(".mk-relato"), "el CSS de la página viaja como archivo");
+ok(Boolean(css) && readFileSync(join(P, css), "utf8").includes(".mk-m-sellos-lista"), "el CSS de los momentos viaja como archivo");
 const js = Object.entries(r.metafile.outputs).filter(([f]) => f.endsWith(".js")).map(([f]) => f);
 const todo = js.map((f) => readFileSync(join(P, f), "utf8")).join("");
 for (const pieza of ["mk-peso-barra", "mk-pag-precio"]) ok(!todo.includes(pieza), `no se cuela «${pieza}»`);

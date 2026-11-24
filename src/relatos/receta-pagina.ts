@@ -16,11 +16,13 @@ export interface RecetaPagina {
   relato?: RelatoBloqueId;
   /** Relato de fondo para toda la página. */
   relatoPagina?: RelatoPaginaId;
+  /** Estela y chispas: el cursor deja una estela sobre la página y un toque suelta chispas. */
+  estela?: boolean;
   bloques?: BloqueRelato[];
 }
 
 export const TOPES_PAGINA = { bloques: 30, idBloque: 40 } as const;
-export const CAMPOS_PAGINA = ["version", "encabezado", "relato", "relatoPagina", "bloques"] as const;
+export const CAMPOS_PAGINA = ["version", "encabezado", "relato", "relatoPagina", "estela", "bloques"] as const;
 const ID_BLOQUE = /^[a-z0-9-]{1,40}$/;
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -31,7 +33,7 @@ const esDePagina = (v: unknown): v is RelatoPaginaId => (RELATOS_DE_PAGINA as un
 function relatoMalPuesto(v: unknown, donde: "bloque" | "pagina"): string {
   if (donde === "bloque" && esDePagina(v)) return `«${v}» es un relato de página: va en relatoPagina.`;
   if (donde === "pagina" && esBloque(v)) return `«${v}» es un relato de bloque: va en relato.`;
-  return donde === "bloque" ? "Elige un relato de la lista." : "El relato de página es «hilo» o «luz».";
+  return donde === "bloque" ? "Elige un relato de la lista." : "El relato de página es «hilo», «luz» o «impulso».";
 }
 
 /**
@@ -54,6 +56,7 @@ export function validarPagina(x: unknown): { ok: true; pagina: RecetaPagina; avi
   }
   if (x.relato !== undefined && !esBloque(x.relato)) mal("relato", relatoMalPuesto(x.relato, "bloque"));
   if (x.relatoPagina !== undefined && !esDePagina(x.relatoPagina)) mal("relatoPagina", relatoMalPuesto(x.relatoPagina, "pagina"));
+  if (x.estela !== undefined && typeof x.estela !== "boolean") mal("estela", "«estela» va prendida (true) o apagada (false).");
 
   if (x.bloques !== undefined) {
     if (!Array.isArray(x.bloques)) mal("bloques", "Los bloques tienen que ser una lista.");
@@ -87,6 +90,7 @@ export function normalizarPagina(x0: unknown): RecetaPagina {
   const p: RecetaPagina = { version: 1, encabezado: normalizarReceta(x.encabezado) };
   if (esBloque(x.relato)) p.relato = x.relato;
   if (esDePagina(x.relatoPagina)) p.relatoPagina = x.relatoPagina;
+  if (x.estela === true) p.estela = true;
   if (bloques.length) p.bloques = bloques;
   return p;
 }

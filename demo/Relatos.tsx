@@ -112,12 +112,20 @@ export function Relatos() {
           </figure>
         ))}
         <figure>
+          <figcaption>{RELATOS.pila.nombre}</figcaption>
+          <Telefono id="p-pila" estilo="pelicula" relato="pila" respaldo={respaldo} />
+        </figure>
+        <figure>
           <figcaption>Hilo (relato de página)</figcaption>
           <Telefono id="p-hilo" estilo="neon" relato="escenas" relatoPagina="hilo" respaldo={respaldo} />
         </figure>
         <figure>
           <figcaption>Luz que cambia (relato de página)</figcaption>
           <Telefono id="p-luz" estilo="pelicula" relato="escenas" relatoPagina="luz" respaldo={respaldo} />
+        </figure>
+        <figure>
+          <figcaption>{RELATOS.impulso.nombre} (relato de página)</figcaption>
+          <Telefono id="p-impulso" estilo="rock" relato="escenas" relatoPagina="impulso" respaldo={respaldo} />
         </figure>
         <figure>
           <figcaption>Cuento más alto que la pantalla</figcaption>
