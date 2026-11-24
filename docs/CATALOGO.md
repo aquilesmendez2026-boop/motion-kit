@@ -101,6 +101,12 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.3.0 (24-11-2026)
+
+Etiqueta `v0.3.0`: la primera con la receta del encabezado **v2**, los relatos y la receta de página, la entrada
+`motion-kit/momentos`, las fotos vivas y los nueve efectos de «dedo y física». Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.3.0`. Cambios que pueden romper respecto de la 0.2.0: en `CHANGELOG.md`.
+
 ## Escena: encabezados vivos sin librerías (23-11-2026)
 
 Todo en `src/escena/`, sin dependencias. Presupuesto de peso en

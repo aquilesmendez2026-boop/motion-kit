@@ -1,6 +1,6 @@
 {
   "name": "motion-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Librería propia de efectos y animaciones para React",
   "license": "MIT",
   "type": "module",
@@ -46,8 +46,13 @@
     "./contrato/pagina-motionkit.json": "./contrato/pagina-motionkit.json",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "contrato"],
-  "sideEffects": ["**/*.css"],
+  "files": [
+    "dist",
+    "contrato"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "dev:red": "vite --host",

@@ -1,6 +1,9 @@
 # Cambios
 
-## Sin publicar
+## 0.3.0 (24-11-2026)
+
+Receta del encabezado v2, relatos y receta de página, momentos por bloque, fotos vivas y dedo y física. La Mente
+copia los contratos de esta etiqueta (`contrato/*.json`).
 
 ### Dedo y física (nueve efectos)
 
