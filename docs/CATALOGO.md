@@ -395,6 +395,102 @@ Cosas que conviene saber:
 Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_momentos-2-y-fondos.md` (qué pieza va en cada bloque y con
 qué datos). `ClasesDeHoy` dibuja la barra de cupos solo si La Mente manda el total (`cupos`), que hoy no manda.
 
+## Director: el motor de animación propio (fase 1, 24-11-2026)
+
+Un movimiento deja de ser una pieza escrita a mano y pasa a ser un **dato**: una partitura. El Director la hace correr
+con lo que el navegador ya trae. Análisis y plan general: `docs/superpowers/specs/2026-11-24-motor-de-animacion-analisis-y-plan.md`.
+Diseño de esta fase: `docs/superpowers/specs/2026-11-24-director-fase-1-design.md`. Plan:
+`docs/superpowers/plans/2026-11-24-director-fase-1.md`. **Versión 0, experimental:** el modelo puede cambiar hasta la
+fase 2 y La Mente todavía no copia su contrato.
+
+Entrada `motion-kit/director` (9,1 KB gzip al cargar, tope 10; 1,5 KB más se bajan aparte si la partitura sigue al
+cursor o a la velocidad). Vitrina `#director`.
+
+| Qué | Dónde | Para qué |
+|---|---|---|
+| El modelo y sus topes | `src/director/modelo.ts` | Qué puede decir una partitura |
+| `validarPartitura` | `src/director/validar.ts` | Lo que no calza no vale, con mensaje y campo |
+| `montar` | `src/director/montar.ts` | El Director: tres ejecutores y las reglas de la casa |
+| `ConPartitura`, `usePartitura` | `src/director/ConPartitura.tsx` | Para React |
+| `montarSeguir` | `src/director/seguir.ts` | Lo que sigue al cursor o a la velocidad (el compás); se baja aparte |
+| `PARTITURAS` | `src/director/partituras.ts` | Seis ejemplos (portada, tarjetas, paralaje, iman, inercia y boton). Están en la vitrina; todavía no viajan en el paquete |
+| Contrato | `contrato/partitura-motionkit.json` | Generado desde el modelo (`npm run contrato`) |
+
+Las seis señales (`con`):
+
+| Señal | Cuándo corre | Cómo |
+|---|---|---|
+| `verse` | Una vez al verse la raíz (o cada vez, con `repetir`) | Animación nativa por tiempo |
+| `estado` | Mientras un actor está `apuntado`, `enfocado` o `apretado` | Animación nativa; al salir se devuelve |
+| `vista` | Mientras la raíz entra, sale o cruza la pantalla | Línea de tiempo de vista (o respaldo) |
+| `scroll` | Con el avance de la página entera | Línea de tiempo de scroll (o respaldo) |
+| `puntero` | Sigue al dedo o al cursor sobre la raíz | El compás, con resorte |
+| `velocidad` | Sigue a la velocidad del scroll y vuelve a cero | El compás, con resorte |
+
+Cómo se usa:
+
+```tsx
+import { ConPartitura, type Partitura } from "motion-kit/director";
+
+const portada: Partitura = {
+  version: 0,
+  escenas: [
+    { con: "verse", pasos: [
+      { actor: "antetitulo", de: { y: 28, opacidad: 0 }, dura: 800, en: 50 },
+      { actor: "titulo", por: "palabra", mascara: true, de: { y: "135%" }, dura: 800, cada: 90, en: 150 },
+      { actor: "bajada", de: { y: 28, opacidad: 0 }, dura: 800, en: 550 },
+      { actor: "botones", por: "hijo", de: { y: 28, opacidad: 0 }, dura: 700, cada: 90, en: 850 },
+    ] },
+    { con: "vista", tramo: "salida", pasos: [{ actor: "contenido", a: { y: "-14%", opacidad: 0 } }] },
+  ],
+};
+
+<ConPartitura partitura={portada}>
+  <div data-mk-parte="contenido">
+    <p data-mk-parte="antetitulo">Tostaduría de barrio</p>
+    <h1 data-mk-parte="titulo">Café de especialidad</h1>
+    <p data-mk-parte="bajada">Tostamos cada semana.</p>
+    <div data-mk-parte="botones"><a href="#pedir">Pedir</a></div>
+  </div>
+</ConPartitura>
+```
+
+Reglas del modelo que conviene saber:
+
+- **La partitura no trae selectores**, solo nombres de partes. Quien monta puede pasar un mapa (`partes`) para piezas
+  que no llevan `data-mk-parte`.
+- **Un actor sigue a una sola señal continua** (`vista`, `scroll`, `puntero`, `velocidad` o `estado`). Para sumar dos,
+  un actor dentro de otro. Las escenas `verse` se suman a cualquiera: escriben en otro canal (`transform`; las
+  continuas, en `translate`, `rotate` y `scale`).
+- **La opacidad de un actor es de una sola escena.**
+- **`por`** reparte un movimiento entre los hijos, las palabras o las letras de un actor. El Director corta el texto
+  sin romper React: el nodo original queda vacío en su lugar, y vuelve a estar entero cuando termina la entrada (o al
+  desmontar, si lo usa una escena que se repite o una atada al scroll). Un actor se corta de una sola forma.
+- **Topes para partituras de usuarios:** el estado final de una entrada (`a` en `verse`) no baja de 0,5 de opacidad ni
+  de 0,5 de tamaño, ni se corre más de 200 px; una escena dura a lo más 20 s; una partitura arma a lo más 600
+  animaciones y 100 elementos que siguen. `ConPartitura` recorta en los dos sentidos (`recortar`).
+- **Lo que se aprieta nunca queda escondido:** con el foco encima, o con el cursor antes de que le toque entrar, la
+  pieza termina de una vez; a media entrada se detiene donde va.
+- **Niveles:** `quieto` (o «reducir movimiento»): nada se anima. `liviano`: las entradas solo funden y duran a lo más
+  400 ms; nada sigue al cursor ni a la velocidad.
+- **Reloj manual** (`reloj: "manual"`): nada avanza solo; `irA`, `avanzar` y `senal` lo mueven. Es lo que usa la prueba
+  genérica para detener todo en un instante y medir.
+
+Pruebas: `pruebas/director.test.ts` y `scripts/verificar-director.mjs [url] [parte] [ejemplo]`, con las partes `reglas`
+(diez reglas de la casa sobre cada ejemplo), `senales`, `react`, `sin` (sin observadores ni animaciones nativas),
+`hostil` (partituras rotas) y `vitrina`.
+
+Lo que **no** está todavía (fases 2 a 6 del plan): el lenguaje en texto, traspasar piezas existentes, la capa gráfica
+compartida, los peldaños continuos y el Estudio en La Mente. Solo se probó en Chromium.
+
+Para el diseño de la fase 2 (recomendaciones de la revisión final, sin hacer): que lo que sigue use un `Cambio` igual
+que lo demás; llevar al contrato los números de las curvas y los resortes (para que la app en Kotlin los reproduzca);
+definir los tramos de scroll con su fórmula; hacer explícita la cascada de `por` en scroll; y cómo se pasa de la
+versión 0 a la 1. Limitaciones conocidas: mientras un texto está cortado pierde el subrayado de los enlaces y el
+ajuste entre letras; una partitura dentro de otra no comparte actores; lo que sigue al cursor escribe en el estilo en
+línea del elemento (si React también lo usa para `scale` u `opacity`, se pisan); y con render en el servidor el texto
+se ve entero un instante antes de entrar.
+
 ## Mejoras a lo que ya existe
 
 - `Toast`: sumar cierre por deslizamiento y variantes (éxito, error).

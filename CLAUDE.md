@@ -26,5 +26,5 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 - `npm run typecheck`, `npm run build` (mide el peso), `npm test` (receta, contrato y puente con La Mente), `npm run contrato`,
   `npm run peso` (topes por entrada, también `momentos`) y `npm run probar-paquete` (instala el paquete e importa el
   encabezado, la página y los momentos).
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|fotos|dedo>.mjs [url]` con el servidor
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|fotos|dedo|director>.mjs [url]` con el servidor
   arriba (usan Playwright).

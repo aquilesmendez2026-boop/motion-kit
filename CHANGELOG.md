@@ -2,6 +2,36 @@
 
 ## Sin publicar (en `dev`, después de 0.3.0)
 
+### Director: el motor de animación propio, fase 1 (versión 0, experimental)
+
+- **Entrada nueva `motion-kit/director`** (9,1 KB gzip al cargar, tope 10; lo que sigue al cursor o a la velocidad
+  son 1,5 KB más, que se bajan aparte solo si la partitura lo usa). No se exporta desde la entrada principal.
+- **Un movimiento es un dato.** Una **partitura** dice quién se mueve (actores: partes de la página con
+  `data-mk-parte`), con qué señal (`verse`, `estado`, `vista`, `scroll`, `puntero`, `velocidad`), qué cambia (solo `x`,
+  `y`, `escala`, `giro` y `opacidad`) y cuándo (`en`, `luego`, `junto`, `cada`). No es código: no tiene ciclos,
+  funciones ni selectores, y trae topes.
+- **`montar(raiz, partitura, opciones)`** la hace correr con lo que el navegador ya trae: animaciones nativas para el
+  tiempo, líneas de tiempo de scroll nativas (o un respaldo que da lo mismo) y un solo bucle, que duerme, para lo que
+  sigue al cursor o a la velocidad. Para React: **`ConPartitura`** y `usePartitura`.
+- **Las reglas de la casa van en el motor:** con movimiento reducido no hay animaciones; fuera de la vista o con la
+  pestaña oculta todo se detiene; lo que se aprieta no se mueve bajo el cursor ni bajo el foco; al terminar y al
+  desmontar no queda nada vivo; el texto que corta (palabras o letras) se lee igual con lector de pantalla y vuelve a
+  su forma original, también si React lo cambia a medio camino.
+- `validarPartitura` (mensajes en español, con el campo) y el contrato `contrato/partitura-motionkit.json`
+  (**versión 0, experimental: La Mente todavía no lo copia**). Las seis partituras de ejemplo están en
+  `src/director/partituras.ts` y en la vitrina; todavía no viajan en el paquete.
+- **Topes pensados para partituras que guarda un usuario:** el estado final de una entrada no puede esconder nada ni
+  sacarlo de su lugar; una partitura arma a lo más 600 animaciones y 100 elementos que siguen; `ConPartitura` recorta en
+  los dos sentidos, para que una parte agrandada o corrida no tape el resto de la página.
+- Vitrina `#director`: cada ejemplo se ve, se repite y su dato se edita ahí mismo.
+- Pruebas: `pruebas/director.test.ts` (34) y `scripts/verificar-director.mjs`, una prueba genérica que revisa las
+  reglas de la casa en cualquier partitura (57 revisiones sobre los seis ejemplos, más señales, React, navegador
+  incompleto, partituras rotas u hostiles y lo que encontró la revisión final: 86 en total).
+- **Revisión final de la fase** (2 críticos, 7 importantes y 14 menores): resueltos los 2 críticos, los 7 importantes y
+  11 menores, cada uno con su prueba. Lo más importante: un enlace con el foco o el cursor encima nunca queda escondido;
+  una sección mucho más alta que la pantalla igual parte; el texto cortado vuelve a estar entero cuando termina la
+  entrada; un actor con transformación propia en el CSS no salta de lugar; al rearmar no se repite lo que ya pasó.
+
 Segunda tanda de momentos (los bloques que faltaban) y cinco fondos vivos de lienzo. Sin etiqueta todavía.
 
 ### Momentos, segunda tanda

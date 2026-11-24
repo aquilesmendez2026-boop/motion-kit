@@ -30,6 +30,7 @@ import { createRoot } from "react-dom/client";
 import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEstilos, type RecetaEncabezado } from "motion-kit/encabezado";
 import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
 import { SellosEstampa, CuentaRegresiva, FechasQueVienen, LlamadoConVida, type FechaQueViene, type EscenaLlamado } from "motion-kit/momentos";
+import { ConPartitura, validarPartitura, type Partitura } from "motion-kit/director";
 import "motion-kit/estilos-encabezado.css";
 import "motion-kit/estilos-pagina.css";
 import "motion-kit/estilos-momentos.css";
@@ -40,8 +41,10 @@ const receta: RecetaEncabezado | null = r.ok ? r.receta : null;
 const fondo = validarReceta({ version: 2, estilo: "neon", titulo: "Hola", efecto: "bandada" });
 const fechas: FechaQueViene[] = [{ fecha: "2026-12-24", titulo: "Cerramos a las 14:00", tipo: "cerrado" }];
 const escena: EscenaLlamado = "agenda";
+const partitura: Partitura = { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", por: "palabra", mascara: true, de: { y: "135%" } }] }] };
+const vale = validarPartitura(partitura);
 const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "impulso", estela: true });
-if (receta && p.ok && fondo.ok) createRoot(document.getElementById("raiz")!).render(
+if (receta && p.ok && fondo.ok && vale.ok) createRoot(document.getElementById("raiz")!).render(
   <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
     <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela}>
       <Encabezado {...recetaAProps(receta)} />
@@ -50,6 +53,7 @@ if (receta && p.ok && fondo.ok) createRoot(document.getElementById("raiz")!).ren
       <CuentaRegresiva titulo="Noche de vinilos" fecha="2026-12-01" hora="20:00" />
       <FechasQueVienen fechas={fechas} hoy="2026-11-24" respaldo={<p>Fechas</p>} />
       <LlamadoConVida escena={escena} />
+      <ConPartitura partitura={partitura}><h2 data-mk-parte="titulo">Hola</h2></ConPartitura>
     </PaginaRelato>
   </EstiloLaMente>
 );

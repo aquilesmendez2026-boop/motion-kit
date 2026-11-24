@@ -206,7 +206,9 @@ if (parte("descifrar")) {
   {
     const { ctx, pagina, errores } = await abrir(vista({ titulo: TITULO, efectoTexto: "descifrar" }), { antes: espiarTitulo });
     await pagina.waitForSelector(".mk-enc-titulo");
-    await pagina.waitForTimeout(2600);
+    // Se espera a que el título llegue a su texto (con el computador cargado tarda más que un tiempo fijo), con tope.
+    await pagina.waitForFunction((fin) => window.__titulo?.at(-1)?.texto === fin && window.__titulo.length > 3, FINAL, { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(300);
     const vistos = await pagina.evaluate(() => window.__titulo);
     const letras = (t) => Array.from(t).length;
     const distintos = vistos.filter((v) => v.texto !== FINAL);

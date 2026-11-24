@@ -33,6 +33,11 @@
       "import": "./dist/momentos.js",
       "require": "./dist/momentos.cjs"
     },
+    "./director": {
+      "types": "./dist/entradas/director.d.ts",
+      "import": "./dist/director.js",
+      "require": "./dist/director.cjs"
+    },
     "./receta": {
       "types": "./dist/receta/index.d.ts",
       "import": "./dist/receta.js",
@@ -44,6 +49,7 @@
     "./estilos-momentos.css": "./dist/estilos-momentos.css",
     "./contrato/encabezado-motionkit.json": "./contrato/encabezado-motionkit.json",
     "./contrato/pagina-motionkit.json": "./contrato/pagina-motionkit.json",
+    "./contrato/partitura-motionkit.json": "./contrato/partitura-motionkit.json",
     "./package.json": "./package.json"
   },
   "files": [

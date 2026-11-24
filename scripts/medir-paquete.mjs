@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director"];
 const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css"];
 
 /**
@@ -25,7 +25,8 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // 24-11-2026: momentos 13 (era 12; con la segunda tanda mide 12,5: nueve piezas que se bajan aparte, y lo que queda al
 // cargar son sus nueve cargadores). Aquiles aprobó hasta 14 como máximo en el diseño de la segunda tanda; se sube solo
 // lo que hace falta.
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10 };
+// 24-11-2026: director 10 (entrada nueva del motor de animación; tope del diseño de la fase 1, aprobado por Aquiles).
+export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10, director: 10 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;

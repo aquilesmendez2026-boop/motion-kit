@@ -1,0 +1,191 @@
+{
+  "$comentario": "Partitura de motion-kit, v0, EXPERIMENTAL: puede cambiar sin aviso y La Mente todavía no la copia. Generado por scripts/generar-contrato.mjs desde src/director: no editar a mano. Una partitura describe un movimiento como dato: escenas, cada una con una señal (con) y sus pasos. actor: el nombre de una parte de la página (data-mk-parte); la partitura no trae selectores. Un cambio (de, a) solo toca x, y (px o un porcentaje del propio tamaño, como «-14%»), escala, giro (grados) y opacidad. Un paso por tiempo parte de una sola forma: en (ms desde la escena), luego (ms después de que termina el anterior) o junto (ms después de que empieza). Un actor sigue a una sola señal continua (señalesContinuas), su opacidad es de una sola escena y su texto se corta de una sola forma (por y mascara). El estado final de una entrada (a en una escena verse) tiene topes propios (topes.final): no puede esconder ni sacar de su lugar. Una escena por tiempo dura a lo más topes.escena ms. Una partitura arma a lo más topes.animaciones animaciones y topes.seguidores elementos que siguen. En estado y en puntero/velocidad los cambios tienen topes más chicos (topes.estado y topes.seguir).",
+  "version": 0,
+  "experimental": true,
+  "campos": {
+    "partitura": [
+      "version",
+      "nombre",
+      "escenas"
+    ],
+    "cambio": [
+      "x",
+      "y",
+      "escala",
+      "giro",
+      "opacidad"
+    ],
+    "escena": {
+      "verse": [
+        "con",
+        "repetir",
+        "pasos"
+      ],
+      "estado": [
+        "con",
+        "estado",
+        "sobre",
+        "pasos"
+      ],
+      "vista": [
+        "con",
+        "tramo",
+        "pasos"
+      ],
+      "scroll": [
+        "con",
+        "pasos"
+      ],
+      "puntero": [
+        "con",
+        "pasos"
+      ],
+      "velocidad": [
+        "con",
+        "pasos"
+      ]
+    },
+    "paso": {
+      "verse": [
+        "actor",
+        "por",
+        "mascara",
+        "de",
+        "a",
+        "dura",
+        "curva",
+        "cada",
+        "en",
+        "luego",
+        "junto"
+      ],
+      "estado": [
+        "actor",
+        "a",
+        "dura",
+        "curva"
+      ],
+      "vista": [
+        "actor",
+        "por",
+        "de",
+        "a",
+        "entre",
+        "curva"
+      ],
+      "scroll": [
+        "actor",
+        "por",
+        "de",
+        "a",
+        "entre",
+        "curva"
+      ],
+      "puntero": [
+        "actor",
+        "x",
+        "y",
+        "giro",
+        "escala",
+        "opacidad",
+        "resorte"
+      ],
+      "velocidad": [
+        "actor",
+        "x",
+        "y",
+        "giro",
+        "escala",
+        "opacidad",
+        "resorte"
+      ]
+    }
+  },
+  "obligatorios": [
+    "version",
+    "escenas"
+  ],
+  "listas": {
+    "con": [
+      "verse",
+      "estado",
+      "vista",
+      "scroll",
+      "puntero",
+      "velocidad"
+    ],
+    "curva": [
+      "suave",
+      "lineal",
+      "entra",
+      "sale",
+      "vaiven",
+      "resorte"
+    ],
+    "por": [
+      "hijo",
+      "palabra",
+      "letra"
+    ],
+    "tramo": [
+      "entrada",
+      "salida",
+      "paso"
+    ],
+    "estado": [
+      "apuntado",
+      "enfocado",
+      "apretado"
+    ],
+    "resorte": [
+      "suave",
+      "firme",
+      "elastico"
+    ]
+  },
+  "señalesContinuas": [
+    "estado",
+    "vista",
+    "scroll",
+    "puntero",
+    "velocidad"
+  ],
+  "topes": {
+    "escenas": 12,
+    "pasos": 24,
+    "dura": 10000,
+    "cada": 1000,
+    "escena": 20000,
+    "piezas": 200,
+    "px": 2000,
+    "porciento": 300,
+    "escala": 4,
+    "giro": 720,
+    "final": {
+      "opacidadMin": 0.5,
+      "escalaMin": 0.5,
+      "escalaMax": 2,
+      "px": 200,
+      "porciento": 100
+    },
+    "animaciones": 600,
+    "seguidores": 100,
+    "estado": {
+      "px": 6,
+      "escalaMin": 0.94,
+      "escalaMax": 1.08,
+      "giro": 3,
+      "opacidadMin": 0.5,
+      "dura": 1000
+    },
+    "seguir": {
+      "px": 200,
+      "giro": 45,
+      "escalaMin": 0.5,
+      "escalaMax": 2
+    },
+    "nombre": 60
+  },
+  "actor": "^[a-z0-9][a-z0-9-]{0,39}$",
+  "porcentaje": "^-?\\d{1,3}(\\.\\d{1,2})?%$"
+}
