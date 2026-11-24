@@ -149,6 +149,8 @@ export interface RecetaEncabezado {
   tomas?: boolean;
   /** Foto viva: se arma desde partículas, ondula bajo el dedo y cambia de toma con un borde líquido. */
   fotoViva?: boolean;
+  /** Foto profunda: la foto se mueve con profundidad real (necesita su mapa, que pasa quien arma la página). Solo en completo. */
+  fotoProfunda?: boolean;
   /** El título relleno con la primera foto (o el póster). */
   fotoEnLetras?: boolean;
   tratamiento?: Tratamiento;
@@ -173,7 +175,7 @@ export interface RecetaEncabezado {
 export const CAMPOS_RECETA = [
   "version", "estilo", "composicion", "entrada", "efectoTexto", "pack", "antetitulo", "titulo", "bajada", "datos",
   "botones", "alto", "altoCelular", "imagenes", "alt", "poster", "efecto", "variante", "profundidad", "luz", "mover",
-  "salida", "ahorro", "apertura", "tomas", "fotoViva", "fotoEnLetras", "tratamiento", "estado", "palabras", "iman", "colgante", "horaDelDia", "shader",
+  "salida", "ahorro", "apertura", "tomas", "fotoViva", "fotoProfunda", "fotoEnLetras", "tratamiento", "estado", "palabras", "iman", "colgante", "horaDelDia", "shader",
   "objeto", "logo", "nombre",
 ] as const satisfies readonly (keyof RecetaEncabezado)[];
 
@@ -338,7 +340,7 @@ export function validarReceta(x: unknown): ResultadoReceta {
   }
 
   // --- v2 ---
-  for (const k of ["tomas", "fotoViva", "fotoEnLetras", "estado", "horaDelDia", "iman", "colgante"] as const) {
+  for (const k of ["tomas", "fotoViva", "fotoProfunda", "fotoEnLetras", "estado", "horaDelDia", "iman", "colgante"] as const) {
     if (x[k] !== undefined && typeof x[k] !== "boolean") mal(k, `«${k}» va prendido (true) o apagado (false).`);
   }
   if (x.apertura !== undefined) {
@@ -448,6 +450,24 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     avisos.push("La foto viva solo se ve en las composiciones con foto: queda apagada.");
     fotoViva = false;
   }
+  // La foto profunda usa el mismo lugar: una sola foto, a la vista, y sin la foto viva encima.
+  let fotoProfunda = x.fotoProfunda === true;
+  if (fotoProfunda && !(COMPOSICIONES_CON_FOTO.includes(composicion) && !(composicion === "dividido" && conObjeto))) {
+    avisos.push("La foto profunda solo se ve en las composiciones con foto: queda apagada.");
+    fotoProfunda = false;
+  }
+  if (fotoProfunda && !imagenes.length) {
+    avisos.push("La foto profunda necesita una foto en imagenes: queda apagada.");
+    fotoProfunda = false;
+  }
+  if (fotoProfunda && fotoViva) {
+    avisos.push("La foto profunda y la foto viva usan la misma foto y todavía no se combinan: queda la foto viva.");
+    fotoProfunda = false;
+  }
+  if (fotoProfunda && tomas) {
+    avisos.push("La foto profunda va con una sola foto: con las tomas prendidas queda apagada.");
+    fotoProfunda = false;
+  }
   const fotoEnLetras = x.fotoEnLetras === true && (imagenes.length > 0 || Boolean(poster));
   // El imán mueve letra por letra, y la foto en las letras necesita el título en una sola pieza.
   let iman = x.iman === true;
@@ -539,6 +559,7 @@ function normalizar(x0: unknown): { receta: RecetaEncabezado; avisos: string[] }
     apertura: apertura && (apertura.presenta ? apertura : {}),
     tomas: tomas || undefined,
     fotoViva: fotoViva || undefined,
+    fotoProfunda: fotoProfunda || undefined,
     fotoEnLetras: fotoEnLetras || undefined,
     tratamiento: deLista("tratamiento"),
     estado: x.estado === true || undefined,
@@ -609,6 +630,7 @@ export function recetaAProps(r: RecetaEncabezado, { urlImagen }: OpcionesProps =
     apertura: r.apertura,
     tomas: r.tomas,
     fotoViva: r.fotoViva,
+    fotoProfunda: r.fotoProfunda,
     iman: r.iman,
     colgante: r.colgante,
     palabras: r.palabras,

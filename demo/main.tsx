@@ -14,12 +14,13 @@ import { Pagina } from "./Pagina";
 import { Momentos } from "./Momentos";
 import { Banco } from "./Banco";
 import { Director } from "./Director";
+import { Profundidad } from "./Profundidad";
 import { ToastProvider } from "../src";
 import "./demo.css";
 
 // Navegación mínima por hash: "#landing" muestra la plantilla de ejemplo.
 // Sin hash o con «#» solo es la portada (los enlaces «← Demo» y el botón atrás del navegador llegan así).
-const RUTAS = /^(#(landing|efectos|piezas|estudio|encabezados(?:\?id=[\w-]+)?|biblioteca|relatos|momentos|director(?:\?d=[\w-]*)?|pagina(?:\?d=[\w-]*)?|vista\?d=[\w-]*|banco\?d=[\w-]*|plantilla\/[\w-]+)?)?$/;
+const RUTAS = /^(#(landing|efectos|piezas|estudio|encabezados(?:\?id=[\w-]+)?|biblioteca|relatos|momentos|profundidad|director(?:\?d=[\w-]*)?|pagina(?:\?d=[\w-]*)?|vista\?d=[\w-]*|banco\?d=[\w-]*|plantilla\/[\w-]+)?)?$/;
 
 // Navegación mínima por hash. Los enlaces internos de una página (#carta, #contacto) solo desplazan.
 function Root() {
@@ -46,6 +47,7 @@ function Root() {
   if (ruta === "#biblioteca") return <Biblioteca />;
   if (ruta === "#relatos") return <Relatos />;
   if (ruta === "#momentos") return <Momentos />;
+  if (ruta === "#profundidad") return <Profundidad />;
   if (ruta.startsWith("#director")) return <Director key={ruta} d={ruta.startsWith("#director?d=") ? ruta.slice(12) : undefined} />;
   if (ruta.startsWith("#pagina")) return <Pagina key={ruta} d={ruta.startsWith("#pagina?d=") ? ruta.slice(10) : undefined} />;
   if (ruta.startsWith("#vista?d=")) return <Vista d={ruta.slice(9)} />;

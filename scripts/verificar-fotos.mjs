@@ -630,6 +630,388 @@ if (parte("visor")) {
   await ctx.close();
 }
 
+// --- Foto profunda: la foto del encabezado con profundidad real (un mapa en grises al lado de la foto) ---
+if (parte("profunda")) {
+  const FOTO = "/demo/fotos/cafe.jpg";
+  const MAPA = "/demo/fotos/cafe-mapa.jpg";
+  const CON = { estilo: "pelicula", composicion: "imagen", titulo: "Café *Luna*", alt: "El local", entrada: "ninguna", imagenes: [FOTO], mapasFotos: [MAPA], fotoProfunda: true, ahorro: "nunca" };
+  const L = ".mk-enc canvas.mk-foto-profunda";
+  /** Deja leer lo que dibuja el lienzo y cuenta sus dibujos. */
+  const espiar = () => {
+    window.__prof = { dibujos: 0, texturas: [], sombreadores: [] };
+    const real = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (tipo, o) {
+      if (this.className !== "mk-foto-profunda" || !/webgl/.test(tipo)) return real.call(this, tipo, o);
+      const gl = real.call(this, tipo, { ...o, preserveDrawingBuffer: true });
+      if (gl && !gl.__espiado) {
+        gl.__espiado = true;
+        const dibujar = gl.drawArrays.bind(gl);
+        gl.drawArrays = (...a) => {
+          window.__prof.dibujos++;
+          return dibujar(...a);
+        };
+        // Lo que se sube a la tarjeta gráfica (su tamaño) y el texto de los sombreadores.
+        const subir = gl.texImage2D.bind(gl);
+        gl.texImage2D = (...a) => {
+          const f = a[a.length - 1];
+          window.__prof.texturas.push({ ancho: f?.naturalWidth || f?.width || 0, alto: f?.naturalHeight || f?.height || 0 });
+          return subir(...a);
+        };
+        const fuente = gl.shaderSource.bind(gl);
+        gl.shaderSource = (sh, texto) => {
+          window.__prof.sombreadores.push(texto);
+          return fuente(sh, texto);
+        };
+      }
+      return gl;
+    };
+  };
+  /** Una firma de lo dibujado (un punto de cada tanto) y si hay algo pintado. */
+  const firma = (pagina) =>
+    pagina.locator(L).evaluate((c) => {
+      const gl = c.getContext("webgl");
+      const [w, h] = [gl.drawingBufferWidth, gl.drawingBufferHeight];
+      const d = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, d);
+      const puntos = [];
+      let suma = 0;
+      for (let i = 0; i < d.length; i += 4 * 211) {
+        puntos.push(d[i]);
+        suma += d[i] + d[i + 1] + d[i + 2];
+      }
+      return { texto: puntos.join(","), pintado: suma > 0, ancho: w, alto: h };
+    });
+  const dibujosEn = async (pagina, ms) => {
+    const a = await pagina.evaluate(() => window.__prof.dibujos);
+    await pagina.waitForTimeout(ms);
+    return (await pagina.evaluate(() => window.__prof.dibujos)) - a;
+  };
+  const quieto = (pagina) => pagina.waitForSelector(`${L}[data-estado=quieto]`, { timeout: 5000 }).catch(() => {});
+  {
+    const { ctx, pagina, errores } = await abrir(vista(CON), { antes: [espiar] });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    const armado = await pagina.evaluate((q) => {
+      const c = document.querySelector(q);
+      const img = document.querySelector(".mk-enc-media img");
+      return c && { lista: c.hasAttribute("data-lista"), oculto: c.getAttribute("aria-hidden"), toques: getComputedStyle(c).pointerEvents, opacidad: getComputedStyle(c).opacity, foto: img?.getAttribute("alt"), calza: Math.abs(c.getBoundingClientRect().width - c.parentElement.parentElement.getBoundingClientRect().width) < 1 && Math.abs(img.getBoundingClientRect().width - c.getBoundingClientRect().width * 1.06) < 1.5 };
+    }, L);
+    const alPartir = await firma(pagina);
+    revisar(armado && armado.lista && armado.oculto === "true" && armado.toques === "none" && armado.opacidad === "1" && armado.foto === "El local" && armado.calza && alPartir.pintado, `la foto profunda pone un lienzo decorativo encima de la foto, que sigue en la página (${JSON.stringify(armado)})`);
+    // Con el cursor a un lado y al otro, lo dibujado cambia.
+    const caja = await pagina.locator(".mk-enc").boundingBox();
+    await pagina.mouse.move(caja.x + caja.width * 0.1, caja.y + caja.height * 0.5, { steps: 4 });
+    await pagina.waitForTimeout(200);
+    await quieto(pagina);
+    const izquierda = await firma(pagina);
+    await pagina.mouse.move(caja.x + caja.width * 0.9, caja.y + caja.height * 0.5, { steps: 4 });
+    await pagina.waitForTimeout(200);
+    const moviendose = await pagina.locator(L).getAttribute("data-estado");
+    await quieto(pagina);
+    const derecha = await firma(pagina);
+    revisar(izquierda.texto !== derecha.texto && izquierda.texto !== alPartir.texto && moviendose === "vivo", `al mover el cursor, la foto se mueve con profundidad (cambia lo dibujado; mientras tanto está «${moviendose}»)`);
+    // Quieto, no dibuja.
+    const enReposo = await dibujosEn(pagina, 700);
+    revisar(enReposo === 0 && (await pagina.locator(L).getAttribute("data-estado")) === "quieto", `con el cursor quieto, deja de dibujar (${enReposo} dibujos)`);
+    // Al bajar la página (con el encabezado a la vista) también se mueve; fuera de la vista, no dibuja.
+    await pagina.mouse.move(2, 2);
+    await quieto(pagina);
+    const arriba = await firma(pagina);
+    await pagina.evaluate(() => window.scrollTo(0, 260));
+    await pagina.waitForTimeout(200);
+    await quieto(pagina);
+    const bajando = await firma(pagina);
+    // La página de prueba es corta: se le suma espacio abajo para poder sacar el encabezado de la vista.
+    await pagina.evaluate(() => {
+      document.body.style.paddingBottom = "220vh";
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    await pagina.waitForTimeout(500);
+    const fueraDeVista = await pagina.evaluate((q) => document.querySelector(q).getBoundingClientRect().bottom < 0, L);
+    await pagina.mouse.wheel(0, -30);
+    const lejos = fueraDeVista ? await dibujosEn(pagina, 500) : -1;
+    revisar(arriba.texto !== bajando.texto && fueraDeVista && lejos === 0, `al bajar la página la foto también se mueve, y fuera de la vista no dibuja (fuera de la vista: ${fueraDeVista}; ${lejos} dibujos)`);
+    // Otro tamaño: el lienzo se ajusta y sigue pintado.
+    await pagina.evaluate(() => {
+      document.body.style.paddingBottom = "";
+      window.scrollTo(0, 0);
+    });
+    await pagina.setViewportSize({ width: 700, height: 860 });
+    await pagina.waitForTimeout(500);
+    const angosto = await firma(pagina);
+    // La foto de abajo va acercada igual que lo que dibuja el lienzo (un 6 %).
+    const calza = await pagina.evaluate((q) => Math.abs(document.querySelector(q).getBoundingClientRect().width - document.querySelector(".mk-enc-media").getBoundingClientRect().width) < 1 && Math.abs(document.querySelector(".mk-enc-media img").getBoundingClientRect().width - document.querySelector(q).getBoundingClientRect().width * 1.06) < 1.5, L);
+    revisar(angosto.pintado && angosto.ancho !== alPartir.ancho && calza, `al cambiar el tamaño, el lienzo se ajusta y sigue calzando con la foto (${alPartir.ancho} → ${angosto.ancho} px)`);
+    // Contexto perdido: el lienzo se va y queda la foto.
+    await pagina.locator(L).evaluate((c) => c.getContext("webgl").getExtension("WEBGL_lose_context").loseContext());
+    await pagina.waitForTimeout(400);
+    revisar((await pagina.locator(L).count()) === 0 && (await pagina.locator(".mk-enc-media img").count()) === 1, "si se pierde el contexto WebGL, el lienzo se quita y queda la foto");
+    revisar(errores.length === 0, `sin errores con la foto profunda${errores.length ? `: ${errores.join(" | ")}` : ""}`);
+    await ctx.close();
+  }
+  // Cuando no se puede, queda la foto normal y sin errores.
+  const CASOS = [
+    ["con movimiento reducido", CON, { opciones: { reducedMotion: "reduce" } }],
+    ["sin WebGL", CON, { antes: [() => { const real = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...r) { return /webgl/.test(t) ? null : real.call(this, t, ...r); }; }] }],
+    ["sin mapa para la foto", { ...CON, mapasFotos: [] }, {}],
+    ["con un mapa que no carga", { ...CON, mapasFotos: ["/__foto/falta.svg"] }, {}],
+    ["con una foto que no carga", { ...CON, imagenes: ["/__foto/falta.svg"] }, {}],
+    ["con la foto en otro sitio que no está autorizado", { ...CON, imagenes: [`${OTRO}/f.svg`] }, { cors: true }],
+    ["con la foto en un sitio autorizado que no da permiso", { ...CON, imagenes: [`${OTRO}/f.svg`], origenesFotos: [OTRO] }, {}],
+    ["con el efecto apagado", { ...CON, fotoProfunda: false }, {}],
+    ["con un mapa de otra proporción (no es el de esa foto)", { ...CON, mapasFotos: ["/__foto/1.svg"] }, {}],
+  ];
+  for (const [que, config, opciones] of CASOS) {
+    const { ctx, pagina, errores } = await abrir(vista(config), opciones);
+    await pagina.waitForSelector(".mk-enc-media img", { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(900);
+    const v = { lienzos: await pagina.locator(".mk-enc canvas.mk-foto-profunda[data-lista]").count(), restos: await pagina.locator(".mk-enc canvas.mk-foto-profunda").count(), foto: await pagina.locator(".mk-enc-media img").count() };
+    revisar(v.lienzos === 0 && v.restos === 0 && v.foto === 1 && errores.length === 0, `${que}: queda la foto normal, sin lienzo y sin errores (${JSON.stringify(v)}${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
+  {
+    // Con la foto viva también prendida, gana la foto viva (todavía no se combinan).
+    const { ctx, pagina } = await abrir(vista({ ...CON, fotoViva: true }));
+    await pagina.waitForSelector(".mk-enc canvas.mk-foto-viva", { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(600);
+    revisar((await pagina.locator(".mk-enc canvas.mk-foto-viva").count()) === 1 && (await pagina.locator(".mk-enc canvas.mk-foto-profunda").count()) === 0, "con la foto viva también prendida, va solo la foto viva");
+    await ctx.close();
+  }
+  {
+    // Foto y mapa en otro sitio, autorizado y con permiso: funciona.
+    const { ctx, pagina, errores } = await abrir(vista({ ...CON, imagenes: [`${OTRO}/f.svg`], mapasFotos: [`${OTRO}/m.svg`], origenesFotos: [OTRO] }), { cors: true });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    revisar((await pagina.locator(`${L}[data-lista]`).count()) === 1 && errores.length === 0, "con la foto y el mapa en otro sitio, autorizado y con permiso, la foto profunda funciona");
+    await ctx.close();
+  }
+  {
+    // Al salir de la página del encabezado no quedan lienzos; y en teléfono nada se sale de lado.
+    const { ctx, pagina, errores } = await abrir(vista(CON), { antes: [espiar], opciones: { viewport: { width: 360, height: 780 }, isMobile: true, hasTouch: true } });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    const sobra = await pagina.evaluate(() => document.documentElement.scrollWidth - 360);
+    await pagina.touchscreen.tap(180, 300).catch(() => {});
+    await pagina.waitForTimeout(300);
+    await pagina.evaluate(() => (location.hash = ""));
+    await pagina.waitForTimeout(500);
+    const restos = await pagina.locator("canvas.mk-foto-profunda").count();
+    const despues = await dibujosEn(pagina, 500);
+    revisar(sobra <= 0 && restos === 0 && despues === 0 && errores.length === 0, `en teléfono no se sale de lado (${sobra} px) y al salir no quedan lienzos ni dibujos (${restos} lienzos, ${despues} dibujos)`);
+    await ctx.close();
+  }
+  // --- Lo que encontró la revisión final (24-11-2026) ---
+  /** Cuánto se diferencian dos capturas (promedio por canal, de 0 a 255). Se comparan en una página aparte. */
+  const diferencia = async (ctx, a, b) => {
+    const hoja = await ctx.newPage();
+    const d = await hoja.evaluate(async ([x, y]) => {
+      const leer = async (b64) => {
+        const mapa = await createImageBitmap(await (await fetch("data:image/png;base64," + b64)).blob());
+        const c = new OffscreenCanvas(mapa.width, mapa.height);
+        const g = c.getContext("2d");
+        g.drawImage(mapa, 0, 0);
+        return g.getImageData(0, 0, mapa.width, mapa.height).data;
+      };
+      const [p, q] = [await leer(x), await leer(y)];
+      if (p.length !== q.length) return 255;
+      let suma = 0;
+      for (let i = 0; i < p.length; i += 4) suma += Math.abs(p[i] - q[i]) + Math.abs(p[i + 1] - q[i + 1]) + Math.abs(p[i + 2] - q[i + 2]);
+      return suma / ((p.length / 4) * 3);
+    }, [a.toString("base64"), b.toString("base64")]);
+    await hoja.close();
+    return d;
+  };
+  /** En reposo: el cursor fuera del encabezado (abajo, en la franja de los medidores). */
+  const reposo = async (pagina) => {
+    const pie = (await pagina.locator(".mk-enc").boundingBox()).height;
+    await pagina.mouse.move(640, Math.min(855, pie + 30));
+  };
+  {
+    // Con las capas de profundidad la foto de abajo lleva otra escala más: el lienzo también calza ahí.
+    const { ctx, pagina, errores } = await abrir(vista({ ...CON, profundidad: true }), { antes: [espiar] });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    await reposo(pagina);
+    await pagina.waitForTimeout(1800);
+    await quieto(pagina);
+    const zona = { x: 0, y: 0, width: 1280, height: 700 };
+    const que = await pagina.evaluate(() => ({ capas: document.querySelector(".mk-enc").hasAttribute("data-profundidad"), escala: getComputedStyle(document.querySelector(".mk-enc-media img")).scale }));
+    const conLienzo = await pagina.screenshot({ clip: zona });
+    await pagina.locator(L).evaluate((c) => (c.style.visibility = "hidden"));
+    const calce = await diferencia(ctx, conLienzo, await pagina.screenshot({ clip: zona }));
+    revisar(que.capas && que.escala === "1.113" && calce < 2.5 && errores.length === 0, `con las capas de profundidad prendidas, el lienzo también calza con la foto de abajo (${JSON.stringify(que)}; diferencia ${calce.toFixed(2)})`);
+    await ctx.close();
+  }
+  {
+    // En reposo, el lienzo muestra lo mismo que la foto de abajo: al aparecer o al irse no hay salto.
+    const { ctx, pagina, errores } = await abrir(vista(CON), { antes: [espiar] });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    const fuera = () => reposo(pagina);
+    await fuera();
+    await pagina.waitForTimeout(1500);
+    await quieto(pagina);
+    const zona = { x: 0, y: 0, width: 1280, height: 700 };
+    const conLienzo = await pagina.screenshot({ clip: zona });
+    await pagina.locator(L).evaluate((c) => (c.style.visibility = "hidden"));
+    const sinLienzo = await pagina.screenshot({ clip: zona });
+    await pagina.locator(L).evaluate((c) => (c.style.visibility = ""));
+    // Con el cursor a un lado sí tiene que diferenciarse (si no, la comparación no estaría mirando el lienzo).
+    await pagina.mouse.move(1200, 600, { steps: 3 });
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const corrida = await pagina.screenshot({ clip: zona });
+    await fuera();
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const calce = await diferencia(ctx, conLienzo, sinLienzo);
+    const control = await diferencia(ctx, corrida, sinLienzo);
+    revisar(calce < 2.5 && control > calce * 1.5, `en reposo el lienzo calza con la foto de abajo, sin salto de acercamiento (diferencia ${calce.toFixed(2)} de 255; con el cursor a un lado, ${control.toFixed(2)})`);
+    // Si el efecto se cae (contexto perdido), la foto queda donde estaba.
+    await pagina.locator(L).evaluate((c) => c.getContext("webgl").getExtension("WEBGL_lose_context").loseContext());
+    await pagina.waitForTimeout(400);
+    const caida = await diferencia(ctx, await pagina.screenshot({ clip: zona }), sinLienzo);
+    revisar((await pagina.locator(L).count()) === 0 && caida < 0.5, `si el efecto se cae, la foto queda igual que antes (diferencia ${caida.toFixed(2)})`);
+    const fino = await pagina.evaluate(() => window.__prof.sombreadores.some((t) => /GL_FRAGMENT_PRECISION_HIGH/.test(t) && /highp/.test(t)));
+    revisar(fino, "el sombreador pide precisión alta cuando el aparato la tiene (en teléfonos, la media deja la foto borrosa)");
+    revisar(errores.length === 0, `sin errores${errores.length ? `: ${errores.join(" | ")}` : ""}`);
+    await ctx.close();
+  }
+  {
+    // Una foto enorme no se sube entera a la tarjeta gráfica.
+    const enorme = `<svg xmlns="http://www.w3.org/2000/svg" width="6000" height="4000" viewBox="0 0 600 400"><rect width="600" height="400" fill="#b5462f"/><circle cx="300" cy="200" r="120" fill="#fff"/></svg>`;
+    const { ctx, pagina, errores } = await abrir(vista({ ...CON, imagenes: ["/__grande.svg"] }), {
+      antes: [espiar],
+      preparar: (pg) => pg.route(/\/__grande\.svg/, (r) => r.fulfill({ status: 200, contentType: "image/svg+xml", body: enorme })),
+    });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    const t = await pagina.evaluate(() => window.__prof.texturas);
+    const mayor = Math.max(0, ...t.map((x) => Math.max(x.ancho, x.alto)));
+    const foto = t.find((x) => x.ancho === mayor);
+    revisar((await pagina.locator(`${L}[data-lista]`).count()) === 1 && t.length >= 2 && mayor <= 1600 && mayor >= 1200 && foto && Math.abs(foto.ancho / foto.alto - 1.5) < 0.01 && errores.length === 0, `una foto de 6000 × 4000 se sube achicada, con su proporción (${JSON.stringify(t)})`);
+    await ctx.close();
+  }
+  {
+    // La caché del navegador guardó la foto sin permiso (la pidió el <img> de siempre): se pide de nuevo y funciona.
+    const { ctx, pagina, errores, pedidos } = await abrir(vista({ ...CON, imagenes: [`${OTRO}/f.svg`], mapasFotos: [`${OTRO}/m.svg`], origenesFotos: [OTRO] }), { cors: "solo-fetch" });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    revisar((await pagina.locator(`${L}[data-lista]`).count()) === 1 && errores.length === 0, `si la caché devuelve la foto sin permiso, se pide de nuevo saltándose la caché y la foto profunda funciona (${JSON.stringify(pedidos.porDireccion)})`);
+    await ctx.close();
+  }
+  {
+    // El teléfono en la mano: el temblor no despierta al efecto; una inclinación de verdad, sí; acostado, no se usa.
+    const inclinar = (pagina, lecturas, cada = 16) =>
+      pagina.evaluate(
+        async ([ls, ms]) => {
+          for (const [beta, gamma] of ls) {
+            window.dispatchEvent(new DeviceOrientationEvent("deviceorientation", { alpha: 0, beta, gamma }));
+            await new Promise((r) => setTimeout(r, ms));
+          }
+        },
+        [lecturas, cada],
+      );
+    const { ctx, pagina, errores } = await abrir(vista(CON), { antes: [espiar] });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    await pagina.mouse.move(2, 2);
+    await pagina.waitForTimeout(600);
+    await inclinar(pagina, [[50, 0]]);
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const derecho = await firma(pagina);
+    const antes = await pagina.evaluate(() => window.__prof.dibujos);
+    // Un segundo de temblor: tres décimas de grado para cada lado, también justo en el borde entre dos grados.
+    await inclinar(pagina, Array.from({ length: 60 }, (_, i) => [50 + (i % 2 ? 0.3 : -0.3), i % 3 ? 0.3 : -0.3]));
+    const temblando = (await pagina.evaluate(() => window.__prof.dibujos)) - antes;
+    revisar(temblando === 0 && (await pagina.locator(L).getAttribute("data-estado")) === "quieto", `con el teléfono quieto en la mano (el sensor tiembla), el efecto no dibuja (${temblando} dibujos en un segundo)`);
+    await inclinar(pagina, [[60, 10]]);
+    await pagina.waitForTimeout(150);
+    const estado = await pagina.locator(L).getAttribute("data-estado");
+    await quieto(pagina);
+    const inclinado = await firma(pagina);
+    // En el borde entre dos grados (10,5°), el ruido tampoco lo hace bailar.
+    await inclinar(pagina, [[60.5, 10.5]]);
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const antesBorde = await pagina.evaluate(() => window.__prof.dibujos);
+    await inclinar(pagina, Array.from({ length: 40 }, (_, i) => [60.5 + (i % 2 ? 0.2 : -0.2), 10.5 + (i % 2 ? -0.2 : 0.2)]));
+    const enElBorde = (await pagina.evaluate(() => window.__prof.dibujos)) - antesBorde;
+    revisar(estado === "vivo" && inclinado.texto !== derecho.texto && enElBorde === 0, `al inclinar el teléfono de verdad la foto se mueve, y justo entre dos grados no baila (estaba «${estado}»; ${enElBorde} dibujos en el borde)`);
+    // Acostado: los ejes del sensor quedan cambiados. La inclinación deja de usarse y la foto vuelve a su lugar.
+    await pagina.evaluate(() => {
+      Object.defineProperty(screen.orientation, "angle", { configurable: true, get: () => 90 });
+      window.dispatchEvent(new Event("orientationchange"));
+    });
+    await inclinar(pagina, [[20, 70], [22, 75]]);
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const acostado = await firma(pagina);
+    // De vuelta derecho: parte de cero desde como está ahora (no desde como estaba antes de acostarlo).
+    await pagina.evaluate(() => {
+      Object.defineProperty(screen.orientation, "angle", { configurable: true, get: () => 0 });
+      window.dispatchEvent(new Event("orientationchange"));
+    });
+    await inclinar(pagina, [[30, 0], [30, 0]]);
+    await pagina.waitForTimeout(300);
+    await quieto(pagina);
+    const deVuelta = await firma(pagina);
+    revisar(acostado.texto === derecho.texto && deVuelta.texto === derecho.texto, "con el teléfono acostado la inclinación no se usa, y al volver a pararlo parte de cero desde como está");
+    revisar(errores.length === 0, `sin errores con la inclinación${errores.length ? `: ${errores.join(" | ")}` : ""}`);
+    await ctx.close();
+  }
+  {
+    // Con la entrada «zoom» la foto de abajo se acerca sola: el lienzo espera a que termine para no cortarla.
+    const lenta = () => addEventListener("DOMContentLoaded", () => document.head.appendChild(Object.assign(document.createElement("style"), { textContent: ".mk-enc-media img{animation-duration:40s!important}" })));
+    const { ctx, pagina, errores } = await abrir(vista({ ...CON, entrada: "zoom" }), { antes: [espiar, lenta] });
+    await pagina.waitForSelector(`${L}[data-lista]`, { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(300);
+    const durante = await pagina.evaluate((q) => ({ corriendo: document.querySelector(".mk-enc-media img").getAnimations().filter((a) => a.playState === "running").length, opacidad: getComputedStyle(document.querySelector(q)).opacity }), L);
+    await pagina.evaluate(() => document.querySelector(".mk-enc-media img").getAnimations().forEach((a) => a.finish()));
+    await pagina.waitForTimeout(300);
+    const despues = await pagina.evaluate((q) => getComputedStyle(document.querySelector(q)).opacity, L);
+    revisar(durante.corriendo >= 1 && durante.opacidad === "0" && despues === "1" && errores.length === 0, `con la entrada «zoom», el lienzo espera a que la foto termine de entrar (durante: ${JSON.stringify(durante)}; después: ${despues})`);
+    await ctx.close();
+  }
+  {
+    // Salir de la página a medio cargar: no queda nada y no hay errores.
+    const { ctx, pagina, errores } = await abrir(vista(CON), {
+      antes: [espiar],
+      preparar: (pg) => pg.route(/\/demo\/fotos\/cafe-mapa\.jpg/, async (r) => (await new Promise((f) => setTimeout(f, 1500)), r.continue())),
+    });
+    await pagina.waitForSelector(L, { state: "attached", timeout: 8000 }).catch(() => {});
+    const aMedias = { lienzos: await pagina.locator(L).count(), listos: await pagina.locator(`${L}[data-lista]`).count() };
+    await pagina.evaluate(() => (location.hash = ""));
+    await pagina.waitForTimeout(2200);
+    const restos = await pagina.locator("canvas.mk-foto-profunda").count();
+    const dibujos = await pagina.evaluate(() => window.__prof.dibujos);
+    revisar(aMedias.lienzos === 1 && aMedias.listos === 0 && restos === 0 && dibujos === 0 && errores.length === 0, `al salir a medio cargar no queda lienzo ni se dibuja nada (${JSON.stringify(aMedias)}; ${restos} lienzos, ${dibujos} dibujos${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
+  {
+    // En una composición sin foto a la vista, la pieza ni siquiera se baja.
+    const bajadas = [];
+    const { ctx, pagina } = await abrir(vista({ ...CON, composicion: "gigante" }), { preparar: (pg) => pg.on("request", (r) => /FotoProfunda/.test(r.url()) && bajadas.push(r.url())) });
+    await pagina.waitForSelector(".mk-enc", { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(900);
+    revisar(bajadas.length === 0 && (await pagina.locator(".mk-enc").count()) === 1, `en una composición sin foto a la vista, la foto profunda no se baja (${bajadas.length} bajadas)`);
+    await ctx.close();
+  }
+  {
+    // La vitrina: las tres fotos de ejemplo se ven con su efecto.
+    const ctx = await navegador.newContext({ viewport: { width: 1280, height: 860 } });
+    const pagina = await ctx.newPage();
+    const errores = [];
+    pagina.on("pageerror", (e) => errores.push(e.message));
+    await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+    await pagina.goto(base + "/#profundidad");
+    await pagina.waitForSelector("canvas.mk-foto-profunda[data-lista]", { timeout: 8000 }).catch(() => {});
+    await pagina.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += 500) {
+        scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    });
+    await pagina.waitForTimeout(600);
+    const listos = await pagina.locator("canvas.mk-foto-profunda[data-lista]").count();
+    revisar(listos === 3 && errores.length === 0, `la vitrina muestra las tres fotos de ejemplo con su efecto (${listos} lienzos)`);
+    await ctx.close();
+  }
+}
+
 await navegador.close();
 console.log(fallas ? `\n${fallas} revisión(es) fallaron.` : "\nTodo bien.");
 process.exit(fallas ? 1 : 0);

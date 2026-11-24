@@ -283,6 +283,46 @@ encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-23_permiso-fotos-webgl.md`.
 Pendiente: cartas o tarjetas que crecen y llevan a otra página (depende de las rutas de La Mente); fotos vivas en otros
 bloques.
 
+## Foto profunda (24-11-2026)
+
+La foto del encabezado con profundidad real: lo que está cerca se mueve distinto de lo que está lejos. Diseño
+`docs/superpowers/specs/2026-11-24-foto-profunda-design.md`, plan `docs/superpowers/plans/2026-11-24-foto-profunda.md`.
+Vitrina `#profundidad`. Prueba: `scripts/verificar-fotos.mjs [url] profunda`.
+
+| Qué | Cómo |
+|---|---|
+| Prenderla | `fotoProfunda: true` en la receta v2, en una composición con foto. No va con `fotoViva` ni con `tomas` (queda apagada, con aviso) |
+| El mapa | `mapasFotos` en `Encabezado`: la dirección del mapa de cada foto de `imagenes`, en el mismo orden. No va en la receta. Sin mapa, queda la foto normal |
+| Formato del mapa | Imagen en grises (JPG, PNG o WebP) con la proporción de la foto; más claro es más cerca. Se recomienda 256 px de ancho (2 a 5 KB); el motor lo suaviza a entre 64 y 160 puntos según el ancho del lienzo. Si su proporción no es la de la foto (más de un 4 % de diferencia), no se usa |
+| Con qué se mueve | El cursor, el paso del encabezado por la pantalla y la inclinación del teléfono (en iPhone, si el encabezado ya pidió el permiso con `mover`) |
+| Cuánto | Entre lo más cercano y lo más lejano hay hasta un 3,5 % del ancho de diferencia (cada punto se corre a lo más un 1,75 %). La foto va un 6 % acercada para que no asomen los bordes: el lienzo y también la foto de abajo, mientras el efecto esté pedido, así no hay salto cuando el lienzo aparece o se va |
+
+Archivos: `src/fotos/calculo-profunda.ts` (lo calculable), `profunda.ts` (el motor WebGL, chico y aparte del de las
+fotos vivas), `FotoProfunda.tsx` (la pieza, que se baja aparte) e `imagen.ts` (bajar una foto con permiso para WebGL,
+con el reintento que salta la caché; lo comparte con las fotos vivas).
+
+Detalles que cuidar (salieron de la revisión final):
+
+- **El calce.** `Encabezado` marca la caja de la foto con `data-foto-profunda` y el CSS acerca la `<img>` un 6 %
+  (1,113 con las capas de profundidad, que ya la acercan un 5 %). Si cambia `ACERCAR`, cambian esos dos números.
+- **Memoria.** La foto pasa por un lienzo 2D antes de subirla: lado mayor de 1600 px y el tope de la tarjeta gráfica.
+- **Batería.** La inclinación va de a un grado y con holgura (`pasoFirme`); fuera de la vista no se mide. El efecto
+  llega y duerme cuando lo que falta ya no se ve (`llegoA`).
+- **Entradas.** Con la entrada `zoom` (la única que anima la `<img>` y no su caja), el lienzo espera a que termine.
+
+**De dónde sale el mapa.** De un modelo abierto de profundidad (Depth Anything V2 Small, Apache-2.0), una vez por foto.
+No es parte del paquete: corre donde se sube la foto. En la prueba del 24-11, en un navegador y sin tarjeta gráfica,
+tomó 4,2 a 4,6 segundos por foto; quien edita baja 3 MB del motor que lo corre, más el modelo. La vitrina trae el
+código de referencia (`demo/Profundidad.tsx`, función `calcular`). Ojo con las licencias: las versiones más grandes de
+ese modelo son solo para uso no comercial.
+
+Reglas: solo en nivel completo; dibuja solo mientras algo cambia y se detiene fuera de la vista; el mapa se suaviza al
+cargarlo (si no, los bordes de las cosas se ven dentados); si falta WebGL, la foto, el mapa o el permiso CORS, o se
+pierde el contexto, queda la foto normal. Vale el mismo `origenesFotos` de las fotos vivas.
+
+Pendiente: la galería y las fotos de productos; combinarla con la foto viva y con las tomas; un control de cuánta
+profundidad. Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_foto-profunda.md`.
+
 ## Dedo y física (23-11-2026)
 
 Nueve efectos que responden al dedo o al cursor, o que tienen física propia. Se eligen desde las recetas, se bajan

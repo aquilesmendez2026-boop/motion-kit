@@ -17,6 +17,8 @@ export const CSS_ENCABEZADO = `
 .mk-enc-botones{margin-top:.6rem}
 .mk-enc-media{position:relative;z-index:1;overflow:hidden;border-radius:var(--mk-radio-tarjeta,18px);background:color-mix(in srgb,var(--mk-acento,#7c5cff) 15%,transparent)}
 .mk-enc-media img{display:block;width:100%;height:100%;object-fit:cover}
+.mk-enc-media[data-foto-profunda] img{scale:1.06}
+.mk-enc[data-profundidad] .mk-enc-media[data-foto-profunda] img{scale:1.113}
 .mk-enc :is(.mk-enc-bajada,.mk-enc-ante){text-shadow:0 0 4px var(--mk-fondo,transparent),0 0 16px var(--mk-fondo,transparent)}
 
 /* Composiciones */

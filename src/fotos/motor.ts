@@ -2,6 +2,7 @@
 // la foto que se arma desde partículas y el cambio líquido entre dos fotos. Se carga aparte (import()). Si algo falla
 // (sin WebGL, foto sin permiso, contexto perdido), quien lo usa quita el lienzo y queda la foto de siempre.
 import { rejillaParticulas } from "./calculos";
+import { pedirConPermiso } from "./imagen";
 
 export interface Textura {
   img: HTMLImageElement;
@@ -63,27 +64,6 @@ const FRAG_P = "precision mediump float;uniform sampler2D a;varying vec2 v;void 
 
 const DURACION = { particulas: 1200, liquido: 1000, onda: 1700, acercar: 6000 };
 const LADO_MAXIMO = 1600;
-
-/** Baja una foto. Con `cors`, pidiendo permiso para usarla en WebGL. `null` si no carga. */
-function pedirImagen(src: string, cors: boolean): Promise<HTMLImageElement | null> {
-  return new Promise((listo) => {
-    const img = new Image();
-    if (cors) img.crossOrigin = "anonymous";
-    img.decoding = "async";
-    img.onload = () => listo(img);
-    img.onerror = () => listo(null);
-    img.src = src;
-  });
-}
-
-function esDeOtroSitio(url: string): boolean {
-  try {
-    const u = new URL(url, location.href);
-    return /^https?:$/.test(u.protocol) && u.origin !== location.origin;
-  } catch {
-    return false;
-  }
-}
 
 /** Crea el motor sobre un lienzo. `null` si el navegador no da WebGL. */
 export function crearMotor(lienzo: HTMLCanvasElement): Motor | null {
@@ -305,21 +285,7 @@ export function crearMotor(lienzo: HTMLCanvasElement): Motor | null {
 
   const motor: Motor = {
     async cargar(url) {
-      let img = await pedirImagen(url, true);
-      if (!img && esDeOtroSitio(url)) {
-        // El <img> de siempre pide la foto sin CORS; si el servidor solo da el permiso cuando se lo piden, la caché del
-        // navegador puede devolver esa respuesta sin permiso. Se pide de nuevo, saltándose la caché.
-        try {
-          const r = await fetch(url, { mode: "cors", cache: "reload", credentials: "omit" });
-          if (r.ok) {
-            const direccion = URL.createObjectURL(await r.blob());
-            img = await pedirImagen(direccion, false);
-            URL.revokeObjectURL(direccion);
-          }
-        } catch {
-          /* sin permiso de verdad (o sin red): queda la foto normal */
-        }
-      }
+      const img = await pedirConPermiso(url, true);
       if (!img || !vivo) return null;
       const t: Textura = { img, tex: gl.createTexture()! };
       let subida = false;

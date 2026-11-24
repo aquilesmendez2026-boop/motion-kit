@@ -96,6 +96,10 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   fotoViva?: boolean;
   /** Orígenes cuyas fotos permiten CORS (el motor pide la textura solo a estos, al mismo sitio, data: y blob:). */
   origenesFotos?: string[];
+  /** Foto profunda: la foto se mueve con profundidad real. Necesita `mapasFotos`. Solo en completo; no va con la foto viva ni con las tomas. */
+  fotoProfunda?: boolean;
+  /** El mapa de profundidad de cada foto de `imagenes`, en el mismo orden (en grises: más claro es más cerca). Se usa el de la primera. */
+  mapasFotos?: string[];
   /** Letras con imán: las letras del título se apartan del dedo o del cursor y vuelven con rebote. Solo en completo. */
   iman?: boolean;
   /** Letrero colgante: en la composición «letrero», el marco cuelga y se balancea. Solo en completo. */
@@ -127,7 +131,7 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function Encabezado({
   composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
-  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, fotoViva, origenesFotos, iman, colgante, palabras,
+  shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, fotoViva, origenesFotos, fotoProfunda, mapasFotos, iman, colgante, palabras,
   barraPropia, logo, nombre, estado, estadoNegocio, fotoEnLetras, tratamiento, horaDelDia, ahora, className, style, ...resto
 }: EncabezadoProps) {
   useStyles("encabezado", CSS_ENCABEZADO);
@@ -206,16 +210,23 @@ export function Encabezado({
   // sigue dibujando aquí, en su mismo lugar (no se vuelve a montar cuando el lienzo llega o se va).
   const FotoViva = useAparte(Boolean(fotoViva) && nivel === "completo", () => import("../fotos/FotoVivaEncabezado"));
   const [tomaViva, setTomaViva] = useState<number | undefined>(undefined);
+  // Foto profunda: solo en completo, con una sola foto (sin tomas ni foto viva) y si viene su mapa. Se baja aparte.
+  const mapa = mapasFotos?.[0];
+  // Mientras está pedida, la foto de abajo va acercada igual que el lienzo (en cualquier nivel): así no salta cuando el
+  // lienzo aparece ni cuando se va.
+  const profunda = Boolean(fotoProfunda) && !fotoViva && !conTomas && Boolean(mapa) && Boolean(imagenes?.[0]) && (composicion === "imagen" || composicion === "tarjeta" || composicion === "vinetas" || (composicion === "dividido" && !objeto));
+  const FotoProfunda = useAparte(profunda && nivel === "completo", () => import("../fotos/FotoProfunda"));
   // Letras con imán: solo en completo, y no con la foto en las letras (ahí el título va en una sola pieza).
   const Iman = useAparte(Boolean(iman) && !fotoEnLetras && nivel === "completo", () => import("../dedo/Iman"));
   // Letrero colgante: solo en la composición «letrero» y en completo.
   const Colgante = useAparte(Boolean(colgante) && composicion === "letrero" && nivel === "completo", () => import("../dedo/Colgante"));
   const media = (k = 0) => (
-    <div className="mk-enc-media" key={k}>
+    <div className="mk-enc-media" key={k} data-foto-profunda={k === 0 && profunda ? "" : undefined}>
       {k === 0 && conTomas ? <Tomas fotos={imagenes!} alt={alt} quieto={liviano} activa={tomaViva} /> : <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />}
       {k === 0 && FotoViva && (
         <FotoViva fotos={conTomas ? imagenes! : [foto(0)]} tomas={conTomas} particulas={!apertura} origenes={origenesFotos ?? SIN_ORIGENES} alCambiarToma={setTomaViva} />
       )}
+      {k === 0 && FotoProfunda && mapa && <FotoProfunda foto={foto(0)} mapa={mapa} origenes={origenesFotos ?? SIN_ORIGENES} />}
     </div>
   );
   const ante = antetitulo && <p className="mk-enc-ante">{antetitulo}</p>;

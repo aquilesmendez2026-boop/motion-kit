@@ -2,6 +2,40 @@
 
 ## Sin publicar (en `dev`, después de 0.3.0)
 
+### Foto profunda: profundidad real en la foto del encabezado
+
+- **Receta del encabezado (v2, sin versión nueva): campo `fotoProfunda`.** Solo en las composiciones con foto. Si la
+  receta trae también `fotoViva` o `tomas`, queda apagada, con aviso. El contrato está regenerado: La Mente tiene que
+  copiarlo antes de que el Estudio mande ese campo.
+- **`Encabezado` suma las props `fotoProfunda` y `mapasFotos`** (la dirección del mapa de profundidad de cada foto de
+  `imagenes`, en el mismo orden; se usa el de la primera). Los mapas no van en la receta: los pasa quien arma la página.
+- **El efecto** (se baja aparte, unos 4,5 KB; WebGL a mano): lo que está cerca se mueve distinto de lo que está lejos, con el
+  cursor, con el paso del encabezado por la pantalla y con la inclinación del teléfono. Solo en nivel completo; dibuja
+  solo mientras algo cambia. Si no hay WebGL, si la foto o el mapa no cargan o no dan permiso (CORS), o si se pierde
+  el contexto, queda la foto normal.
+- **El mapa** es una imagen en grises, más claro es más cerca (se recomienda 256 px de ancho: pesa de 2 a 5 KB; tiene que tener la proporción de la foto). Se
+  calcula una vez por foto con un modelo abierto (Depth Anything V2 Small, Apache-2.0). **El modelo no es parte del
+  paquete:** corre donde se sube la foto.
+- Vitrina `#profundidad`: tres fotos de ejemplo con su mapa (`demo/fotos/`, licencia libre) y una herramienta para
+  soltar una foto propia, que baja el modelo de internet solo ahí.
+- **Revisión final (24-11), arreglada entera:**
+  - La foto de abajo va acercada el mismo 6 % que el lienzo mientras el efecto esté pedido (`data-foto-profunda` en la
+    caja de la foto): antes, al aparecer o al irse el lienzo, la foto saltaba.
+  - Una foto enorme se sube achicada (lado mayor de 1600 px) y el sombreador pide precisión alta: menos memoria y más
+    nitidez en teléfonos.
+  - Si la caché del navegador devuelve la foto sin permiso CORS, se pide de nuevo saltándose la caché. Eso ahora vive
+    en `src/fotos/imagen.ts`, que comparten la foto profunda y las fotos vivas.
+  - La inclinación del teléfono va de a un grado y con holgura: el temblor de la mano ya no despierta al efecto. Con
+    el teléfono acostado no se usa, y al girarlo parte de cero.
+  - Con la entrada `zoom`, el lienzo espera a que la foto termine de entrar.
+  - Un mapa con otra proporción que la foto (más de un 4 %) no se usa. La receta apaga `fotoProfunda` si no hay
+    ninguna foto, con aviso. El mapa se suaviza según el ancho del lienzo (de 64 a 160 puntos). El movimiento va igual
+    de rápido en pantallas de 60 y de 120 cuadros por segundo. En una composición sin foto, la pieza no se baja.
+  - Vitrina: la revisión del modelo quedó fija, y si el modelo no baja se puede reintentar.
+- Prueba: parte `profunda` de `scripts/verificar-fotos.mjs` (34 revisiones) y `pruebas/profunda.test.ts` (12).
+- Pesos al cargar (gzip): principal 79,3 KB (tope 80), encabezado 34,0 (35), página 15,5 (17), momentos 12,6 (13),
+  escena 14,4 (16), receta 9,7 (10) y director 9,1 (10). El efecto, aparte: 3,8 KB más 0,8 KB de lo compartido.
+
 ### Director: el motor de animación propio, fase 1 (versión 0, experimental)
 
 - **Entrada nueva `motion-kit/director`** (9,1 KB gzip al cargar, tope 10; lo que sigue al cursor o a la velocidad
