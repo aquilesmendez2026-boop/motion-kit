@@ -128,6 +128,10 @@ export function Relatos() {
           <Telefono id="p-impulso" estilo="rock" relato="escenas" relatoPagina="impulso" respaldo={respaldo} />
         </figure>
         <figure>
+          <figcaption>{RELATOS.figura.nombre} (relato de página, dentro de un marco con su propio scroll)</figcaption>
+          <Telefono id="p-figura" estilo="retro" relato="escenas" relatoPagina="figura" respaldo={respaldo} />
+        </figure>
+        <figure>
           <figcaption>Cuento más alto que la pantalla</figcaption>
           <Telefono id="r-cuento-largo" estilo="pelicula" relato="cuento" respaldo={respaldo}>
             <Relato modo="cuento" className="rel-blq">

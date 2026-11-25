@@ -101,6 +101,16 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.0 (25-11-2026)
+
+Etiqueta `v0.5.0`: suma la entrada `motion-kit/luz` («Luz y materia»), cuatro momentos que se manejan con el dedo
+(cupón, sticker, sellos con timbre y ruleta), tres hilos de página (`rulos`, `hebras`, `figura`) con el material de
+cada estilo, y el encabezado listo para una partitura (sus partes marcadas con `data-mk-parte` y `sinEntrada`). Arregla
+las formas de `Boton`, que nunca se aplicaban: **cambia cómo se ven** los botones con forma. Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.5.0`. El contrato de página suma valores (los hilos, `figura`, `semilla`);
+los del encabezado y la partitura no cambian. Antes de la etiqueta: 313 pruebas calculables, pesos dentro de sus
+topes (el de `motion-kit` sube a 90 KB, fijado por Aquiles) y la batería visual completa.
+
 ## Paquete v0.4.0 (24-11-2026)
 
 Etiqueta `v0.4.0`: suma el Director (`motion-kit/director`) con la Partitura **versión 1** y su contrato
@@ -225,6 +235,7 @@ Cómo se cuenta la página al bajar. Todo en `src/relatos/`, entrada `motion-kit
 | Carrete | bloque | La tira pasa de lado | una tira: 2+ `foto` o `tarjeta` |
 | Subtítulos | bloque | La frase se enciende palabra por palabra (`FraseRelato`) | `frase` |
 | Hilo | página | Una línea se dibuja y una luz viaja | — |
+| Hilo con rulos, Hebras, Hilo que dibuja | página | Un hilo por delante de los bloques, que serpentea, se abre donde hay tarjetas y termina en una figura (ver «Hilos») | — (`tarjeta` para abrirse) |
 | Luz que cambia | página | El cielo pasa de la tarde a la noche, con tintes de la paleta | — |
 
 CSS nativo con scroll dentro de `@supports`; sin soporte, respaldo con `data-visto`. En liviano los pesados caen a
@@ -712,13 +723,32 @@ Pendiente: la señal `dato` (cupos, sellos, precios); la capa gráfica y los pel
 Mente (encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-24_partitura-y-lenguaje.md`). Margen de `director`: 186 bytes
 (9.814 de 10.000); lo próximo grande que se sume ahí obliga a bajar aparte la inclinación de `verse`.
 
+### El encabezado dentro de una partitura (25-11-2026)
+
+Para que una partitura mueva un `Encabezado` de verdad (lo pidió La Mente para conectarla en la página pública):
+
+- **El encabezado marca sus partes** con `data-mk-parte`, siempre: `antetitulo`, `titulo` (el `h1`), `bajada`,
+  `botones`, `media` (cada foto; tres en «viñetas») y `contenido` (la caja). Son los nombres que usan las partituras
+  de la casa y «Sorpréndeme». Una parte que no está (sin antetítulo, sin botón) no se marca.
+- **`sinEntrada`** (prop de `Encabezado`, no va en la receta): apaga la entrada del encabezado y el efecto de su
+  título, para que las partes no se muevan dos veces. Quien envuelve el encabezado en `ConPartitura` la pasa. Sin
+  ella, el encabezado sigue como siempre. No alcanza con `entrada: "ninguna"`: el título siempre trae un efecto.
+- `TextoCinetico` gana `cuando="nunca"`: el texto queda quieto y entero (lo mueve otro).
+- Nada del encabezado es `position: fixed` dentro del padre del título ni del de la caja: la profundidad que el
+  Director pone ahí para inclinar no descoloca nada. Lo fijo (la barra de salida, la estela) va fuera.
+- Pendiente: la composición «tarjeta» no tiene todavía una capa de brillo, así que «Tarjeta holográfica» solo la
+  inclinaría. No se ofrece hasta que la tenga.
+
+Prueba: `scripts/verificar-director.mjs [url] encabezado` y `pruebas/encabezado-partes.test.ts`. Peso: `encabezado`
+pasa de 34,0 a 34,2 KB (tope 35).
+
 ## Luz y materia: una sola luz para la página (24-11-2026)
 
 Para que una página se vea como objetos sobre una mesa, iluminados por una sola luz. Diseño
 `docs/superpowers/specs/2026-11-24-luz-y-materia-design.md`, plan `docs/superpowers/plans/2026-11-24-luz-y-materia.md`.
 Entrada **`motion-kit/luz`** (6,6 KB gzip al cargar, con su CSS adentro; tope 8, fijado por Aquiles) y
-`motion-kit/estilos-luz.css` (2,7 KB). Vitrina `#luz`. No se exporta desde la entrada principal. Sin etiqueta todavía:
-está en `dev`, después de `v0.4.0`.
+`motion-kit/estilos-luz.css` (2,7 KB). Vitrina `#luz`. No se exporta desde la entrada principal. Viaja desde la
+etiqueta `v0.5.0`.
 
 | Qué | Dónde | Para qué |
 |---|---|---|
@@ -879,6 +909,80 @@ Pesos (gzip): cupón 4,0 KB, sticker 3,8, sellos con timbre 3,1 y ruleta 5,7, ca
 Pruebas: `pruebas/momentos4.test.ts` y `pruebas/momentos4-dibujo.test.ts` (15) y `scripts/verificar-momentos4.mjs`
 (69 revisiones; la ruleta se lanza 20 veces, con el botón y con el dedo, hacia los dos lados). Pasa entera también con el motor de Safari.
 
+## Hilos: el hilo que gira, se abre, se junta y arma algo (25-11-2026)
+
+Tres relatos de página más, hermanos del Hilo. Van **por delante** de los bloques, por lo libre de cada uno (su
+relleno), y se ven en un teléfono con páginas de franjas pegadas como las de La Mente. Cada uno incluye al anterior.
+Diseño `docs/superpowers/specs/2026-11-25-hilos-design.md`, plan `docs/superpowers/plans/2026-11-25-hilos.md`.
+Vitrina `#hilos` (la página puede verse con un estilo del kit, como una de La Mente o en su vista previa). Prueba:
+`scripts/verificar-hilos.mjs [url] [rulos|hebras|figura|niveles|marco|lamente]`.
+
+| `relatoPagina` | Nombre | Qué hace |
+|---|---|---|
+| `rulos` | Hilo con rulos | Baja serpenteando por la orilla de cada bloque, cruza al otro lado en el paso al siguiente y hace un rulo en cada cruce |
+| `hebras` | Hebras | Además, en un bloque con dos o más tarjetas (`data-mk-parte="tarjeta"`) se abre en hebras por sus canales (las orillas y entre columnas; a lo más 5), deja un nudo junto a cada tarjeta y se junta abajo |
+| `figura` | Hilo que dibuja | Además, al final el mismo hilo dibuja una figura del rubro de un solo trazo, en una franja propia de 140 px (el remate) |
+
+Qué recibe `PaginaRelato` (y la receta de página, con los mismos nombres):
+
+- `figura`: `taza`, `hamburguesa`, `plato`, `poste`, `tijera`, `huella`, `pesa`, `lapiz`, `bolsa`, `corazon` o `estrella`
+  (por defecto). `figuraDeRubro(rubro)` dice cuál le toca a cada rubro de los encabezados; el contrato lo trae también.
+- `semilla`: el `slug` del negocio. Decide por qué lado parte el hilo, cómo son sus rulos y el giro de la figura: dos
+  negocios del mismo rubro no salen iguales.
+
+Reglas que cuidar:
+
+- **Nunca sobre el contenido.** El hilo se mide contra cada texto, foto, tarjeta, botón y campo. Va por la orilla
+  libre (a lo más a 14 px del borde) y cruza por la franja libre entre lo último de un bloque y lo primero del
+  siguiente. Si un bloque tiene relleno propio arriba, cruza ahí, sobre su fondo.
+- **Puntadas.** Donde no quedan 10 px libres (una foto de lado a lado), el hilo pasa por debajo: ese tramo no se
+  dibuja y queda un ojal donde entra y otro donde sale. También cuentan como sin lugar un bloque con una **foto de
+  fondo** (una imagen puesta por CSS que lo cubre, con `cover`, `contain` o sin repetir: el hilo no pasa sobre ella
+  aunque su texto deje orilla; una textura que se repite no cuenta como foto) y un bloque con algo
+  pegado al bajar (`sticky`: los relatos «pila», «cuento», «carrete» y «subtítulos»). En una página muy apretada el
+  hilo se ve a ratos.
+- **Las hebras y el cruce se reparten el espacio.** Si el bloque que sigue no trae relleno propio arriba, la junta de
+  las hebras y el cruce al otro lado caben los dos en lo que queda bajo las tarjetas (con unos 44 px alcanza).
+- **Se mide contra el lugar final de cada bloque,** no contra donde está mientras entra: al medir se quitan por un
+  instante los corrimientos de la entrada de los relatos, y de lo que la página marca con `data-entrada` (como las
+  franjas de La Mente), sin que se alcance a pintar. Vuelven a su lugar sin transición: medir no hace bajar y subir
+  una tarjeta levantada.
+- **Se vuelve a medir** cuando algo cambia de tamaño (una foto que carga, un bloque que crece) o de orden (bloques que
+  se reordenan sin cambiar de tamaño). Varios cambios seguidos se miden una sola vez, cuando se calman.
+- **Dentro de un marco con su propio scroll** sigue al scroll del marco. En una **vista previa achicada y sin scroll
+  propio** (como la del Estudio: la página dentro de `overflow: hidden` con `transform: scale`) va entera y quieta,
+  medida en su lugar: ahí el scroll no la dibujaría nunca. En pantalla ancha va por las orillas de la página.
+- **Color.** Es el acento: `--mk-acento` o, en una página sin el estilo del kit (La Mente), `--lm-acento`. Sobre un
+  bloque cuyo fondo se parece al acento (contraste menor que 1,6 a 1), ese tramo toma el color del texto del bloque.
+  Entiende los colores como los entrega el navegador (`rgb`, `color(srgb)`, `oklab`, `oklch`, `lab`, `lch`); un fondo
+  con degradado o imagen no se puede leer: ahí queda el acento.
+- **El final va con tiempo.** La figura está al final de la página y solo cabe entera en la pantalla cuando ya casi no
+  queda nada por bajar: la llegada y la figura se dibujan apenas el remate se ve (unos 2 segundos), no con el scroll.
+  Lo demás del hilo se dibuja a la vista, nunca bajo el borde de la pantalla. El remate se mide (un relleno bajo él no
+  descoloca la figura).
+- **El hilo de cada estilo.** El mismo recorrido, con el material del estilo de la página: un tubo de luz en neón,
+  dos hebras de lana que se trenzan en retro, un cable en rock, una cinta en anime y los rieles de una tira en
+  «película». Sin estilo del kit (La Mente), una línea. Cada capa va a lo más a 3,25 px del centro (no pisa el
+  contenido) y todas se dibujan juntas. Si cambia el estilo, se vuelve a medir.
+- **El encabezado no lleva hilo.** Parte en el paso al segundo bloque.
+- **Sin código al bajar.** Se mide al montar y cuando algo cambia de tamaño (una foto que carga, un bloque que crece);
+  después lo dibuja el navegador, atado al scroll. Con la página quieta no pide cuadros.
+- **Excepción a «solo `transform` y `opacity`».** Dibujar una línea no se puede con `transform`: como el Hilo de
+  siempre, estos animan `stroke-dashoffset` (el trazo) y `offset-distance` (la luz), además de `opacity`. Medido en
+  Chromium con el procesador frenado 4 veces: 60 cuadros por segundo al bajar la vitrina, igual que con el Hilo.
+- **Niveles.** Completo con animaciones atadas al scroll (Chrome, Safari 26): todo. Liviano, o un navegador sin ellas:
+  el hilo entero y quieto, sin luces. Quieto: sin hilo (con `rulos` o `hebras` el archivo ni se baja); con `figura`,
+  solo la figura, dibujada, en su remate.
+- **Contrato.** `contrato/pagina-motionkit.json` suma los tres ids, la lista `figura`, los campos `figura` y `semilla`
+  y `figuraDeRubro`. Solo agrega; quien valide con el contrato viejo rechaza lo nuevo.
+
+Pesos (gzip): los hilos van en un archivo aparte de 9,9 KB (el diseño pedía 5), que baja solo si la página eligió
+uno. Al cargar, `motion-kit/pagina` pasa de 15,5 a 16,2 KB (tope 17) y `motion-kit` de 79,4 a 80,3 KB (tope 90, fijado por Aquiles el
+25-11-2026).
+
+Pruebas: `pruebas/hilos.test.ts` (23) y `scripts/verificar-hilos.mjs` (53 revisiones). Con el motor de Safari pasan
+40 y 14 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
+
 ## Safari (sondeo del 24-11-2026)
 
 Las pruebas visuales están escritas para Chrome. El 24-11 se corrieron las quince, una vez, con el motor de Safari
@@ -888,6 +992,7 @@ sirve para buscar diferencias de verdad.
 | Prueba | En Safari | Qué era |
 |---|---|---|
 | efectos, encabezados, lamente, biblioteca, momentos3 | Pasan enteras | — |
+| hilos (25-11) | Pasan 40; 14 no aplican | El WebKit de Playwright no tiene animaciones atadas al scroll: el hilo va entero y quieto, y lo que se revisa «al bajar» se salta con su motivo |
 | fotos | Un error real, arreglado | Al arrastrar sobre una foto de la galería, el navegador iniciaba su «arrastrar imagen» y se tragaba el toque siguiente: el visor no abría. Ahora las fotos con gestos lo evitan |
 | piezas, estilos, escena, momentos, momentos2 | Diferencias que no son errores | Safari no lleva el Tab a los enlaces por defecto; mide distinto lo que sobra dentro de una caja (nada se sale a la vista); la foto de prueba pesa menos; una revisión usa una herramienta que solo tiene Chrome |
 | relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Más simples, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, cada bloque de un relato hace una entrada simple al verse (el respaldo de `src/relatos/respaldo.ts`), y lo demás se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |

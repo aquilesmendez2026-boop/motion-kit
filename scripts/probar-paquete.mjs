@@ -28,7 +28,7 @@ writeFileSync(join(P, "package.json"), JSON.stringify({ name: "proyecto-prueba",
 writeFileSync(join(P, "pagina.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEstilos, type RecetaEncabezado } from "motion-kit/encabezado";
-import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
+import { PaginaRelato, Relato, validarPagina, FIGURA_IDS, figuraDeRubro, type FiguraId } from "motion-kit/pagina";
 import { SellosEstampa, CuentaRegresiva, FechasQueVienen, LlamadoConVida, FuegosArtificiales, CarruselGiratorio, LibroQueSeAbre, CuponQueSeArranca, StickerQueSeDespega, SellosConTimbre, RuletaDePremios, type RuletaDePremiosProps, type FechaQueViene, type EscenaLlamado, type LibroQueSeAbreProps } from "motion-kit/momentos";
 import { ConPartitura, validarPartitura, type Partitura } from "motion-kit/director";
 import { leerPartitura, escribirPartitura, subirPartitura } from "motion-kit/partitura";
@@ -53,10 +53,11 @@ const ruleta: RuletaDePremiosProps = { premios: ["Café gratis", { texto: "10 % 
 const leida = leerPartitura("al verse:\\n  titulo desde abajo 135%, por palabra, con máscara");
 const escrita: string = leida.ok ? escribirPartitura(leida.partitura) : "";
 const subida = validarPartitura(subirPartitura({ version: 0, escenas: [{ con: "puntero", pasos: [{ actor: "tarjeta", x: 8 }] }] }));
-const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "impulso", estela: true });
+const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "figura", figura: figuraDeRubro("cafeteria"), semilla: "cafe-luna", estela: true });
+const figuras: FiguraId[] = FIGURA_IDS;
 if (receta && p.ok && fondo.ok && vale.ok && leida.ok && escrita && subida.ok) createRoot(document.getElementById("raiz")!).render(
   <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
-    <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela}>
+    <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela} figura={p.pagina.figura ?? figuras[0]} semilla={p.pagina.semilla}>
       <Encabezado {...recetaAProps(receta)} />
       <Relato modo="cuento"><p data-mk-parte="linea">Había una vez…</p></Relato>
       <SellosEstampa total={10} llenos={3} premio="Café gratis" semilla="cafe" />

@@ -7,8 +7,8 @@ export interface TextoCineticoProps extends HTMLAttributes<HTMLElement> {
   texto: string;
   efecto: TextoEfecto;
   como?: "h1" | "h2" | "h3" | "p" | "span" | "div";
-  /** «entrar»: al aparecer en pantalla. «siempre»: al cargar. */
-  cuando?: "entrar" | "siempre";
+  /** «entrar»: al aparecer en pantalla. «siempre»: al cargar. «nunca»: el texto queda quieto y entero (lo mueve otro). */
+  cuando?: "entrar" | "siempre" | "nunca";
   /** Milisegundos antes de empezar. */
   retraso?: number;
   /** Reemplaza el contenido de la palabra resaltada (por ejemplo, palabras que rotan). El `aria-label` no cambia. */
@@ -79,6 +79,7 @@ export function TextoCinetico({ texto, efecto, como = "h2", cuando = "entrar", r
 
   useEffect(() => {
     const el = ref.current;
+    if (cuando === "nunca") return setFase("inicial");
     if (cuando === "siempre" || !el || typeof IntersectionObserver === "undefined") return setFase("jugando");
     setFase("esperando");
     const o = new IntersectionObserver(([e]) => {

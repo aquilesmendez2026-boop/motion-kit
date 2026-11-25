@@ -93,6 +93,7 @@ export function App() {
           <a href="#encabezados">Encabezados</a>
           <a href="#biblioteca">Biblioteca</a>
           <a href="#relatos">Relatos</a>
+          <a href="#hilos">Hilos</a>
           <a href="#momentos">Momentos</a>
           <a href="#director">Director</a>
           <a href="#luz">Luz</a>

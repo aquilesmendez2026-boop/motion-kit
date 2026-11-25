@@ -45,6 +45,12 @@ const altoCss = (a: AltoEncabezado) => (typeof a === "number" ? `${Math.max(20, 
 export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   composicion?: ComposicionId;
   entrada?: EntradaId;
+  /**
+   * Sin la entrada del encabezado ni el efecto de su título: para cuando una partitura (`ConPartitura`) es la que mueve
+   * sus partes, y así no se mueven dos veces. Las partes van marcadas con `data-mk-parte`: `antetitulo`, `titulo`,
+   * `bajada`, `botones`, `media` y `contenido`.
+   */
+  sinEntrada?: boolean;
   antetitulo?: string;
   /** Título. Una palabra entre asteriscos (`*Smash* burgers`) se resalta. */
   titulo: string;
@@ -129,7 +135,7 @@ export interface EncabezadoProps extends Omit<HTMLAttributes<HTMLElement>, "titl
  * Todo son datos, así que el cliente puede editarlo desde un formulario.
  */
 export function Encabezado({
-  composicion = "izquierda", entrada = "cascada", antetitulo, titulo, bajada, boton, botonSecundario, pack,
+  composicion = "izquierda", entrada: entradaPedida = "cascada", sinEntrada = false, antetitulo, titulo, bajada, boton, botonSecundario, pack,
   efecto, variante = 1, efectoTexto, imagenes, alt = "", datos, alto = "pantalla", altoCelular, profundidad, luz, mover,
   shader, poster, objeto, salida = "ninguna", ahorro = "auto", alCambiarNivel, apertura, tomas, fotoViva, origenesFotos, fotoProfunda, mapasFotos, iman, colgante, palabras,
   barraPropia, logo, nombre, estado, estadoNegocio, fotoEnLetras, tratamiento, horaDelDia, ahora, className, style, ...resto
@@ -137,6 +143,8 @@ export function Encabezado({
   useStyles("encabezado", CSS_ENCABEZADO);
   const estilo = useEstilo();
   const [listo, setListo] = useState(false);
+  /** La entrada que de verdad se usa: ninguna, si la pone una partitura. */
+  const entrada: EntradaId = sinEntrada ? "ninguna" : entradaPedida;
   const ref = useRef<HTMLElement>(null);
   useLayoutEffect(() => setListo(true), []);
   const capas = profundidad === true ? CAPAS_POR_DEFECTO : Array.isArray(profundidad) && profundidad.length ? profundidad : null;
@@ -221,7 +229,7 @@ export function Encabezado({
   // Letrero colgante: solo en la composición «letrero» y en completo.
   const Colgante = useAparte(Boolean(colgante) && composicion === "letrero" && nivel === "completo", () => import("../dedo/Colgante"));
   const media = (k = 0) => (
-    <div className="mk-enc-media" key={k} data-foto-profunda={k === 0 && profunda ? "" : undefined}>
+    <div className="mk-enc-media" data-mk-parte="media" key={k} data-foto-profunda={k === 0 && profunda ? "" : undefined}>
       {k === 0 && conTomas ? <Tomas fotos={imagenes!} alt={alt} quieto={liviano} activa={tomaViva} /> : <img src={foto(k)} alt={k === 0 ? alt : ""} decoding="async" />}
       {k === 0 && FotoViva && (
         <FotoViva fotos={conTomas ? imagenes! : [foto(0)]} tomas={conTomas} particulas={!apertura} origenes={origenesFotos ?? SIN_ORIGENES} alCambiarToma={setTomaViva} />
@@ -229,16 +237,16 @@ export function Encabezado({
       {k === 0 && FotoProfunda && mapa && <FotoProfunda foto={foto(0)} mapa={mapa} origenes={origenesFotos ?? SIN_ORIGENES} />}
     </div>
   );
-  const ante = antetitulo && <p className="mk-enc-ante">{antetitulo}</p>;
+  const ante = antetitulo && <p className="mk-enc-ante" data-mk-parte="antetitulo">{antetitulo}</p>;
   const tit = (
-    <TextoCinetico como="h1" className="mk-enc-titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando="siempre" letras={Boolean(iman) && !fotoEnLetras}
+    <TextoCinetico como="h1" className="mk-enc-titulo" data-mk-parte="titulo" texto={titulo} efecto={efectoTexto ?? estilo?.texto[0] ?? "revelar"} cuando={sinEntrada ? "nunca" : "siempre"} letras={Boolean(iman) && !fotoEnLetras}
       retraso={entrada === "telon" ? 900 : entrada === "foco" ? 600 : 150} resaltado={rotacion && <PalabrasRotan palabras={rotacion} quieto={quieto} />} />
   );
   const est = estado && estadoNegocio && <EstadoNegocio datos={estadoNegocio} />;
-  const baj = (bajada || est) && <>{bajada && <p className="mk-enc-bajada">{bajada}</p>}{est}</>;
+  const baj = (bajada || est) && <>{bajada && <p className="mk-enc-bajada" data-mk-parte="bajada">{bajada}</p>}{est}</>;
   const dat = datos && datos.length > 0 && <ul className="mk-enc-datos">{datos.map((d) => <li key={d}>{d}</li>)}</ul>;
   const bot = boton && (
-    <div className="mk-enc-botones">
+    <div className="mk-enc-botones" data-mk-parte="botones">
       <BotonesPack pack={pack ?? estilo?.pack ?? "clasico"} principal={boton} secundario={botonSecundario} />
     </div>
   );
@@ -246,19 +254,19 @@ export function Encabezado({
   let caja: ReactNode;
   switch (composicion) {
     case "gigante":
-      caja = <div className="mk-enc-caja">{ante}{tit}<div className="mk-enc-pie"><div>{baj}{dat}</div>{bot}</div></div>;
+      caja = <div className="mk-enc-caja" data-mk-parte="contenido">{ante}{tit}<div className="mk-enc-pie"><div>{baj}{dat}</div>{bot}</div></div>;
       break;
     case "poster":
-      caja = <div className="mk-enc-caja">{ante}{tit}<div className="mk-enc-lado">{baj}{dat}</div>{bot}</div>;
+      caja = <div className="mk-enc-caja" data-mk-parte="contenido">{ante}{tit}<div className="mk-enc-lado">{baj}{dat}</div>{bot}</div>;
       break;
     case "letrero":
     case "pantalla":
-      caja = <div className="mk-enc-marco"><div className="mk-enc-caja">{ante}{tit}{baj}{dat}{bot}</div></div>;
+      caja = <div className="mk-enc-marco"><div className="mk-enc-caja" data-mk-parte="contenido">{ante}{tit}{baj}{dat}{bot}</div></div>;
       break;
     case "boleto":
       caja = (
         <div className="mk-enc-marco">
-          <div className="mk-enc-caja">{ante}{tit}{baj}{bot}</div>
+          <div className="mk-enc-caja" data-mk-parte="contenido">{ante}{tit}{baj}{bot}</div>
           <div className="mk-enc-talon" aria-hidden={datos?.length ? undefined : "true"}>
             {datos?.length ? datos.map((d, i) => (i === 0 ? <b key={d}>{d}</b> : <span key={d}>{d}</span>)) : <><span>Entrada</span><b>Nº 0001</b><span>Admite uno</span></>}
           </div>
@@ -266,7 +274,7 @@ export function Encabezado({
       );
       break;
     default:
-      caja = <div className="mk-enc-caja">{ante}{tit}{baj}{dat}{bot}</div>;
+      caja = <div className="mk-enc-caja" data-mk-parte="contenido">{ante}{tit}{baj}{dat}{bot}</div>;
   }
 
   const fondoFoto = composicion === "tarjeta" || composicion === "imagen";

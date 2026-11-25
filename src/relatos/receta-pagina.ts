@@ -1,7 +1,7 @@
 // Receta de página v1: el encabezado más el relato de la página y el de cada bloque. Sin React: corre en el
 // navegador, en Node y, copiada como contrato, en el backend de La Mente.
 import { normalizarReceta, validarReceta, type ErrorReceta, type RecetaEncabezado } from "../receta/receta";
-import { RELATOS_DE_BLOQUE, RELATOS_DE_PAGINA, RELATO_DE_ESTILO, type RelatoBloqueId, type RelatoPaginaId } from "./catalogo";
+import { FIGURA_IDS, RELATOS_DE_BLOQUE, RELATOS_DE_PAGINA, RELATO_DE_ESTILO, type FiguraId, type RelatoBloqueId, type RelatoPaginaId } from "./catalogo";
 
 export interface BloqueRelato {
   /** En el kit, el bloque de la demo; en La Mente, el `tipo` de su bloque (`precios`, `galeria`…). */
@@ -18,22 +18,27 @@ export interface RecetaPagina {
   relatoPagina?: RelatoPaginaId;
   /** Estela y chispas: el cursor deja una estela sobre la página y un toque suelta chispas. */
   estela?: boolean;
+  /** La figura que dibuja el hilo al final (con `relatoPagina: "figura"`). Sin ella, una estrella. */
+  figura?: FiguraId;
+  /** El `slug` del negocio: con él, dos páginas del mismo rubro no salen iguales (los hilos). */
+  semilla?: string;
   bloques?: BloqueRelato[];
 }
 
-export const TOPES_PAGINA = { bloques: 30, idBloque: 40 } as const;
-export const CAMPOS_PAGINA = ["version", "encabezado", "relato", "relatoPagina", "estela", "bloques"] as const;
+export const TOPES_PAGINA = { bloques: 30, idBloque: 40, semilla: 80 } as const;
+export const CAMPOS_PAGINA = ["version", "encabezado", "relato", "relatoPagina", "estela", "figura", "semilla", "bloques"] as const;
 const ID_BLOQUE = /^[a-z0-9-]{1,40}$/;
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const esBloque = (v: unknown): v is RelatoBloqueId => (RELATOS_DE_BLOQUE as unknown[]).includes(v);
 const esDePagina = (v: unknown): v is RelatoPaginaId => (RELATOS_DE_PAGINA as unknown[]).includes(v);
+const esFigura = (v: unknown): v is FiguraId => (FIGURA_IDS as unknown[]).includes(v);
 
 /** Mensaje para un relato puesto donde no va. */
 function relatoMalPuesto(v: unknown, donde: "bloque" | "pagina"): string {
   if (donde === "bloque" && esDePagina(v)) return `«${v}» es un relato de página: va en relatoPagina.`;
   if (donde === "pagina" && esBloque(v)) return `«${v}» es un relato de bloque: va en relato.`;
-  return donde === "bloque" ? "Elige un relato de la lista." : "El relato de página es «hilo», «luz» o «impulso».";
+  return donde === "bloque" ? "Elige un relato de la lista." : `El relato de página es uno de: ${RELATOS_DE_PAGINA.map((id) => `«${id}»`).join(", ")}.`;
 }
 
 /**
@@ -57,6 +62,8 @@ export function validarPagina(x: unknown): { ok: true; pagina: RecetaPagina; avi
   if (x.relato !== undefined && !esBloque(x.relato)) mal("relato", relatoMalPuesto(x.relato, "bloque"));
   if (x.relatoPagina !== undefined && !esDePagina(x.relatoPagina)) mal("relatoPagina", relatoMalPuesto(x.relatoPagina, "pagina"));
   if (x.estela !== undefined && typeof x.estela !== "boolean") mal("estela", "«estela» va prendida (true) o apagada (false).");
+  if (x.figura !== undefined && !esFigura(x.figura)) mal("figura", `La figura es una de: ${FIGURA_IDS.join(", ")}.`);
+  if (x.semilla !== undefined && (typeof x.semilla !== "string" || !x.semilla.trim() || x.semilla.trim().length > TOPES_PAGINA.semilla)) mal("semilla", `La semilla es un texto de hasta ${TOPES_PAGINA.semilla}.`);
 
   if (x.bloques !== undefined) {
     if (!Array.isArray(x.bloques)) mal("bloques", "Los bloques tienen que ser una lista.");
@@ -91,6 +98,8 @@ export function normalizarPagina(x0: unknown): RecetaPagina {
   if (esBloque(x.relato)) p.relato = x.relato;
   if (esDePagina(x.relatoPagina)) p.relatoPagina = x.relatoPagina;
   if (x.estela === true) p.estela = true;
+  if (esFigura(x.figura)) p.figura = x.figura;
+  if (typeof x.semilla === "string" && x.semilla.trim()) p.semilla = x.semilla.trim().slice(0, TOPES_PAGINA.semilla);
   if (bloques.length) p.bloques = bloques;
   return p;
 }

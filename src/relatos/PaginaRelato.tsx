@@ -3,7 +3,7 @@ import { useStyles } from "../utils/styles";
 import { useAparte } from "../utils/aparte";
 import { useEstilo } from "../estilos/contexto";
 import { useNivelEscena, type ModoAhorro, type NivelEscena } from "../escena/nivel";
-import { RELATO_DE_ESTILO, type RelatoBloqueId, type RelatoPaginaId } from "./catalogo";
+import { RELATO_DE_ESTILO, type FiguraId, type RelatoBloqueId, type RelatoPaginaId } from "./catalogo";
 import { useRespaldo } from "./respaldo";
 import { CSS_RELATOS } from "./css";
 import { altoVista, contenedorScroll } from "./medidas";
@@ -25,6 +25,10 @@ export interface PaginaRelatoProps extends HTMLAttributes<HTMLDivElement> {
   relatoPagina?: RelatoPaginaId;
   /** Estela y chispas: el cursor deja una estela sobre la página y un toque suelta chispas. Solo en nivel completo. */
   estela?: boolean;
+  /** Con `relatoPagina: "figura"`, lo que dibuja el hilo al final (`figuraDeRubro` dice cuál le toca a cada rubro). */
+  figura?: FiguraId;
+  /** El `slug` del negocio: con él, los hilos de dos páginas del mismo rubro no salen iguales. */
+  semilla?: string;
   ahorro?: ModoAhorro;
   /** Fuerza el respaldo sin scroll nativo (pruebas y demo). */
   respaldo?: boolean;
@@ -65,7 +69,7 @@ function useMedidas(ref: React.RefObject<HTMLDivElement | null>, activo: boolean
  * navegadores sin scroll nativo y, si hay, el relato de página (hilo, luz o impulso). Cada bloque va dentro de un
  * `<Relato>`.
  */
-export function PaginaRelato({ relato, relatoPagina, estela, ahorro = "auto", respaldo = false, className, children, ...resto }: PaginaRelatoProps) {
+export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ahorro = "auto", respaldo = false, className, children, ...resto }: PaginaRelatoProps) {
   useStyles("relatos", CSS_RELATOS);
   const estilo = useEstilo();
   const nivel = useNivelEscena({ ahorro });
@@ -81,6 +85,9 @@ export function PaginaRelato({ relato, relatoPagina, estela, ahorro = "auto", re
   const camino = relatoPagina === "hilo" && w > 0 && h > 0 ? caminoHilo(w, h) : "";
   // Inclinación por velocidad: su archivo se baja aparte y solo en nivel completo.
   const Impulso = useAparte(relatoPagina === "impulso" && nivel === "completo", () => import("../dedo/Impulso"));
+  // Los hilos (rulos, hebras, figura): su archivo se baja aparte. En quieto también, por la figura del final.
+  const tipoHilo = relatoPagina === "rulos" || relatoPagina === "hebras" || relatoPagina === "figura" ? relatoPagina : null;
+  const Hilos = useAparte(tipoHilo === "figura" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
   // Estela y chispas: igual, aparte y solo en completo.
   const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (
@@ -109,6 +116,9 @@ export function PaginaRelato({ relato, relatoPagina, estela, ahorro = "auto", re
         )}
         {valor.relato === "pelicula" && <div className="mk-cinta" aria-hidden="true"><i /></div>}
         {children}
+        {/* El remate: la franja del final donde el hilo dibuja la figura. Está desde el principio, para que la página no salte. */}
+        {tipoHilo === "figura" && <div className="mk-hilos-remate" aria-hidden="true" />}
+        {Hilos && tipoHilo && <Hilos pagina={ref} tipo={tipoHilo} semilla={semilla} figura={figura} nivel={nivel} sinScroll={sinScroll} />}
         {Impulso && <Impulso pagina={ref} />}
         {Estela && <Estela pagina={ref} />}
       </div>

@@ -73,7 +73,8 @@ const REGLAS = [
   [/^src\/dedo\/calculo-impulso/, ["dedo:impulso", "momentos2:cinta"]],
   [/^src\/dedo\//, ["dedo"]],
   // Encabezado, receta, escena y efectos de fondo.
-  [/^(src\/encabezados\/|src\/entradas\/encabezado)/, ENCABEZADO],
+  // El encabezado también va dentro de una partitura (sus partes marcadas y `sinEntrada`).
+  [/^(src\/encabezados\/|src\/entradas\/encabezado)/, [...ENCABEZADO, "director:encabezado"]],
   [/^(src\/receta\/|src\/entradas\/receta)/, ["encabezados", "pelicula", "lamente"]],
   [/^src\/escena\/nivel/, [...ENCABEZADO, ...MOMENTOS, "relatos"]],
   [/^(src\/escena\/|src\/entradas\/escena)/, ["escena", "encabezados", "pelicula"]],
@@ -82,7 +83,9 @@ const REGLAS = [
   [/^src\/efectos\//, ["efectos", "encabezados", "dedo"]],
   [/^demo\/(Encabezados|Vista|compartir)/, [...ENCABEZADO, "estilos"]],
   // Página, relatos, biblioteca, piezas y plantillas.
-  [/^(src\/relatos\/|src\/entradas\/pagina|demo\/(Pagina|Relatos))/, ["relatos", "dedo:impulso", "dedo:estela", "dedo:pila"]],
+  // Los hilos: su trazado, su pieza y su vitrina. Lo demás de la página (que los carga) corre también la prueba de hilos.
+  [/^(src\/relatos\/hilos\/|demo\/Hilos)/, ["hilos"]],
+  [/^(src\/relatos\/|src\/entradas\/pagina|demo\/(Pagina|Relatos))/, ["relatos", "hilos", "dedo:impulso", "dedo:estela", "dedo:pila"]],
   [/^(src\/biblioteca\/|demo\/Biblioteca)/, ["biblioteca"]],
   // Los botones y las tarjetas cambian de sombra dentro de una luz, y los paquetes de botones van en el encabezado.
   [/^src\/piezas\/(Boton|Tarjeta)/, ["piezas", "luz:existe", "encabezados"]],
@@ -91,6 +94,8 @@ const REGLAS = [
   // Cada prueba, si cambia ella misma.
   [/^scripts\/verificar-([a-z0-9]+)\.mjs$/, (m) => (m[1] === "cambios" ? [] : [m[1]])],
   // Común a todo.
+  // El título que se mueve solo lo usan el encabezado y las plantillas (y la vitrina del Director, que lo compara).
+  [/^src\/estilos\/TextoCinetico/, [...ENCABEZADO, "director", "estilos", "biblioteca"]],
   [/^src\/(estilos|utils|hooks)\//, [TODO]],
   [/^src\/index\.ts$/, [TODO]],
   // El armazón de la vitrina (rutas, portada, su CSS): casi siempre se le suma algo. Si se rompe, no carga ninguna

@@ -1,7 +1,7 @@
 // La prueba genérica del Director: revisa las reglas de la casa en cada partitura de ejemplo (y en cualquiera que se
 // le pase a `#director?d=…`), más los casos que el diseño marcó como riesgo.
 // Uso: npm run dev (en otra terminal) y después `node scripts/verificar-director.mjs [http://localhost:5173] [parte]`,
-// donde la parte (opcional) es reglas, senales, react, sin, hostil, revision o vitrina. Con `reglas` se puede sumar el nombre de
+// donde la parte (opcional) es reglas, senales, react, sin, hostil, revision, vitrina, inclina o encabezado. Con `reglas` se puede sumar el nombre de
 // un solo ejemplo: `… reglas portada`.
 import { chromium } from "playwright";
 
@@ -1164,6 +1164,69 @@ if (parte("casa")) {
     const otra = await pagina.locator("[data-prueba=dir-sorpresa-texto]").innerText();
     const corriendo = await pagina.evaluate(() => document.getAnimations().filter((a) => a.id === "mk-verse" && a.effect.target.closest("[data-prueba=dir-sorpresa]")).length);
     revisar(/^partitura sorpresa 1\n\nal verse:\n  antetitulo /.test(una) && /^partitura sorpresa 2\n/.test(otra) && una !== otra && corriendo >= 4 && errores.length === 0, `«Sorpréndeme» arma cada vez otra entrada para las cuatro partes, y la muestra en español (${corriendo} animaciones${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
+}
+
+// --- Un encabezado de verdad dentro de una partitura: sus partes marcadas y sin su propia entrada ---
+if (parte("encabezado")) {
+  /** «Título con volumen»: el título se inclina hacia el cursor. */
+  const VOLUMEN = { version: 1, escenas: [{ con: "puntero", pasos: [{ actor: "titulo", a: { inclinaX: 10, inclinaY: 14 }, resorte: "suave" }] }] };
+  /** Una entrada de la partitura: el antetítulo, el título, la bajada y los botones suben de a uno. */
+  const ENTRA = { version: 1, escenas: [{ con: "verse", pasos: ["antetitulo", "titulo", "bajada", "botones"].map((actor, i) => ({ actor, de: { y: 30, opacidad: 0 }, dura: 500, en: i * 120 })) }] };
+  const estado = (pagina) =>
+    pagina.evaluate((q) => {
+      const raiz = document.querySelector(q);
+      const enc = raiz.querySelector(".mk-enc");
+      const de = (sel) => raiz.querySelector(sel);
+      const css = (sel) => (de(sel) ? getComputedStyle(de(sel)).animationName : null);
+      return {
+        entrada: enc?.dataset.entrada,
+        marcas: ["antetitulo", "titulo", "bajada", "botones", "contenido"].filter((m) => raiz.querySelector(`[data-mk-parte="${m}"]`)),
+        clases: { antetitulo: de('[data-mk-parte="antetitulo"]')?.className, titulo: de('[data-mk-parte="titulo"]')?.tagName, bajada: de('[data-mk-parte="bajada"]')?.className, botones: de('[data-mk-parte="botones"]')?.className, contenido: de('[data-mk-parte="contenido"]')?.className },
+        fase: de('[data-mk-parte="titulo"]')?.dataset.fase,
+        // Las animaciones propias del encabezado (CSS) sobre sus partes y sobre las letras del título.
+        propias: [css(".mk-enc-ante"), css(".mk-enc-bajada"), css(".mk-enc-botones"), css(".mk-tc-l")],
+        opacidades: [".mk-enc-ante", ".mk-enc-titulo", ".mk-enc-bajada", ".mk-enc-botones"].map((sel) => Number(getComputedStyle(de(sel)).opacity)),
+      };
+    }, ESCENARIO);
+  const ver = (pagina, selector) =>
+    pagina.locator(`${ESCENARIO} ${selector}`).first().evaluate((e) => ({ rotate: getComputedStyle(e).rotate, padre: e.parentElement.style.perspective }));
+  const angulo = (rotate) => (rotate === "none" ? 0 : Math.abs(parseFloat(rotate.split(" ").pop())));
+  {
+    const { ctx, pagina, errores } = await abrir({ encabezado: "sin", partitura: VOLUMEN, corta: true });
+    await pagina.waitForTimeout(1300);
+    const e = await estado(pagina);
+    revisar(e.marcas.length === 5 && e.clases.titulo === "H1" && /mk-enc-ante/.test(e.clases.antetitulo) && /mk-enc-bajada/.test(e.clases.bajada) && /mk-enc-botones/.test(e.clases.botones) && /mk-enc-caja/.test(e.clases.contenido) && errores.length === 0, `el encabezado marca sus partes para la partitura: ${e.marcas.join(", ")}${errores.length ? ` (${errores[0]})` : ""}`);
+    revisar(e.entrada === "ninguna" && e.fase === "inicial" && e.propias.every((n) => n === "none") && e.opacidades.every((o) => o === 1), `con sinEntrada el encabezado no trae entrada ni efecto de título propios, y todo se ve desde el principio (entrada «${e.entrada}», título en fase «${e.fase}», animaciones ${e.propias.join(", ")})`);
+    // La partitura mueve el título de verdad: se inclina hacia el cursor y vuelve.
+    const caja = await pagina.locator(ESCENARIO).boundingBox();
+    await pagina.mouse.move(caja.x + 40, caja.y + 40);
+    await pagina.mouse.move(caja.x + caja.width - 60, caja.y + 60, { steps: 10 });
+    await pagina.waitForTimeout(1200);
+    const inclinado = await ver(pagina, '[data-mk-parte="titulo"]');
+    await pagina.mouse.move(caja.x + 200, caja.y + caja.height + 160, { steps: 4 });
+    await pagina.waitForTimeout(1800);
+    const suelto = await ver(pagina, '[data-mk-parte="titulo"]');
+    revisar(angulo(inclinado.rotate) > 3 && inclinado.padre === "900px" && angulo(suelto.rotate) < 0.05 && errores.length === 0, `la partitura inclina el título del encabezado hacia el cursor (${inclinado.rotate}) y lo suelta al salir (${suelto.rotate})`);
+    await ctx.close();
+  }
+  {
+    // Una entrada puesta por la partitura: las partes entran por ella, una sola vez, y terminan enteras.
+    const { ctx, pagina, errores } = await abrir({ encabezado: "sin", partitura: ENTRA, corta: true, reloj: "manual" });
+    await manual(pagina, "m[0].irA(60);");
+    const aMedias = await estado(pagina);
+    await manual(pagina, "m[0].irA(5000);");
+    const alFinal = await estado(pagina);
+    revisar(aMedias.opacidades[0] > 0 && aMedias.opacidades[0] < 1 && aMedias.opacidades[3] === 0 && alFinal.opacidades.every((o) => o === 1) && aMedias.propias.every((n) => n === "none") && errores.length === 0, `con sinEntrada, la entrada la pone la partitura: a los 60 ms el antetítulo va en ${aMedias.opacidades[0].toFixed(2)} y los botones todavía en ${aMedias.opacidades[3]}; al final todo se ve (${alFinal.opacidades.join(", ")})`);
+    await ctx.close();
+  }
+  {
+    // Sin sinEntrada, el encabezado sigue como siempre: su entrada y el efecto de su título.
+    const { ctx, pagina, errores } = await abrir({ encabezado: "con", sin: true, corta: true });
+    await pagina.waitForTimeout(400);
+    const e = await estado(pagina);
+    revisar(e.entrada === "cascada" && e.fase === "jugando" && e.propias.some((n) => n !== "none") && e.marcas.length === 5 && errores.length === 0, `sin sinEntrada el encabezado no cambia: entra en «${e.entrada}» y su título juega su efecto (fase «${e.fase}»; animaciones ${e.propias.join(", ")})`);
     await ctx.close();
   }
 }

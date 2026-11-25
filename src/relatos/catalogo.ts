@@ -3,7 +3,7 @@
 import type { EstiloId } from "../estilos/estilos";
 
 export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos" | "pila";
-export type RelatoPaginaId = "hilo" | "luz" | "impulso";
+export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura";
 export type RelatoId = RelatoBloqueId | RelatoPaginaId;
 
 /** Marcas que un bloque pone en sus partes (`data-mk-parte`) para que un relato las encuentre. */
@@ -27,6 +27,9 @@ export interface FichaRelato {
   /** Alarga la página (el bloque se queda quieto mientras se baja). */
   largo: boolean;
 }
+
+/** La ficha de un hilo: los tres se dibujan al bajar y, en liviano, van enteros y quietos. */
+const hilo = (id: RelatoPaginaId, nombre: string, descripcion: string, quieto: string): FichaRelato => ({ id, nombre, alcance: "pagina", para: ["pagina"], requiere: [], largo: false, descripcion, completo: "Se dibuja al bajar.", liviano: "Entero y quieto.", quieto });
 
 export const RELATOS: Record<RelatoId, FichaRelato> = {
   escenas: {
@@ -87,6 +90,10 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
     descripcion: "Mientras más rápido bajas, más se inclinan los bloques; al parar vuelven a quedar derechos.",
     completo: "Los bloques se inclinan con la velocidad al bajar.", liviano: "Sin inclinación.", quieto: "Sin inclinación.",
   },
+  // Los hilos (van por delante, por lo libre de cada bloque; se bajan aparte). Cada uno incluye al anterior.
+  rulos: hilo("rulos", "Hilo con rulos", "Un hilo baja por la orilla y hace un rulo en cada cruce.", "Sin hilo."),
+  hebras: hilo("hebras", "Hebras", "Además, se abre en hebras donde hay tarjetas y se junta.", "Sin hilo."),
+  figura: hilo("figura", "Hilo que dibuja", "Además, al final dibuja una figura del rubro.", "Solo la figura."),
 };
 
 export const RELATO_IDS = Object.keys(RELATOS) as RelatoId[];
@@ -101,3 +108,16 @@ export const RELATO_DE_ESTILO: Record<EstiloId, RelatoBloqueId> = {
   anime: "profundidad",
   pelicula: "cuento",
 };
+
+/** Las figuras que el «Hilo que dibuja» arma al final de la página (sus trazos van aparte, en `hilos/figuras.ts`). */
+export type FiguraId = "taza" | "hamburguesa" | "plato" | "poste" | "tijera" | "huella" | "pesa" | "lapiz" | "bolsa" | "corazon" | "estrella";
+/** La figura de cada rubro de los encabezados (`RubroId`). */
+export const FIGURA_DE_RUBRO: Record<string, FiguraId> = {
+  cafeteria: "taza", hamburgueseria: "hamburguesa", restaurante: "plato", barberia: "poste", peluqueria: "tijera",
+  veterinaria: "huella", gimnasio: "pesa", academia: "lapiz", tienda: "bolsa", consulta: "corazon",
+};
+export const FIGURA_IDS: FiguraId[] = [...Object.values(FIGURA_DE_RUBRO), "estrella"];
+/** La figura de un rubro; la estrella si no se conoce. */
+export function figuraDeRubro(rubro: unknown): FiguraId {
+  return (typeof rubro === "string" && Object.prototype.hasOwnProperty.call(FIGURA_DE_RUBRO, rubro) && FIGURA_DE_RUBRO[rubro]) || "estrella";
+}

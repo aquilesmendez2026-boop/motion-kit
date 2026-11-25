@@ -145,13 +145,18 @@ const SUBTITULOS = `
 }
 `;
 
-/** H. Hilo: una línea se dibuja mientras se baja y una luz viaja por ella. Va por detrás de los bloques. */
+/**
+ * H. Hilo: una línea se dibuja mientras se baja y una luz viaja por ella. Va por detrás de los bloques.
+ * `.mk-hilos-remate` es la franja del final donde el «Hilo que dibuja» pone su figura (su alto es REMATE, en
+ * hilos/trazar.ts); lo demás de los hilos nuevos va en su archivo aparte.
+ */
 const HILO = `
 .mk-pagina[data-mk-relato-pagina]{isolation:isolate}
 .mk-hilo{position:absolute;left:0;top:0;width:100%;height:100%;z-index:-1;pointer-events:none;overflow:visible}
 .mk-hilo path{fill:none;stroke:var(--mk-acento);stroke-width:3;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.7}
 .mk-hilo-viajero{position:absolute;left:0;top:0;z-index:-1;width:18px;height:18px;border-radius:50%;background:var(--mk-acento);box-shadow:0 0 16px var(--mk-acento);offset-rotate:0deg;pointer-events:none;display:none}
 .mk-pagina:is([data-mk-sin-scroll],[data-nivel=quieto]) .mk-hilo{display:none}
+.mk-hilos-remate{height:140px}
 @keyframes mk-r-hilo-trazo{to{stroke-dashoffset:0}}
 @keyframes mk-r-hilo-viaje{from{offset-distance:0%}to{offset-distance:100%}}
 @supports (animation-timeline: view()){

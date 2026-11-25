@@ -6,6 +6,7 @@ import { ConPartitura, validarPartitura, type ErrorPartitura, type Montaje, type
 import { PARTITURAS, type PartituraDeEjemplo } from "../src/director/partituras";
 // Lo de quien crea (en el paquete, `motion-kit/partitura`): el lenguaje, las partituras de la casa y «Sorpréndeme».
 import { CASA, escribirPartitura, leerPartitura, sorprender, type DeLaCasa, type ErrorTexto } from "../src/entradas/partitura";
+import { Encabezado } from "../src/encabezados/Encabezado";
 import { TextoCinetico } from "../src/estilos/TextoCinetico";
 import type { TextoEfecto } from "../src/estilos/estilos";
 
@@ -273,6 +274,11 @@ interface Pedido {
   corta?: boolean;
   /** Muestra un efecto de texto original y la partitura de la casa del mismo nombre, para compararlos. */
   comparar?: string;
+  /**
+   * En vez del escenario del ejemplo, un `Encabezado` de verdad: «sin» lo pide con `sinEntrada` (la partitura es la
+   * que mueve sus partes); «con», con su entrada y su efecto de título de siempre (para comparar).
+   */
+  encabezado?: "sin" | "con";
 }
 
 function leer(d: string | undefined): Pedido {
@@ -320,7 +326,11 @@ function UnEjemplo({ pedido }: { pedido: Pedido }) {
             style={pedido.alto ? { minHeight: `${pedido.alto}vh`, alignContent: "start" } : undefined}
             data-prueba="dir-escenario"
           >
-            {EJEMPLOS[nombre].escenario({ titulo })}
+            {pedido.encabezado ? (
+              <Encabezado sinEntrada={pedido.encabezado === "sin"} alto="compacto" antetitulo="Tostaduría de barrio" titulo={`${titulo} *especialidad*`} bajada="Tostamos cada semana y lo llevamos a tu casa." boton={{ texto: "Pedir café", href: "#director" }} />
+            ) : (
+              EJEMPLOS[nombre].escenario({ titulo })
+            )}
           </ConPartitura>
         ))}
       {!pedido.corta && <div className="dir-relleno" data-prueba="dir-abajo">Baja para ver lo que sigue al scroll.</div>}

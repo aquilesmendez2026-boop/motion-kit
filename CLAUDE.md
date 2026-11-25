@@ -34,5 +34,5 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
   que cambiaron. `-- --lista` dice cuáles sin correrlas; `-- --todo`, la batería completa (antes de una etiqueta).
 - `node scripts/en-safari.mjs <prueba> [parte]`: la misma prueba con el motor de Safari (WebKit). No es semáforo: ver
   «Safari» en `docs/CATALOGO.md`.
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz>.mjs [url]` con el servidor
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos>.mjs [url]` con el servidor
   arriba (usan Playwright).

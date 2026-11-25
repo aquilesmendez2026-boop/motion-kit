@@ -1,0 +1,642 @@
+// Verifica los hilos (rulos, hebras y figura) en #hilos: una página que imita una de La Mente en el teléfono.
+// Uso: npm run dev (en otra terminal) y después
+// `node scripts/verificar-hilos.mjs [http://localhost:5173] [parte]`, donde la parte (opcional) es rulos, hebras,
+// figura, niveles, marco (la página dentro de un marco con scroll propio, en #relatos) o lamente (la página como una de
+// La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden) o material (el hilo de cada estilo).
+import { chromium } from "playwright";
+
+const base = process.argv[2] ?? "http://localhost:5173";
+const solo = process.argv[3];
+const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material"];
+if (solo && !PARTES.includes(solo)) {
+  console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
+  process.exit(1);
+}
+const parte = (nombre) => !solo || solo === nombre;
+let fallas = 0;
+const revisar = (ok, texto) => {
+  console.log(`${ok ? "✓" : "✗"} ${texto}`);
+  if (!ok) fallas++;
+};
+const navegador = await chromium.launch();
+const P = "[data-prueba=hilo-pagina]";
+/** Para lo que solo pasa donde hay animaciones atadas al scroll: en los demás navegadores el hilo va entero y quieto. */
+let alBajarGlobal = revisar;
+const noAplica = (_ok, texto) => console.log(`– no aplica aquí (este navegador no tiene animaciones atadas al scroll: el hilo va entero y quieto): ${texto.split(" (")[0]}`);
+
+/** Abre #hilos en un teléfono. Cuenta los cuadros que piden los hilos y deja las ayudas para mirar el trazado. */
+async function abrir({ opciones = {}, hilo, ruta = "#hilos", raiz = P } = {}) {
+  const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, ...opciones });
+  const pagina = await ctx.newPage();
+  const errores = [];
+  pagina.on("pageerror", (e) => errores.push(e.message));
+  pagina.on("console", (m) => m.type() === "error" && errores.push(m.text().slice(0, 200)));
+  await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+  await pagina.addInitScript(() => {
+    window.__cuadros = 0;
+    const pedir = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (f) => {
+      if (/relatos\/hilos\//.test(new Error().stack ?? "")) window.__cuadros++;
+      return pedir(f);
+    };
+    /** Los tramos del hilo: sus puntos en la pantalla (uno cada 6 px) y cuánto va dibujado de cada uno. */
+    window.__hilos = (raiz = "[data-prueba=hilo-pagina]") => {
+      const svg = document.querySelector(`${raiz} svg.mk-hilos`);
+      if (!svg) return { hay: false, tramos: [], nudos: [], luces: [] };
+      const c = svg.getBoundingClientRect();
+      // De los px del dibujo a los de la pantalla (la página puede estar achicada, como en una vista previa). Se saca de
+      // la caja del dibujo y no de getScreenCTM(): en WebKit esa no cuenta el `transform` de lo que envuelve al SVG.
+      const k = c.width / (Number(svg.getAttribute("width")) || c.width || 1);
+      const aPantalla = { a: k, b: 0, c: 0, d: k, e: c.left, f: c.top };
+      const tramos = [...svg.querySelectorAll("path[data-tramo]")].map((p) => {
+        const largo = p.getTotalLength();
+        const s = getComputedStyle(p);
+        const n = Math.max(2, Math.ceil(largo / 6));
+        const puntos = Array.from({ length: n + 1 }, (_, i) => {
+          const q = p.getPointAtLength((largo * i) / n);
+          const e = new DOMPoint(q.x, q.y).matrixTransform(new DOMMatrix([aPantalla.a, 0, 0, aPantalla.d, aPantalla.e, aPantalla.f]));
+          return { x: e.x, y: e.y };
+        });
+        // `stroke-dashoffset` va de 1 (sin dibujar) a 0 (entero); el largo del camino está normalizado a 1.
+        // Con un material, el color del tramo va en su grupo de capas.
+        const grupo = p.closest("[data-capas]");
+        return { clase: p.dataset.clase, largo, puntos, dibujado: 1 - Math.min(1, Math.max(0, parseFloat(s.strokeDashoffset) || 0)), color: grupo ? getComputedStyle(grupo).color : s.stroke, d: p.getAttribute("d"), tiempo: p.hasAttribute("data-tiempo") };
+      });
+      const nudos = [...svg.querySelectorAll("[data-nudo]")].map((n) => {
+        const r = n.getBoundingClientRect();
+        return { clase: n.dataset.clase, x: r.left + r.width / 2, y: r.top + r.height / 2, opacidad: Number(getComputedStyle(n).opacity) };
+      });
+      const luces = [...document.querySelectorAll(`${raiz} .mk-hilos-luz`)].map((l) => Number(getComputedStyle(l).opacity));
+      return { hay: true, vivo: svg.hasAttribute("data-vivo"), final: svg.hasAttribute("data-final"), ancho: Number(svg.getAttribute("width")), alto: Number(svg.getAttribute("height")), color: getComputedStyle(svg).color, caja: svg.getAttribute("viewBox"), tramos, nudos, luces };
+    };
+    /** Las cajas de lo que el hilo no puede pisar: cada texto, las fotos, las tarjetas y los botones. */
+    window.__contenido = (donde = "[data-prueba=hilo-pagina]") => {
+      const raiz = document.querySelector(donde);
+      const cajas = [];
+      const anda = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+      for (let n = anda.nextNode(); n; n = anda.nextNode()) {
+        if (!n.textContent.trim() || n.parentElement.closest("[aria-hidden=true], svg")) continue;
+        const r = document.createRange();
+        r.selectNodeContents(n);
+        for (const c of r.getClientRects()) cajas.push({ izq: c.left, arriba: c.top, der: c.right, abajo: c.bottom, que: n.textContent.trim().slice(0, 24) });
+      }
+      for (const e of raiz.querySelectorAll("[data-mk-parte], a, button, img")) {
+        const c = e.getBoundingClientRect();
+        cajas.push({ izq: c.left, arriba: c.top, der: c.right, abajo: c.bottom, que: e.dataset.mkParte ?? e.tagName });
+      }
+      return cajas.filter((c) => c.der > c.izq && c.abajo > c.arriba);
+    };
+    window.__franja = (nombre) => {
+      const c = document.querySelector(`[data-franja="${nombre}"]`).getBoundingClientRect();
+      return { izq: c.left, arriba: c.top, der: c.right, abajo: c.bottom };
+    };
+  });
+  await pagina.goto(`${base}/${ruta}`);
+  await pagina.waitForSelector(raiz, { timeout: 8000 }).catch(() => {});
+  if (hilo) await pagina.selectOption("[data-prueba=hilo-tipo]", hilo);
+  await pagina.waitForSelector(`${raiz} svg.mk-hilos path[data-tramo]`, { timeout: 4000 }).catch(() => {});
+  await pagina.waitForTimeout(500);
+  const nativo = await pagina.evaluate(() => CSS.supports("animation-timeline: scroll()"));
+  alBajarGlobal = nativo ? revisar : noAplica;
+  // `alBajar`: una revisión de lo que el hilo hace mientras se baja (solo donde el navegador lo dibuja atado al scroll).
+  return { ctx, pagina, errores, nativo, alBajar: nativo ? revisar : noAplica };
+}
+/** Baja hasta esa parte del scroll total (de 0 a 1) y espera a que el navegador pinte. */
+async function bajar(pagina, parte) {
+  await pagina.evaluate((k) => {
+    const e = document.scrollingElement;
+    e.scrollTo(0, (e.scrollHeight - e.clientHeight) * k);
+    return new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo)));
+  }, parte);
+  await pagina.waitForTimeout(120);
+}
+/** Baja hasta dejar el centro de una franja en el centro de la pantalla. */
+async function centrar(pagina, franja, corrido = 0) {
+  await pagina.evaluate(([f, c]) => {
+    const r = document.querySelector(`[data-franja="${f}"]`).getBoundingClientRect();
+    window.scrollBy(0, r.top + r.height / 2 - innerHeight / 2 + c);
+    return new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo)));
+  }, [franja, corrido]);
+  await pagina.waitForTimeout(120);
+}
+const hilos = (pagina, raiz = P) => pagina.evaluate((r) => window.__hilos(r), raiz);
+/** Cuántos px de hilo ya dibujado hay dentro de la pantalla. */
+const aLaVista = (h, alto = 844) => h.tramos.reduce((s, t) => s + t.puntos.filter((p, i) => i / (t.puntos.length - 1) <= t.dibujado && p.y >= 0 && p.y <= alto).length * 6, 0);
+const dibujado = (h) => h.tramos.reduce((s, t) => s + t.dibujado * t.largo, 0);
+/**
+ * Deja los bloques en su lugar (sin la entrada de su relato) para comparar el hilo con el contenido. También sin
+ * transición: donde la entrada es una transición (sin scroll nativo), el cambio se animaría y los bloques seguirían
+ * a medio camino al mirar.
+ */
+const asentar = (pagina) => pagina.addStyleTag({ content: ".mk-relato,.mk-relato *{animation:none!important;transition:none!important;transform:none!important;translate:none!important;scale:none!important;opacity:1!important}" });
+/** Espera a que el final (la llegada y la figura, que van con tiempo) termine de dibujarse. */
+const esperarFinal = (pagina, raiz = P) =>
+  pagina.waitForFunction((r) => {
+    const h = window.__hilos(r);
+    return h.tramos.length > 0 && h.tramos.filter((t) => t.tiempo).every((t) => t.dibujado > 0.99);
+  }, raiz, { timeout: 6000 }).catch(() => {});
+/** Los puntos del hilo (y sus nudos) que caen sobre el contenido. */
+async function pisados(pagina, raiz = P) {
+  return pagina.evaluate((r) => {
+    const cajas = window.__contenido(r);
+    const h = window.__hilos(r);
+    const sobre = (p) => cajas.find((c) => p.x > c.izq + 2 && p.x < c.der - 2 && p.y > c.arriba + 2 && p.y < c.abajo - 2);
+    // El borde de las capas del material: lo que más se aleja del centro, hacia cada lado.
+    const svg = document.querySelector(`${r} svg.mk-hilos`);
+    const bordes = [];
+    if (svg) {
+      const caja = svg.getBoundingClientRect();
+      const k = caja.width / (Number(svg.getAttribute("width")) || caja.width || 1);
+      const aPantalla = new DOMMatrix([k, 0, 0, k, caja.left, caja.top]);
+      for (const c of svg.querySelectorAll("[data-capas] path:not([data-tramo])")) {
+        const ancho = parseFloat(getComputedStyle(c).strokeWidth) / 2;
+        const largo = c.getTotalLength();
+        const n = Math.max(2, Math.ceil(largo / 8));
+        for (let i = 1; i < n; i++) {
+          const [a, b] = [c.getPointAtLength((largo * (i - 1)) / n), c.getPointAtLength((largo * i) / n)];
+          const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          for (const lado of [-1, 1]) {
+            const e = new DOMPoint(b.x + (lado * ancho * -(b.y - a.y)) / l, b.y + (lado * ancho * (b.x - a.x)) / l).matrixTransform(aPantalla);
+            bordes.push({ x: e.x, y: e.y });
+          }
+        }
+      }
+    }
+    const malos = [];
+    for (const t of h.tramos) for (const p of t.puntos) if (sobre(p)) malos.push(`${t.clase} en (${Math.round(p.x)}, ${Math.round(p.y)}) sobre «${sobre(p).que}»`);
+    for (const n of h.nudos) if (sobre(n)) malos.push(`${n.clase} sobre «${sobre(n).que}»`);
+    for (const b of bordes) if (sobre(b)) malos.push(`borde de una capa en (${Math.round(b.x)}, ${Math.round(b.y)}) sobre «${sobre(b).que}»`);
+    return { malos: [...new Set(malos)], puntos: h.tramos.reduce((s, t) => s + t.puntos.length, 0), cajas: cajas.length };
+  }, raiz);
+}
+/** Cuánto gira en total un camino (en grados): un rulo suma una vuelta entera. */
+function giro(puntos) {
+  let total = 0;
+  for (let i = 2; i < puntos.length; i++) {
+    const a = Math.atan2(puntos[i - 1].y - puntos[i - 2].y, puntos[i - 1].x - puntos[i - 2].x);
+    const b = Math.atan2(puntos[i].y - puntos[i - 1].y, puntos[i].x - puntos[i - 1].x);
+    let d = b - a;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    total += d;
+  }
+  return Math.abs((total * 180) / Math.PI);
+}
+/** Razón de contraste entre dos colores `rgb()`. */
+function contraste(a, b) {
+  const luz = (c) => {
+    const [r, g, b2] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+      const k = Number(v) / 255;
+      return k <= 0.03928 ? k / 12.92 : ((k + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b2;
+  };
+  const [x, y] = [luz(a), luz(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+const ALTURAS = Array.from({ length: 10 }, (_, i) => 0.28 + (i * 0.72) / 9);
+
+// --- El hilo con rulos ---
+if (parte("rulos")) {
+  {
+    const { ctx, pagina, errores, nativo, alBajar } = await abrir({ hilo: "rulos" });
+    const arriba = await hilos(pagina);
+    revisar(arriba.hay && arriba.vivo === nativo && arriba.tramos.length >= 4 && arriba.tramos.every((t) => t.clase === "tronco") && errores.length === 0, `con «rulos» hay un hilo de ${arriba.tramos.length} tramos, todos del tronco${errores.length ? ` (${errores[0]})` : ""}`);
+    alBajar(arriba.tramos.every((t) => t.dibujado < 0.05), `arriba de todo el hilo todavía no se dibuja (${arriba.tramos.map((t) => t.dibujado.toFixed(2)).join(" ")})`);
+    // A diez alturas de la bajada hay hilo dibujado a la vista, y avanza sin retroceder.
+    const vistas = [];
+    const avance = [];
+    for (const k of ALTURAS) {
+      await bajar(pagina, k);
+      const h = await hilos(pagina);
+      vistas.push(aLaVista(h));
+      avance.push(Math.round(dibujado(h)));
+    }
+    revisar(vistas.every((v) => v >= 120), `a diez alturas de la bajada hay hilo dibujado a la vista (px de trazo: ${vistas.join(", ")})`);
+    alBajar(avance.every((v, i) => i === 0 || v >= avance[i - 1] - 1) && avance.at(-1) > avance[0] + 400, `el hilo avanza al bajar y no retrocede (px dibujados: ${avance.join(", ")})`);
+    const abajo = await hilos(pagina);
+    revisar(abajo.tramos.every((t) => t.dibujado > 0.99), `al terminar de bajar, el hilo está entero (${abajo.tramos.map((t) => t.dibujado.toFixed(2)).join(" ")})`);
+    // La punta del hilo va a la altura de la vista (cerca del 60 %), aunque haya cosas sobre la página en el mismo scroll.
+    const puntas = [];
+    for (const k of [0.22, 0.3, 0.38, 0.46]) {
+      await bajar(pagina, k);
+      const h = await hilos(pagina);
+      for (const t of h.tramos.filter((x) => x.dibujado > 0.08 && x.dibujado < 0.92)) puntas.push(t.puntos[Math.round(t.dibujado * (t.puntos.length - 1))].y / 844);
+    }
+    // Va un poco más arriba del 60 %: mientras dibuja el cruce (que es largo y no baja), la línea de la vista sigue bajando.
+    alBajar(puntas.length >= 2 && puntas.every((y) => y > 0.38 && y < 0.72), `la punta del hilo va a la altura de la vista, entre el 40 y el 70 % (${puntas.map((y) => `${Math.round(y * 100)} %`).join(", ")})`);
+    // Solo cambian el trazo, el viaje de la luz y la opacidad.
+    const estilos = () =>
+      pagina.evaluate(() =>
+        [...document.querySelectorAll("[data-prueba=hilo-pagina] svg.mk-hilos, [data-prueba=hilo-pagina] svg.mk-hilos *, [data-prueba=hilo-pagina] .mk-hilos-luz")].map((e) => {
+          const s = getComputedStyle(e);
+          return Object.fromEntries([...s].filter((p) => !p.startsWith("--")).map((p) => [p, s.getPropertyValue(p)]));
+        }),
+      );
+    await bajar(pagina, 0.4);
+    const e1 = await estilos();
+    await bajar(pagina, 0.55);
+    const e2 = await estilos();
+    const cambia = [...new Set(e1.flatMap((x, i) => Object.keys(x).filter((p) => x[p] !== e2[i]?.[p])))];
+    alBajar(cambia.length > 0 && cambia.every((p) => ["stroke-dashoffset", "offset-distance", "offset", "opacity"].includes(p)), `al bajar, en el hilo solo cambia: ${cambia.join(", ")}`);
+    // Donde no se dibuja al bajar, no cambia nada.
+    if (!nativo) revisar(cambia.length === 0, `sin animaciones atadas al scroll, al bajar no cambia nada en el hilo (${cambia.join(", ") || "nada"})`);
+    // Con la página quieta no se pide ningún cuadro.
+    await pagina.waitForTimeout(500);
+    const c1 = await pagina.evaluate(() => window.__cuadros);
+    await pagina.waitForTimeout(700);
+    const c2 = await pagina.evaluate(() => window.__cuadros);
+    revisar(c1 === c2, `con la página quieta el hilo no pide cuadros (${c2 - c1} en 0,7 s)`);
+    // Una luz viaja por la punta.
+    const luces = (await hilos(pagina)).luces.filter((o) => o > 0.5).length;
+    alBajar(luces === 1, `una sola luz viaja por la punta del hilo (${luces} a la vista)`);
+    await ctx.close();
+  }
+  {
+    // Nunca sobre el contenido; rulos de verdad; puntadas frente a la foto; y otro color sobre la franja de acento.
+    const { ctx, pagina, errores } = await abrir({ hilo: "rulos" });
+    await asentar(pagina);
+    await pagina.waitForTimeout(400);
+    const p = await pisados(pagina);
+    revisar(p.malos.length === 0 && p.puntos > 200 && p.cajas > 20, `ningún punto del hilo cae sobre un texto, una foto, una tarjeta o un botón (${p.puntos} puntos contra ${p.cajas} cajas${p.malos.length ? `; ${p.malos.slice(0, 3).join("; ")}` : ""})`);
+    const h = await hilos(pagina);
+    const conRulo = h.tramos.filter((t) => giro(t.puntos) >= 250).length;
+    revisar(conRulo >= 3 && h.caja === `0 0 ${h.ancho} ${h.alto}`, `el hilo hace rulos (${conRulo} tramos dan una vuelta entera) y no se estira: el dibujo mide lo mismo que la página (${h.caja} en ${h.ancho} × ${h.alto})`);
+    const foto = await pagina.evaluate(() => window.__franja("foto"));
+    const sobreLaFoto = h.tramos.flatMap((t) => t.puntos).filter((q) => q.y > foto.arriba + 2 && q.y < foto.abajo - 2).length;
+    const puntadas = h.nudos.filter((n) => n.clase === "puntada");
+    const entra = puntadas.filter((n) => n.y <= foto.arriba + 2 && n.y > foto.arriba - 90).length;
+    const sale = puntadas.filter((n) => n.y >= foto.abajo - 2 && n.y < foto.abajo + 90).length;
+    revisar(sobreLaFoto === 0 && entra === 1 && sale === 1, `frente a la foto de lado a lado el hilo pasa por debajo: no hay línea (${sobreLaFoto} puntos) y quedan dos puntadas, una donde entra y otra donde sale (${entra} y ${sale})`);
+    // Una foto puesta como fondo de la franja (por CSS) tampoco se pisa, aunque su texto deje orilla libre.
+    const conFondo = await pagina.evaluate(() => window.__franja("fondo-foto"));
+    const sobreElFondo = h.tramos.flatMap((t) => t.puntos).filter((q) => q.y > conFondo.arriba + 2 && q.y < conFondo.abajo - 2).length;
+    revisar(sobreElFondo === 0 && puntadas.length === 4, `sobre una franja con una foto de fondo tampoco hay línea: el hilo pasa por debajo (${sobreElFondo} puntos sobre ella; ${puntadas.length} puntadas en la página)`);
+    const acento = await pagina.evaluate(() => {
+      const f = document.querySelector('[data-franja="acento"]');
+      const c = f.getBoundingClientRect();
+      return { fondo: getComputedStyle(f).backgroundColor, arriba: c.top, abajo: c.bottom };
+    });
+    const enAcento = h.tramos.filter((t) => t.puntos.filter((q) => q.y > acento.arriba && q.y < acento.abajo).length > t.puntos.length / 2);
+    const otros = h.tramos.filter((t) => !enAcento.includes(t));
+    revisar(enAcento.length >= 1 && enAcento.every((t) => contraste(t.color, acento.fondo) >= 1.6) && otros.every((t) => t.color !== enAcento[0].color), `sobre la franja de acento el hilo cambia de color para no perderse (contraste ${enAcento.map((t) => contraste(t.color, acento.fondo).toFixed(1)).join(", ")} a 1 con el fondo)`);
+    // Si un bloque cambia de alto, el hilo se vuelve a trazar.
+    const antes = { alto: h.alto, d: h.tramos.map((t) => t.d).join("|") };
+    await pagina.locator("[data-prueba=hilo-crece]").click();
+    await pagina.waitForTimeout(700);
+    const despues = await hilos(pagina);
+    const p2 = await pisados(pagina);
+    const altoPagina = await pagina.locator(P).evaluate((e) => e.offsetHeight);
+    revisar(despues.alto > antes.alto + 40 && Math.abs(despues.alto - altoPagina) < 1 && despues.tramos.map((t) => t.d).join("|") !== antes.d && p2.malos.length === 0 && errores.length === 0, `si un bloque crece, el hilo se vuelve a trazar y sigue sin pisar el contenido (${antes.alto} → ${despues.alto} px${p2.malos.length ? `; ${p2.malos[0]}` : ""})`);
+    await ctx.close();
+  }
+  {
+    const { ctx, pagina } = await abrir({ hilo: "rulos", opciones: { viewport: { width: 360, height: 760 } } });
+    await asentar(pagina);
+    await pagina.waitForTimeout(400);
+    const sobra = await pagina.evaluate(() => document.scrollingElement.scrollWidth - document.scrollingElement.clientWidth);
+    const p = await pisados(pagina);
+    revisar(sobra <= 0 && p.malos.length === 0 && p.puntos > 200, `a 360 px nada se sale de lado (${sobra} px) y el hilo sigue sin pisar el contenido${p.malos.length ? ` (${p.malos[0]})` : ""}`);
+    await ctx.close();
+  }
+}
+
+// --- Las hebras ---
+if (parte("hebras")) {
+  const { ctx, pagina, errores, alBajar } = await abrir({ hilo: "hebras" });
+  const enFranja = async (nombre) => {
+    const f = await pagina.evaluate((n) => window.__franja(n), nombre);
+    const h = await hilos(pagina);
+    return { f, h, hebras: h.tramos.filter((t) => t.clase === "hebra" && t.puntos.every((q) => q.y > f.arriba - 4 && q.y < f.abajo + 4)) };
+  };
+  await centrar(pagina, "grilla");
+  const grilla = await enFranja("grilla");
+  const aLaVez = grilla.hebras.filter((t) => t.dibujado > 0.05 && t.dibujado < 0.95).length;
+  const lucesGrilla = grilla.h.luces.filter((o) => o > 0.5).length;
+  revisar(grilla.hebras.length === 3 && errores.length === 0, `en la grilla de dos columnas el hilo se abre en tres hebras (${grilla.hebras.length})${errores.length ? ` (${errores[0]})` : ""}`);
+  alBajar(aLaVez >= 2, `a media bajada se dibujan varias hebras a la vez (${grilla.hebras.map((t) => t.dibujado.toFixed(2)).join(" ")})`);
+  alBajar(lucesGrilla >= 2, `mientras está abierto viaja una luz por hebra (${lucesGrilla} a la vista)`);
+  // Parten de un punto y se juntan en otro.
+  const puntas = grilla.hebras.map((t) => [t.puntos[0], t.puntos.at(-1)]);
+  const junto = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) <= 2;
+  revisar(puntas.every(([a, b]) => junto(a, puntas[0][0]) && junto(b, puntas[0][1])), "las hebras parten del mismo punto y se juntan en el mismo punto");
+  await centrar(pagina, "lista");
+  const lista = await enFranja("lista");
+  revisar(lista.hebras.length === 2 && grilla.hebras.every((_, i) => lista.h.tramos.filter((t) => t.clase === "hebra")[i].dibujado > 0.99), `en la lista de una columna son dos hebras que la abrazan, y las de la grilla ya quedaron enteras (${lista.hebras.length})`);
+  await centrar(pagina, "texto");
+  const lucesTexto = (await hilos(pagina)).luces.filter((o) => o > 0.5).length;
+  alBajar(lucesTexto === 1, `donde el hilo va junto, hay una sola luz (${lucesTexto})`);
+  // Un nudo junto a cada tarjeta, sin pisarla.
+  await asentar(pagina);
+  await pagina.waitForTimeout(400);
+  const nudos = await pagina.evaluate(() => {
+    const tarjetas = [...document.querySelectorAll('[data-prueba=hilo-pagina] [data-mk-parte="tarjeta"]')].map((t) => t.getBoundingClientRect());
+    return window.__hilos().nudos.filter((n) => n.clase === "nudo").map((n) => Math.min(...tarjetas.map((t) => Math.max(t.left - n.x, n.x - t.right, t.top - n.y, n.y - t.bottom))));
+  });
+  const p = await pisados(pagina);
+  revisar(nudos.length === 7 && nudos.every((d) => d > 0 && d <= 20) && p.malos.length === 0, `hay un nudo junto a cada tarjeta (${nudos.length}; a ${nudos.map((d) => Math.round(d)).join(", ")} px de ella) y ni las hebras ni los nudos pisan el contenido${p.malos.length ? ` (${p.malos.slice(0, 2).join("; ")})` : ""}`);
+  await ctx.close();
+}
+
+// --- El hilo que dibuja ---
+if (parte("figura")) {
+  const { ctx, pagina, errores, alBajar } = await abrir({ hilo: "figura" });
+  const remate = () =>
+    pagina.evaluate(() => {
+      const r = document.querySelector("[data-prueba=hilo-pagina] .mk-hilos-remate")?.getBoundingClientRect();
+      const p = document.querySelector("[data-prueba=hilo-pagina]").getBoundingClientRect();
+      return r ? { alto: r.height, arriba: r.top, abajo: r.bottom, alFinal: Math.abs(r.bottom - p.bottom) < 1 } : null;
+    });
+  await bajar(pagina, 0.8);
+  const antes = (await hilos(pagina)).tramos.find((t) => t.clase === "figura");
+  await bajar(pagina, 1);
+  await esperarFinal(pagina);
+  const h = await hilos(pagina);
+  const r = await remate();
+  const figura = h.tramos.find((t) => t.clase === "figura");
+  const ys = figura ? figura.puntos.map((q) => q.y) : [0];
+  revisar(Boolean(r) && r.alto === 140 && r.alFinal && errores.length === 0, `con «figura» la página termina en un remate de 140 px (${r?.alto})${errores.length ? ` (${errores[0]})` : ""}`);
+  revisar(Boolean(figura) && figura.dibujado > 0.99 && h.tramos.at(-1) === figura, `al terminar de bajar, la figura está entera y es lo último del hilo (${figura?.dibujado.toFixed(2)})`);
+  alBajar(Boolean(antes) && antes.dibujado < 0.05, `la figura se dibuja recién al final de la bajada (al 80 % todavía no: ${antes?.dibujado.toFixed(2)})`);
+  // El final no depende de cuánto quede por bajar: se dibuja con tiempo cuando el remate se ve, y a la vista.
+  {
+    const { ctx: ctx2, pagina: p2, alBajar: alBajar2 } = await abrir({ hilo: "figura" });
+    await p2.evaluate(() => document.querySelector(".mk-hilos-remate").scrollIntoView({ block: "end" }));
+    await p2.waitForTimeout(250);
+    const recien = await hilos(p2);
+    const enPantalla = await p2.evaluate(() => {
+      const r = document.querySelector(".mk-hilos-remate").getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= innerHeight + 1;
+    });
+    await esperarFinal(p2);
+    const luego = await hilos(p2);
+    const t0 = recien.tramos.filter((t) => t.tiempo);
+    alBajar2(t0.length === 2 && recien.final && t0.every((t) => t.dibujado < 0.95) && luego.tramos.filter((t) => t.tiempo).every((t) => t.dibujado > 0.99) && enPantalla, `el final (la llegada y la figura) se dibuja con tiempo apenas el remate se ve, entero dentro de la pantalla (recién: ${t0.map((t) => t.dibujado.toFixed(2)).join(", ")}; después: entero)`);
+    await ctx2.close();
+  }
+  revisar(Boolean(figura) && Math.min(...ys) >= r.arriba - 1 && Math.max(...ys) <= r.abajo + 1 && Math.max(...ys) - Math.min(...ys) >= 70, `la figura queda dentro del remate y se nota (${Math.round(Math.max(...ys) - Math.min(...ys))} px de alto)`);
+  // Es el mismo hilo: sigue de corrido.
+  const pegado = h.tramos.some((t) => t !== figura && Math.hypot(t.puntos.at(-1).x - figura.puntos[0].x, t.puntos.at(-1).y - figura.puntos[0].y) <= 2);
+  revisar(pegado, "la figura sigue de corrido desde la punta del hilo");
+  // Otra figura, otro dibujo; otra semilla, otro hilo.
+  await pagina.selectOption("[data-prueba=hilo-figura]", "tijera");
+  await pagina.waitForTimeout(400);
+  const tijera = await hilos(pagina);
+  await pagina.locator("[data-prueba=hilo-semilla]").fill("otro-local");
+  await pagina.waitForTimeout(400);
+  const otra = await hilos(pagina);
+  revisar(tijera.tramos.at(-1).d !== figura.d && otra.tramos[0].d !== tijera.tramos[0].d, "otra figura cambia el dibujo del final, y otra semilla cambia el hilo");
+  // Con «rulos» no hay remate: la página mide 140 px menos.
+  // El remate se mide: con relleno bajo él, la figura sigue dentro.
+  await pagina.locator(P).evaluate((e) => (e.style.paddingBottom = "60px"));
+  await pagina.waitForTimeout(700);
+  const conRelleno = await pagina.evaluate(() => {
+    const r = document.querySelector("[data-prueba=hilo-pagina] .mk-hilos-remate").getBoundingClientRect();
+    const f = window.__hilos().tramos.find((t) => t.clase === "figura");
+    const ys = f.puntos.map((q) => q.y);
+    return { arriba: r.top, abajo: r.bottom, min: Math.min(...ys), max: Math.max(...ys) };
+  });
+  revisar(conRelleno.min >= conRelleno.arriba - 1 && conRelleno.max <= conRelleno.abajo + 1, `con relleno bajo el remate, la figura sigue dentro de él: se mide dónde está (${Math.round(conRelleno.min - conRelleno.arriba)} a ${Math.round(conRelleno.max - conRelleno.arriba)} px de los 140)`);
+  await pagina.locator(P).evaluate((e) => (e.style.paddingBottom = ""));
+  await pagina.waitForTimeout(500);
+  const conRemate = await pagina.locator(P).evaluate((e) => e.offsetHeight);
+  await pagina.selectOption("[data-prueba=hilo-tipo]", "rulos");
+  await pagina.waitForTimeout(400);
+  const sinRemate = await pagina.locator(P).evaluate((e) => e.offsetHeight);
+  revisar(conRemate - sinRemate === 140 && (await remate()) === null, `sin «figura» no hay remate (${conRemate} → ${sinRemate} px)`);
+  await ctx.close();
+}
+
+// --- Niveles y navegadores ---
+if (parte("niveles")) {
+  {
+    // Sin scroll nativo (o en liviano): el hilo entero y quieto, sin luces.
+    const { ctx, pagina, errores } = await abrir({ hilo: "figura" });
+    await pagina.locator("[data-prueba=hilo-respaldo]").check();
+    // Se cambia de hilo y se vuelve: así la página se mide de nuevo ya sin scroll nativo (como en un navegador que
+    // no lo tiene, donde el hilo nace en ese modo).
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "rulos");
+    await pagina.waitForTimeout(400);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "figura");
+    await pagina.waitForTimeout(700);
+    const h = await hilos(pagina);
+    await bajar(pagina, 0.6);
+    const h2 = await hilos(pagina);
+    revisar(h.hay && !h.vivo && h.tramos.length >= 6 && h.tramos.every((t) => t.dibujado > 0.99) && h.luces.length === 0 && dibujado(h2) === dibujado(h) && errores.length === 0, `sin scroll nativo el hilo está entero y quieto, con su figura y sin luces (${h.tramos.length} tramos, ${h.luces.length} luces)`);
+    // Ahí los bloques entran con una transición (corridos 24 px hasta que se ven): el hilo se mide igual contra su
+    // lugar final, no contra donde están mientras tanto.
+    await asentar(pagina);
+    await pagina.waitForTimeout(900);
+    const p = await pisados(pagina);
+    revisar(p.malos.length === 0 && p.puntos > 200, `sin scroll nativo el hilo tampoco pisa el contenido: se mide contra el lugar final de cada bloque (${p.puntos} puntos${p.malos.length ? `; ${p.malos.slice(0, 3).join("; ")}` : ""})`);
+    await ctx.close();
+  }
+  {
+    // Quieto (movimiento reducido): sin hilo; con «figura», solo la figura, dibujada.
+    const { ctx, pagina, errores } = await abrir({ hilo: "figura", opciones: { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" } });
+    const h = await hilos(pagina);
+    const cuadros = await pagina.evaluate(() => window.__cuadros);
+    revisar(h.hay && h.tramos.length === 1 && h.tramos[0].clase === "figura" && h.tramos[0].dibujado > 0.99 && h.nudos.length === 0 && h.luces.length === 0 && errores.length === 0, `con movimiento reducido no hay hilo: queda solo la figura, dibujada y quieta (${h.tramos.map((t) => t.clase).join(", ")})`);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "hebras");
+    await pagina.waitForTimeout(400);
+    const sin = await hilos(pagina);
+    revisar(sin.tramos.length === 0 && sin.nudos.length === 0, `y con «hebras», nada (${sin.tramos.length} tramos); el trazado pidió ${cuadros} cuadros al medir`);
+    await ctx.close();
+  }
+  {
+    // El Hilo de siempre no cambia.
+    const { ctx, pagina, errores } = await abrir({ hilo: "hilo" });
+    const viejo = await pagina.evaluate(() => ({ hilo: document.querySelectorAll("[data-prueba=hilo-pagina] svg.mk-hilo path").length, hilos: document.querySelectorAll("[data-prueba=hilo-pagina] svg.mk-hilos").length, z: getComputedStyle(document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilo")).zIndex }));
+    revisar(viejo.hilo === 1 && viejo.hilos === 0 && viejo.z === "-1" && errores.length === 0, `el Hilo de siempre sigue igual: una S por detrás de los bloques (${JSON.stringify(viejo)})`);
+    await ctx.close();
+  }
+}
+
+// --- La página dentro de un marco con su propio scroll (como una vista previa) ---
+if (parte("marco")) {
+  const T = '[data-telefono="p-figura"]';
+  const R = `${T} .mk-pagina`;
+  const { ctx, pagina, errores, nativo, alBajar } = await abrir({ ruta: "#relatos", raiz: R, opciones: { viewport: { width: 1280, height: 900 } } });
+  await pagina.evaluate((t) => document.querySelector(t).scrollIntoView({ block: "center" }), T);
+  await pagina.waitForTimeout(700);
+  /** Baja dentro del marco hasta esa parte de su scroll (de 0 a 1). */
+  const bajarEn = async (k) => {
+    await pagina.evaluate(([t, parte]) => {
+      const e = document.querySelector(t);
+      e.scrollTo(0, (e.scrollHeight - e.clientHeight) * parte);
+      return new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo)));
+    }, [T, k]);
+    await pagina.waitForTimeout(150);
+  };
+  const marco = await pagina.evaluate((t) => {
+    const e = document.querySelector(t);
+    const c = e.getBoundingClientRect();
+    return { arriba: c.top, alto: e.clientHeight, baja: e.scrollHeight - e.clientHeight, pagina: e.querySelector(".mk-pagina").offsetHeight };
+  }, T);
+  await bajarEn(0);
+  const arriba = await hilos(pagina, R);
+  revisar(arriba.hay && arriba.vivo === nativo && arriba.tramos.length >= 3 && marco.baja > 400 && errores.length === 0, `dentro de un marco con su propio scroll también hay hilo (${arriba.tramos.length} tramos; el marco baja ${Math.round(marco.baja)} px)${errores.length ? ` (${errores[0]})` : ""}`);
+  alBajar(arriba.tramos.every((t) => t.dibujado < 0.05), `arriba del marco el hilo todavía no se dibuja (${arriba.tramos.map((t) => t.dibujado.toFixed(2)).join(" ")})`);
+  // La punta sigue al scroll del marco (no al de la ventana), y va a la altura de su vista.
+  const puntas = [];
+  const avance = [];
+  for (const k of [0.25, 0.4, 0.55, 0.7]) {
+    await bajarEn(k);
+    const h = await hilos(pagina, R);
+    avance.push(Math.round(dibujado(h)));
+    for (const t of h.tramos.filter((x) => x.dibujado > 0.08 && x.dibujado < 0.92)) puntas.push((t.puntos[Math.round(t.dibujado * (t.puntos.length - 1))].y - marco.arriba) / marco.alto);
+  }
+  alBajar(avance.every((v, i) => i === 0 || v >= avance[i - 1] - 1) && avance.at(-1) > avance[0] + 200, `el hilo avanza con el scroll del marco (px dibujados: ${avance.join(", ")})`);
+  alBajar(puntas.length >= 2 && puntas.every((y) => y > 0.15 && y < 0.95), `su punta va a la vista del marco (${puntas.map((y) => `${Math.round(y * 100)} %`).join(", ")})`);
+  await bajarEn(1);
+  await esperarFinal(pagina, R);
+  const abajo = await hilos(pagina, R);
+  const figura = abajo.tramos.find((t) => t.clase === "figura");
+  revisar(abajo.tramos.every((t) => t.dibujado > 0.99) && Boolean(figura) && Math.abs(abajo.alto - marco.pagina) < 1, `al terminar de bajar el marco, el hilo está entero, con su figura, y mide lo mismo que la página (${abajo.alto} px)`);
+  await asentar(pagina);
+  await pagina.waitForTimeout(500);
+  const p = await pisados(pagina, R);
+  revisar(p.malos.length === 0 && p.puntos > 100, `y no pisa el contenido de esa página (${p.puntos} puntos contra ${p.cajas} cajas${p.malos.length ? `; ${p.malos.slice(0, 3).join("; ")}` : ""})`);
+  await ctx.close();
+}
+
+// --- La página como una de La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden ---
+if (parte("lamente")) {
+  {
+    // Sin el estilo del kit, el hilo toma el acento de La Mente (`--lm-acento`), no un naranjo fijo.
+    const { ctx, pagina, errores } = await abrir({ hilo: "hebras" });
+    await pagina.selectOption("[data-prueba=hilo-marco]", "lamente");
+    await pagina.waitForTimeout(700);
+    const h = await hilos(pagina);
+    revisar(h.hay && h.color === "rgb(46, 125, 50)" && h.tramos.length > 3 && errores.length === 0, `sin el estilo del kit, el hilo es del acento de la página de La Mente (${h.color})${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  {
+    // En la vista previa (achicada y sin scroll propio): entero y quieto, y en su lugar.
+    const { ctx, pagina, errores } = await abrir({ hilo: "hebras", opciones: { viewport: { width: 1280, height: 900 } } });
+    await pagina.selectOption("[data-prueba=hilo-marco]", "previa");
+    await pagina.waitForTimeout(900);
+    const h = await hilos(pagina);
+    revisar(h.hay && !h.vivo && h.tramos.length > 3 && h.tramos.every((t) => t.dibujado > 0.99), `en la vista previa (achicada y sin scroll propio) el hilo va entero y quieto: con el scroll no se dibujaría nunca (${h.tramos.length} tramos)`);
+    await asentar(pagina);
+    await pagina.waitForTimeout(500);
+    const p = await pisados(pagina);
+    const escala = await pagina.evaluate(() => {
+      const e = document.querySelector("[data-prueba=hilo-pagina]");
+      return e.getBoundingClientRect().width / e.offsetWidth;
+    });
+    revisar(Math.abs(escala - 0.6) < 0.01 && p.malos.length === 0 && p.puntos > 200 && errores.length === 0, `y achicada al ${Math.round(escala * 100)} % el hilo sigue sin pisar el contenido (${p.puntos} puntos${p.malos.length ? `; ${p.malos.slice(0, 3).join("; ")}` : ""})`);
+    await ctx.close();
+  }
+  {
+    // Los bloques cambian de orden sin cambiar de tamaño (como al ordenarlos en el Estudio): el hilo se vuelve a trazar.
+    const { ctx, pagina, errores } = await abrir({ hilo: "rulos" });
+    const antes = (await hilos(pagina)).tramos.map((t) => t.d).join("|");
+    await pagina.locator("[data-prueba=hilo-orden]").evaluate((b) => b.click());
+    await pagina.waitForTimeout(900);
+    const despues = await hilos(pagina);
+    await asentar(pagina);
+    await pagina.waitForTimeout(400);
+    const p = await pisados(pagina);
+    revisar(despues.tramos.map((t) => t.d).join("|") !== antes && p.malos.length === 0 && errores.length === 0, `si los bloques cambian de orden sin cambiar de tamaño, el hilo se vuelve a trazar y no pisa el contenido${p.malos.length ? ` (${p.malos.slice(0, 2).join("; ")})` : ""}`);
+    await ctx.close();
+  }
+  {
+    // Medir no hace correr las transiciones de nuevo: una tarjeta levantada no baja y sube cada vez que se mide.
+    const { ctx, pagina } = await abrir({ hilo: "rulos" });
+    const T = '[data-prueba=hilo-pagina] [data-franja="lista"] .hil-tarjeta:first-child';
+    await pagina.waitForTimeout(800);
+    const muestras = await pagina.evaluate(async (t) => {
+      const el = document.querySelector(t);
+      const vistos = new Set();
+      document.querySelector("[data-prueba=hilo-crece]").click();
+      const t0 = performance.now();
+      while (performance.now() - t0 < 900) {
+        vistos.add(getComputedStyle(el).translate);
+        await new Promise((listo) => requestAnimationFrame(listo));
+      }
+      return [...vistos];
+    }, T);
+    revisar(muestras.length === 1 && muestras[0] === "0px -3px", `al volver a medir, una tarjeta levantada con transición no se mueve (${muestras.join(" → ")})`);
+    // Y varios cambios seguidos se miden una sola vez, cuando se calman.
+    const veces = await pagina.evaluate(async () => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      // Cada vez que el hilo se vuelve a dibujar, sus caminos cambian juntos: llegan en un solo aviso.
+      let n = 0;
+      const mo = new MutationObserver(() => n++);
+      mo.observe(svg, { subtree: true, attributes: true, attributeFilter: ["d"] });
+      const b = document.querySelector("[data-prueba=hilo-crece]");
+      for (let i = 0; i < 3; i++) {
+        b.click();
+        await new Promise((listo) => setTimeout(listo, 40));
+      }
+      await new Promise((listo) => setTimeout(listo, 900));
+      mo.disconnect();
+      return n;
+    });
+    revisar(veces === 1, `tres cambios seguidos se miden una sola vez, cuando se calman (el hilo se volvió a dibujar ${veces} ${veces === 1 ? "vez" : "veces"})`);
+    await ctx.close();
+  }
+}
+
+// --- El hilo de cada estilo: el mismo recorrido, otro material ---
+if (parte("material")) {
+  const ESPERADO = { neon: 2, retro: 2, rock: 2, anime: 2, pelicula: 3 };
+  const { ctx, pagina, errores } = await abrir({ hilo: "rulos" });
+  const vistos = {};
+  for (const estilo of Object.keys(ESPERADO)) {
+    await pagina.selectOption("[data-prueba=hilo-estilo]", estilo);
+    await pagina.waitForTimeout(700);
+    vistos[estilo] = await pagina.evaluate(() => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      const g = svg.querySelector("[data-capas]");
+      // Las capas que se ven (la del recorrido va sin trazo).
+      const capas = g ? [...g.querySelectorAll("path:not([data-tramo])")] : [];
+      return {
+        material: svg.dataset.material,
+        capas: capas.length,
+        // Todas las capas de un tramo se dibujan juntas: el mismo tramo del scroll.
+        juntas: capas.every((c) => c.style.getPropertyValue("--mk-h-d") === capas[0].style.getPropertyValue("--mk-h-d")),
+        grosores: capas.map((c) => getComputedStyle(c).strokeWidth),
+        tramos: svg.querySelectorAll("path[data-tramo]").length,
+      };
+    });
+  }
+  const bien = Object.entries(ESPERADO).every(([e, n]) => vistos[e].material !== "linea" && vistos[e].capas === n && vistos[e].juntas);
+  const distintos = new Set(Object.values(vistos).map((v) => `${v.material}/${v.grosores.join(",")}`)).size;
+  revisar(bien && distintos === 5 && errores.length === 0, `cada estilo dibuja el hilo con su material: ${Object.entries(vistos).map(([e, v]) => `${e} ${v.material} (${v.capas} capas)`).join("; ")}${errores.length ? ` (${errores[0]})` : ""}`);
+  // Las capas se dibujan al bajar igual que el hilo: a media bajada van a medio camino, todas juntas.
+  await pagina.selectOption("[data-prueba=hilo-estilo]", "retro");
+  await pagina.waitForTimeout(600);
+  await bajar(pagina, 0.45);
+  const medio = await pagina.evaluate(() => {
+    const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+    return [...svg.querySelectorAll("[data-capas]")].map((g) => [...g.querySelectorAll("path:not([data-tramo])")].map((c) => Number(parseFloat(getComputedStyle(c).strokeDashoffset).toFixed(3))));
+  });
+  const aMedias = medio.filter((g) => g.some((v) => v > 0.02 && v < 0.98));
+  alBajarGlobal(aMedias.length >= 1 && aMedias.every((g) => g.every((v) => Math.abs(v - g[0]) < 0.001)), `las capas del material se dibujan juntas al bajar (${JSON.stringify(aMedias.slice(0, 2))})`);
+  // Sin el estilo del kit (La Mente), una sola línea.
+  await pagina.selectOption("[data-prueba=hilo-marco]", "lamente");
+  await pagina.waitForTimeout(700);
+  const lamente = await pagina.evaluate(() => {
+    const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+    return { material: svg.dataset.material, capas: svg.querySelectorAll("[data-capas]").length };
+  });
+  revisar(lamente.material === "linea" && lamente.capas === 0, `sin el estilo del kit el hilo es una línea, como siempre (${JSON.stringify(lamente)})`);
+  // Y sigue sin pisar el contenido, en cada estilo (se mira el borde de cada capa), con los bloques en su lugar.
+  await pagina.selectOption("[data-prueba=hilo-marco]", "kit");
+  await asentar(pagina);
+  const malos = [];
+  for (const estilo of Object.keys(ESPERADO)) {
+    await pagina.selectOption("[data-prueba=hilo-estilo]", estilo);
+    await pagina.waitForTimeout(600);
+    const p = await pisados(pagina);
+    malos.push(...p.malos.map((m) => `${estilo}: ${m}`));
+  }
+  revisar(malos.length === 0, `en ningún estilo el hilo pisa el contenido${malos.length ? ` (${malos.slice(0, 3).join("; ")})` : ""}`);
+  await ctx.close();
+}
+
+await navegador.close();
+console.log(fallas ? `\n${fallas} revisión(es) fallaron.` : "\nTodo bien.");
+process.exit(fallas ? 1 : 0);

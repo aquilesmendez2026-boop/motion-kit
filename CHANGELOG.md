@@ -1,6 +1,11 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.4.0)
+## 0.5.0 (25-11-2026)
+
+Una sola luz para la página (`motion-kit/luz`), cuatro momentos que se manejan con el dedo, tres hilos nuevos para la
+página (con el material de cada estilo) y el encabezado listo para moverse con una partitura. El contrato de página
+suma valores (los hilos, `figura` y `semilla`); el del encabezado y el de la partitura no cambian. **Cambia cómo se
+ven** los botones con forma (el arreglo de abajo). El tope de la entrada principal sube a 90 KB.
 
 ### Luz y materia: una sola luz para la página
 
@@ -19,6 +24,31 @@
 - Pruebas: `pruebas/luz.test.ts` y `scripts/verificar-luz.mjs` (55 revisiones), también con el motor de Safari.
 - Con el scroll, cada superficie se ilumina según por dónde va en la pantalla (lo lleva el navegador, sin código,
   donde hay animaciones atadas al scroll).
+
+### El encabezado dentro de una partitura
+
+- **`Encabezado` marca sus partes** con `data-mk-parte` (`antetitulo`, `titulo`, `bajada`, `botones`, `media`,
+  `contenido`): una partitura (`ConPartitura`) las encuentra sin pasarle un mapa.
+- **`sinEntrada`** (prop nueva de `Encabezado`): sin la entrada del encabezado ni el efecto de su título, para cuando
+  los mueve una partitura. `TextoCinetico` gana `cuando="nunca"`.
+- Sin `sinEntrada`, nada cambia. Detalle en «El encabezado dentro de una partitura» de `docs/CATALOGO.md`.
+
+### Hilos: tres relatos de página nuevos
+
+- **`relatoPagina: "rulos" | "hebras" | "figura"`**: un hilo que va por delante de los bloques, por lo libre de cada
+  uno. Serpentea con un rulo en cada cruce; con `hebras` se abre donde hay tarjetas, deja un nudo en cada una y se
+  junta; con `figura`, al final dibuja una figura del rubro de un solo trazo.
+- **Campos nuevos en la receta de página** (y props de `PaginaRelato`): `figura` (once figuras; `figuraDeRubro` dice
+  cuál le toca a cada rubro) y `semilla` (el slug del negocio). El contrato de página los suma: solo agrega.
+- Nunca pasa sobre un texto, una foto, una tarjeta o un botón; donde no cabe, pasa por debajo. Sobre un fondo del
+  color del acento cambia de color. El final (la figura) se dibuja con tiempo cuando se ve. En una página sin el
+  estilo del kit toma `--lm-acento`; en una vista previa achicada sin scroll propio va entero y quieto. El Hilo de
+  siempre no cambia.
+- **El hilo de cada estilo:** tubo de luz (neón), lana (retro), cable (rock), cinta (anime), rieles (película).
+- Lo dibuja el navegador, atado al scroll; se baja aparte (9,9 KB gzip). El tope de la entrada principal `motion-kit` sube de 80 a 90 KB
+  (lo fijó Aquiles; hoy mide 80,3). Detalle en «Hilos» de `docs/CATALOGO.md`.
+- Pruebas: `pruebas/hilos.test.ts` y `scripts/verificar-hilos.mjs` (53 revisiones), también con el motor de Safari.
+  Vitrina `#hilos`.
 
 ### Con el dedo: cuatro momentos que se manejan como objetos
 

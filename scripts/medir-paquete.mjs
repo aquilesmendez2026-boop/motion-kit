@@ -32,7 +32,9 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // el diseño de «Luz y materia».
 // 24-11-2026: momentos 17 (era 13). Lo fijó Aquiles («sube el tope a 17») al aprobar el diseño de «Con el dedo»
 // (cuatro piezas más que se bajan aparte; al cargar quedan sus cargadores).
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8 };
+// 25-11-2026: motion-kit 90 (era 80; con los hilos y el encabezado dentro de una partitura mide 80,3). Lo fijó Aquiles
+// («sube el tope a 90»).
+export const TOPES_KB = { "motion-kit": 90, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;
