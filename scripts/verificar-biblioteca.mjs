@@ -102,7 +102,9 @@ await ir("#biblioteca");
 revisar((await tarjetas().count()) === 11, "guardar como nuevo suma un diseño");
 const nuevo = p.locator(".bib-tarjeta", { hasText: "Diseño nuevo de prueba" });
 revisar((await nuevo.locator(".bib-etiquetas").innerText()).includes("#noche"), "con sus etiquetas limpias");
-revisar((await nuevo.locator(".mk-enc-titulo").innerText()).includes("nuevo"), "y su miniatura muestra el título nuevo");
+// La miniatura se dibuja después de la tarjeta: se la espera (hasta 5 s) en vez de leerla al tiro.
+const conTitulo = await nuevo.locator(".mk-enc-titulo", { hasText: "nuevo" }).first().waitFor({ timeout: 5000 }).then(() => true, () => false);
+revisar(conTitulo, "y su miniatura muestra el título nuevo");
 await ir("#encabezados?id=no-existe");
 await p.waitForTimeout(500);
 revisar(/ya no está/.test(await p.locator("[data-prueba=bib-aviso]").innerText()), "un id que no existe se avisa");

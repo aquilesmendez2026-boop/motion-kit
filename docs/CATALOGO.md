@@ -427,9 +427,9 @@ Cosas que conviene saber:
 
 - **Sorpréndeme:** con cinco fondos más en el registro hay más candidatos por rubro, así que una misma semilla puede
   dar un encabezado distinto que en `v0.3.0`.
-- **Prueba inestable conocida:** `scripts/verificar-biblioteca.mjs` falló una vez («su miniatura muestra el título
-  nuevo») al final de la batería completa y pasó 25 de 25 las dos veces que se corrió sola. Es anterior a esta tanda y
-  parece de tiempos (lee la miniatura a los 500 ms de guardar). Pendiente: esperar a la miniatura en vez de un tiempo fijo.
+- **Prueba que era inestable, arreglada el 24-11-2026:** `scripts/verificar-biblioteca.mjs` falló dos veces («su
+  miniatura muestra el título nuevo») dentro de la batería completa y pasaba siempre sola. Era de tiempos: leía la
+  miniatura al tiro. Ahora la espera hasta 5 segundos.
 - **Las piezas con hora** (`FechasQueVienen`, `ClasesDeHoy`) se vuelven a dibujar cada medio minuto con la pestaña a la
   vista. Si se les pasa `hoy`, ese valor lo pone al día quien arma la página.
 - **`SeccionesVivas` no pone `id`** en sus secciones: las anclas son de quien arma la página.
