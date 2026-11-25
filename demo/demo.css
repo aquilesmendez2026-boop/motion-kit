@@ -595,12 +595,16 @@ h2 {
 .dir-grilla{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr))}
 .dir-tarjetita{display:grid;place-items:center;min-height:86px;padding:10px;border-radius:14px;background:color-mix(in srgb,#fff 9%,transparent);border:1px solid color-mix(in srgb,#fff 16%,transparent);color:inherit;text-decoration:none;font-weight:700;text-align:center}
 .dir-nota{margin:14px 0 0;font-size:.85rem;opacity:.7}
-.dir-paralaje{position:relative;height:min(70vh,440px);border-radius:12px;overflow:clip;display:grid;place-items:center}
-.dir-capa{position:absolute;inset:-18% 0}
-.dir-fondo{background:radial-gradient(circle at 30% 30%,#5b3a16,#1b130b 70%)}
-.dir-medio{inset:auto 8% 22% auto;width:38%;aspect-ratio:1;border-radius:50%;background:color-mix(in srgb,var(--dir-acento) 55%,transparent)}
-.dir-frente{inset:auto auto 12% 8%;font-size:clamp(3rem,12vw,6rem);line-height:1}
-.dir-frase{position:relative;margin:0;padding:0 8%;font-size:clamp(1.3rem,4.6vw,2.2rem);font-weight:800;text-align:center}
+/* Paralaje: un amanecer por capas. Lo lejano es claro y brumoso; lo cercano, oscuro y nítido. */
+.dir-paralaje{position:relative;height:min(70vh,440px);border-radius:12px;overflow:clip;display:grid;place-items:center;background:linear-gradient(180deg,#171b38 0%,#3d2f5c 34%,#a4553f 62%,#f0a85a 86%,#ffd9a0 100%)}
+.dir-capa{position:absolute;left:0;right:0}
+.dir-sol{left:auto;right:14%;top:30%;width:clamp(64px,15vw,112px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fffbe9 0 42%,#ffe2a1 58%,#ffc76a 100%);box-shadow:0 0 60px 26px rgba(255,196,120,.42),0 0 140px 70px rgba(255,170,90,.2)}
+.dir-fondo{bottom:-34%;height:92%;background:linear-gradient(180deg,#9a7a94 0%,#7a5f86 30%,#5c4670 100%);clip-path:polygon(0 30%,8% 20%,15% 27%,25% 9%,33% 24%,43% 13%,54% 29%,63% 16%,72% 26%,83% 8%,91% 22%,100% 15%,100% 100%,0 100%)}
+.dir-medio{bottom:-30%;height:72%;background:linear-gradient(180deg,#5a3550 0%,#3a2238 40%,#241526 100%);clip-path:polygon(0 24%,11% 12%,22% 26%,37% 7%,50% 28%,62% 14%,76% 30%,88% 15%,100% 26%,100% 100%,0 100%)}
+.dir-frente{bottom:-46%;height:74%}
+.dir-frente::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#1c110f 0%,#0b0706 45%);clip-path:polygon(0 20%,9% 11%,21% 6%,35% 10%,49% 19%,63% 25%,79% 21%,91% 13%,100% 17%,100% 100%,0 100%)}
+.dir-taza{position:absolute;left:9%;top:-13%;font-size:clamp(2.6rem,10vw,4.6rem);line-height:1;filter:drop-shadow(0 10px 8px rgba(0,0,0,.55))}
+.dir-frase{position:relative;margin:0 0 6%;padding:0 8%;font-size:clamp(1.3rem,4.6vw,2.2rem);font-weight:800;text-align:center;text-shadow:0 2px 14px rgba(15,10,30,.75)}
 .dir-iman{display:grid;place-items:center;min-height:300px}
 .dir-socio{position:relative;display:grid;gap:8px;justify-items:start;width:min(100%,320px);padding:22px;border-radius:18px;overflow:clip;background:linear-gradient(135deg,#2b2118,#4a3520);border:1px solid color-mix(in srgb,#fff 18%,transparent)}
 .dir-brillo{position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,#fff 30%,transparent),transparent 65%);pointer-events:none}

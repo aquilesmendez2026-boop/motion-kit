@@ -47,13 +47,14 @@ const EJEMPLOS: Record<PartituraDeEjemplo, { titulo: string; que: string; escena
   },
   paralaje: {
     titulo: "Paralaje",
-    que: "Con la vista: tres capas se mueven distinto al cruzar la pantalla y la frase se enciende palabra por palabra.",
+    que: "Con la vista: al bajar, el sol y los cerros lejanos se quedan atrás y el primer plano se adelanta, como al mirar por una ventana. La frase se enciende palabra por palabra.",
     escenario: () => (
       <div className="dir-paralaje">
+        <div className="dir-capa dir-sol" data-mk-parte="sol" aria-hidden="true" />
         <div className="dir-capa dir-fondo" data-mk-parte="fondo" aria-hidden="true" />
         <div className="dir-capa dir-medio" data-mk-parte="medio" aria-hidden="true" />
-        <div className="dir-capa dir-frente" data-mk-parte="frente" aria-hidden="true">☕</div>
         <p className="dir-frase" data-mk-parte="frase">Cada taza empieza mucho antes de llegar a tu mesa.</p>
+        <div className="dir-capa dir-frente" data-mk-parte="frente" aria-hidden="true"><span className="dir-taza">☕</span></div>
       </div>
     ),
   },

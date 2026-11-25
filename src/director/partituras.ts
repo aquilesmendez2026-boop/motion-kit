@@ -48,10 +48,13 @@ const paralaje: Partitura = {
       con: "vista",
       tramo: "paso",
       pasos: [
-        { actor: "fondo", de: { y: 60, escala: 1.15 }, a: { y: -60, escala: 1.15 } },
-        { actor: "medio", de: { y: 110 }, a: { y: -110 } },
-        { actor: "frente", de: { y: -30, giro: -3 }, a: { y: 30, giro: 3 } },
-        { actor: "frase", por: "palabra", de: { opacidad: 0.15 }, a: { opacidad: 1 }, entre: [0.25, 0.6] },
+        // Lo lejano casi no se mueve en la pantalla: dentro de la caja, se queda atrás. Lo cercano se adelanta.
+        { actor: "sol", de: { y: -130 }, a: { y: 130 } },
+        { actor: "fondo", de: { y: -80 }, a: { y: 80 } },
+        { actor: "medio", de: { y: -25 }, a: { y: 25 } },
+        { actor: "frente", de: { y: 120 }, a: { y: -120 } },
+        // La frase se enciende mientras la caja está entera en la pantalla.
+        { actor: "frase", por: "palabra", de: { opacidad: 0.15 }, a: { opacidad: 1 }, entre: [0.36, 0.6], reparto: 0.4 },
       ],
     },
   ],
