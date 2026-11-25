@@ -1,6 +1,9 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.5.2)
+## 0.5.3 (25-11-2026)
+
+Un relato de página nuevo, `ramas`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la
+partitura no cambian. Los hilos se ven igual.
 
 ### Ramas: el Hilo de fondo que se divide
 

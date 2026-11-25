@@ -101,6 +101,14 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.3 (25-11-2026)
+
+Etiqueta `v0.5.3`: suma el relato de página `ramas` (el Hilo de fondo que se divide: un tronco hasta el fondo, ramas
+que chocan con el contenido con una chispa y otras que se juntan; sobre el fondo de los bloques y bajo su contenido).
+Se instala con `github:aquilesmendez2026-boop/motion-kit#v0.5.3`. El contrato de página suma `ramas` a `relatoPagina`
+(solo agrega); los del encabezado y la partitura no cambian. Antes de la etiqueta: 334 pruebas calculables, pesos
+dentro de sus topes y la batería visual completa.
+
 ## Paquete v0.5.2 (25-11-2026)
 
 Etiqueta `v0.5.2`: suma el hilo de página `enredadera` (un tallo con hojas que se mecen al bajar y una flor al final)

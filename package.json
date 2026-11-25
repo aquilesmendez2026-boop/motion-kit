@@ -1,6 +1,6 @@
 {
   "name": "motion-kit",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Librería propia de efectos y animaciones para React",
   "license": "MIT",
   "type": "module",

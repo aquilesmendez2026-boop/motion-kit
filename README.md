@@ -169,7 +169,7 @@ npm install github:aquilesmendez2026-boop/motion-kit
 
 Al instalarla así se compila sola (script `prepare`); no hace falta subir `dist/`.
 
-Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.5.2`.
+Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.5.3`.
 
 Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
 `motion-kit/pagina` (los relatos y la receta de página), `motion-kit/momentos` (un momento por bloque),
