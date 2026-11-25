@@ -95,6 +95,7 @@ export function App() {
           <a href="#relatos">Relatos</a>
           <a href="#momentos">Momentos</a>
           <a href="#director">Director</a>
+          <a href="#luz">Luz</a>
           <a href="#profundidad">Foto profunda</a>
           <a href="#pagina">Página</a>
         </div>

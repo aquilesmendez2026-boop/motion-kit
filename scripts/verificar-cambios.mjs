@@ -21,7 +21,7 @@ const TODAS = readdirSync("scripts")
   .map((f) => /^verificar-([a-z0-9]+)\.mjs$/.exec(f)?.[1])
   .filter((n) => n && n !== "cambios");
 const TODO = "todo";
-const MOMENTOS = ["momentos", "momentos2", "momentos3"];
+const MOMENTOS = ["momentos", "momentos2", "momentos3", "momentos4"];
 const ENCABEZADO = ["encabezados", "pelicula", "lamente", "escena", "dedo", "fotos:encabezado", "fotos:profunda"];
 const pieza2 = (archivo, parte) => [new RegExp(`^src/momentos/${archivo}`), [`momentos2:${parte}`]];
 
@@ -30,10 +30,16 @@ const pieza2 = (archivo, parte) => [new RegExp(`^src/momentos/${archivo}`), [`mo
  * de `src/` o `demo/` que no calza con ninguna corre todo (más vale de más): si pasa seguido, se le suma su regla.
  */
 const REGLAS = [
+  // Momentos: con el dedo.
+  [/^src\/momentos\/(CuponQueSeArranca|calculo-cupon)/, ["momentos4:cupon"]],
+  [/^src\/momentos\/(StickerQueSeDespega|calculo-sticker)/, ["momentos4:sticker"]],
+  [/^src\/momentos\/(SellosConTimbre|calculo-timbre)/, ["momentos4:sello"]],
+  [/^src\/momentos\/(RuletaDePremios|calculo-ruleta)/, ["momentos4:ruleta"]],
+  [/^src\/momentos\/(perezosos-4|calculos-4|al-acabar)/, ["momentos4"]],
   // Momentos: efectos vistosos.
   [/^src\/momentos\/(FuegosArtificiales|calculo-fuegos)/, ["momentos3:fuegos"]],
-  [/^src\/momentos\/(CarruselGiratorio|calculo-carrusel)/, ["momentos3:carrusel"]],
-  [/^src\/momentos\/(LibroQueSeAbre|calculo-libro)/, ["momentos3:libro"]],
+  [/^src\/momentos\/(CarruselGiratorio|calculo-carrusel)/, ["momentos3:carrusel", "luz:existe"]],
+  [/^src\/momentos\/(LibroQueSeAbre|calculo-libro)/, ["momentos3:libro", "luz:existe"]],
   [/^src\/momentos\/(perezosos-3|calculos-3)/, ["momentos3"]],
   // Momentos: segunda tanda.
   pieza2("FechasQueVienen", "fechas"),
@@ -58,6 +64,8 @@ const REGLAS = [
   [/^src\/fotos\//, ["fotos"]],
   [/^demo\/(Profundidad|fotos\/)/, ["fotos:profunda"]],
   [/^demo\/Galeria/, ["fotos:galeria", "fotos:visor"]],
+  // Luz y materia.
+  [/^(src\/luz\/|src\/entradas\/luz|demo\/Luz)/, ["luz"]],
   // Director.
   [/^(src\/director\/|src\/partitura\/|src\/entradas\/(director|partitura)|demo\/Director)/, ["director"]],
   // Dedo y física.
@@ -76,6 +84,8 @@ const REGLAS = [
   // Página, relatos, biblioteca, piezas y plantillas.
   [/^(src\/relatos\/|src\/entradas\/pagina|demo\/(Pagina|Relatos))/, ["relatos", "dedo:impulso", "dedo:estela", "dedo:pila"]],
   [/^(src\/biblioteca\/|demo\/Biblioteca)/, ["biblioteca"]],
+  // Los botones y las tarjetas cambian de sombra dentro de una luz, y los paquetes de botones van en el encabezado.
+  [/^src\/piezas\/(Boton|Tarjeta)/, ["piezas", "luz:existe", "encabezados"]],
   [/^(src\/(piezas|components)\/|demo\/Piezas)/, ["piezas"]],
   [/^(src\/plantillas\/|demo\/(Estudio|Plantilla|plantillas\/))/, ["estilos", "biblioteca"]],
   // Cada prueba, si cambia ella misma.

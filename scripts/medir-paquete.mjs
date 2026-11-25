@@ -10,8 +10,8 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura"];
-const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz"];
+const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css", "estilos-luz.css"];
 
 /**
  * Topes en KB gzip de lo que baja al cargar (todas las exportaciones; la app que usa menos baja menos). Medido el
@@ -28,7 +28,11 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // 24-11-2026: director 10 (entrada nueva del motor de animación; tope del diseño de la fase 1, aprobado por Aquiles).
 // 24-11-2026: partitura 9 (entrada nueva: el lenguaje en español y lo de quien crea; no viaja a las páginas públicas).
 // Lo fijó Aquiles («tope en 9»); el diseño de la fase 2 del Director proponía 8 y la entrada quedó en 8,1.
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10, director: 10, partitura: 9 };
+// 24-11-2026: luz 8 (entrada nueva: la luz de página y sus superficies, con su CSS adentro). Lo fijó Aquiles al aprobar
+// el diseño de «Luz y materia».
+// 24-11-2026: momentos 17 (era 13). Lo fijó Aquiles («sube el tope a 17») al aprobar el diseño de «Con el dedo»
+// (cuatro piezas más que se bajan aparte; al cargar quedan sus cargadores).
+export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;

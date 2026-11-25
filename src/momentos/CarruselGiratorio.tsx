@@ -19,6 +19,26 @@ const HOLGURA = 6;
 /** El aire entre una ficha y la siguiente, en px. */
 const AIRE = 16;
 
+// --- Dentro de una luz de página (`Luz`, de motion-kit/luz) ---
+// Fuera de una, nada de esto aplica. Las fichas no se apagan: una capa oscura encima dice cuánta luz les llega.
+const C = "[data-mk-luz] .mk-m-carrusel";
+const FICHA = `${C} .mk-m-carrusel-anillo>li`;
+/** Hacia dónde mira la ficha (su lugar en el anillo más el giro del anillo), visto desde donde viene la luz. */
+const DE_CARA = "calc(var(--giro) + var(--mk-c-ang,0deg) - var(--mk-l0x,0)*25deg)";
+const CSS_CARRUSEL_CON_LUZ =
+  // La capa oscura reemplaza al apagado de las fichas de costado (así el texto no pierde contraste dos veces).
+  `${FICHA}:not([data-frente]) .mk-m-carrusel-ficha{opacity:1}` +
+  `${FICHA} .mk-m-carrusel-ficha::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:#000;opacity:.32}` +
+  `${FICHA}[data-frente] .mk-m-carrusel-ficha::after{opacity:0}` +
+  `${C}[data-nivel=completo] .mk-m-carrusel-ficha::after{transition:opacity .25s linear}` +
+  // Donde el navegador sabe de cosenos, es continuo: de frente a la luz queda clara; de espaldas, oscura.
+  `@supports (opacity:calc(cos(1deg))){${FICHA} .mk-m-carrusel-ficha::after,${FICHA}[data-frente] .mk-m-carrusel-ficha::after{opacity:calc(.62*(1 - cos(${DE_CARA})));transition:none}}` +
+  // El piso: la sombra del anillo, corrida al lado contrario de la luz; y su reflejo, donde el navegador refleja.
+  `${C} .mk-m-carrusel-escena{position:relative;margin-bottom:calc(var(--mk-c-ancho)*.3)}` +
+  `${C} .mk-m-carrusel-escena::after{content:"";position:absolute;left:50%;bottom:0;width:calc(var(--mk-c-ancho)*2.1);max-width:96%;height:calc(var(--mk-c-ancho)*.16);pointer-events:none;` +
+  "translate:calc(-50% + var(--mk-l0x,0)*-26px) 55%;background:radial-gradient(closest-side,rgba(0,0,0,.34),rgba(0,0,0,.12) 55%,transparent)}" +
+  `@supports (-webkit-box-reflect:below){${C} .mk-m-carrusel-escena{-webkit-box-reflect:below 2px linear-gradient(transparent 72%,rgba(0,0,0,.2))}}`;
+
 export const CSS_CARRUSEL =
   // `width:100%`: con `container-type`, dentro de una fila o una grilla de ancho libre la pieza quedaría de ancho cero.
   ".mk-m-carrusel{container-type:inline-size;width:100%;box-sizing:border-box;overflow:hidden;overflow:clip;padding:.25rem 0}" +
@@ -49,7 +69,8 @@ export const CSS_CARRUSEL =
   ".mk-m-carrusel-puntos i[data-actual]{background:var(--mk-m-acento);opacity:1}" +
   // La fila: lo que se ve sin anillo. La mueve el navegador.
   ".mk-m-carrusel-fila{list-style:none;margin:0;padding:12px 8px;display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}" +
-  ".mk-m-carrusel-fila>li{flex:0 0 var(--mk-c-ancho);height:calc(var(--mk-c-ancho)*1.32);scroll-snap-align:center}";
+  ".mk-m-carrusel-fila>li{flex:0 0 var(--mk-c-ancho);height:calc(var(--mk-c-ancho)*1.32);scroll-snap-align:center}" +
+  CSS_CARRUSEL_CON_LUZ;
 
 /** Una ficha: su foto (si carga), su título, su pie y su precio. Es un enlace si lleva `href`. */
 function Tarjeta({ ficha, foco, alApretar }: { ficha: Ficha; foco: boolean; alApretar?: (ev: MouseEvent) => void }) {
@@ -113,11 +134,16 @@ export default function CarruselGiratorio({ fichas, etiqueta = "Carrusel", nivel
     anunciar: false,
     /** El foco estaba en una ficha cuando empezó a girar: al detenerse pasa a la del frente. */
     focoPendiente: false,
+    /** Está dentro de una luz de página (`[data-mk-luz]`). */
+    conLuz: false,
   });
 
   const pintar = () => {
     const m = motor.current;
-    if (aro.current) aro.current.style.transform = `translateZ(${-m.radio}px) rotateY(${m.angulo.toFixed(2)}deg)`;
+    if (!aro.current) return;
+    aro.current.style.transform = `translateZ(${-m.radio}px) rotateY(${m.angulo.toFixed(2)}deg)`;
+    // Dentro de una luz de página, las fichas necesitan saber cuánto giró el anillo para sombrearse.
+    if (m.conLuz) aro.current.style.setProperty("--mk-c-ang", `${m.angulo.toFixed(1)}deg`);
   };
   const alLlegar = () => {
     const m = motor.current;
@@ -235,6 +261,7 @@ export default function CarruselGiratorio({ fichas, etiqueta = "Carrusel", nivel
   const pegar = useCallback(
     (el: HTMLDivElement | null) => {
       raiz.current = el;
+      motor.current.conLuz = Boolean(el?.closest("[data-mk-luz]"));
       ref(el);
     },
     [ref],

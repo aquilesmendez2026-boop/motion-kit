@@ -17,6 +17,39 @@ const ANCHO_DOBLE = 620;
 /** Cuánto espera la tapa antes de abrirse sola, en ms: primero se ve el libro cerrado. */
 const ESPERA = 450;
 
+// --- Dentro de una luz de página (`Luz`, de motion-kit/luz) ---
+// Fuera de una, nada de esto aplica. Solo se funden capas (`opacity`); nada se vuelve a pintar cuadro a cuadro.
+/** El libro dentro de una luz; y abierto en dos páginas, que es cuando las hojas giran enteras. */
+const L = "[data-mk-luz] .mk-m-libro";
+const D = `${L}[data-modo=doble]`;
+/** El giro dura 0,9 s y la hoja queda de canto a los 0,27 s: hasta ahí se ve su cara; después, su dorso. */
+const SUBE = "opacity .27s ease-in";
+// Al caer se aclara rápido: la hoja gira más ligero después del canto, y casi plana ya no tiene sombra.
+const BAJA = "opacity .5s cubic-bezier(.1,.8,.3,1) .27s";
+/** Hacia dónde cae la luz, como ángulo de un degradado (donde el navegador sabe calcularlo). */
+const ANGULO = "atan2(calc(var(--mk-l0x)*-1),var(--mk-l0y))";
+const PAPEL = "color-mix(in srgb,#fff 10%,transparent),transparent 45%,rgba(0,0,0,.08)";
+/** Una capa de una cara que no se ve se esconde del todo: así no depende de que el navegador oculte bien el revés. */
+const CAMBIA = "visibility 0s .27s";
+const CSS_LIBRO_CON_LUZ =
+  // La sombra del libro cae al lado contrario de la luz, y el papel es más claro hacia ella.
+  `${L} .mk-m-libro-cara{box-shadow:calc(var(--mk-l0x)*-14px) calc(var(--mk-l0y)*-18px) 30px -20px rgba(0,0,0,.6);background-image:linear-gradient(150deg,${PAPEL});background-image:linear-gradient(${ANGULO},${PAPEL})}` +
+  // La hoja que gira: su cara se oscurece hasta quedar de canto; su dorso parte oscuro y se aclara al caer. Cada capa
+  // va en un solo sentido: si alguien cambia de dirección a medio giro, se devuelven solas, sin saltos. Y cada una se
+  // esconde cuando su cara deja de verse (al pasar por el canto), y vuelve cuando su cara vuelve.
+  `${D} .mk-m-libro-cara::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit}` +
+  `${D} .mk-m-libro-frente::before{background:linear-gradient(90deg,rgba(0,0,0,.52),rgba(0,0,0,.24));opacity:0;visibility:visible;transition:${BAJA},${CAMBIA}}` +
+  `${D} .mk-m-libro-hoja[data-pasada] .mk-m-libro-frente::before{opacity:1;visibility:hidden;transition:${SUBE},${CAMBIA}}` +
+  `${D} .mk-m-libro-dorso::before{background:linear-gradient(270deg,rgba(0,0,0,.52),rgba(0,0,0,.24));opacity:1;visibility:hidden;transition:${SUBE},${CAMBIA}}` +
+  `${D} .mk-m-libro-hoja[data-pasada] .mk-m-libro-dorso::before{opacity:0;visibility:visible;transition:${BAJA},${CAMBIA}}` +
+  // La hoja de abajo: en sombra mientras la tapa otra, y se aclara cuando queda a la vista (a la derecha y a la
+  // izquierda). Mientras está tapada del todo, su capa está escondida: aparece cuando la de arriba empieza a irse.
+  `${L} .mk-m-libro-hoja::before,${D} .mk-m-libro-hoja::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:4px 12px 12px 4px;` +
+  "backface-visibility:hidden;-webkit-backface-visibility:hidden;opacity:0;visibility:visible;transition:opacity .9s cubic-bezier(.3,.05,.2,1),visibility 0s}" +
+  `${L} .mk-m-libro-hoja::before{transform:translateZ(.6px);background:linear-gradient(90deg,rgba(0,0,0,.42),rgba(0,0,0,.12) 55%,transparent)}` +
+  `${D} .mk-m-libro-hoja::after{transform:rotateY(180deg) translateZ(.6px);border-radius:12px 4px 4px 12px;background:linear-gradient(270deg,rgba(0,0,0,.42),rgba(0,0,0,.12) 55%,transparent)}` +
+  `${L} .mk-m-libro-hoja:not([data-pasada])+.mk-m-libro-hoja:not([data-pasada])::before,${D} .mk-m-libro-hoja[data-pasada]:has(+.mk-m-libro-hoja[data-pasada])::after{opacity:1;visibility:hidden;transition:opacity .9s cubic-bezier(.3,.05,.2,1),visibility 0s .9s}`;
+
 export const CSS_LIBRO =
   // `width:100%`: con `container-type`, dentro de una fila o una grilla de ancho libre la pieza quedaría de ancho cero.
   ".mk-m-libro{container-type:inline-size;width:100%;box-sizing:border-box}" +
@@ -65,7 +98,8 @@ export const CSS_LIBRO =
   // La carta plana (liviano, quieto o sin 3D): una hoja debajo de otra.
   ".mk-m-libro[data-modo=plano] .mk-m-libro-plano{display:grid;gap:1.2rem;padding:1.2rem;border-radius:14px;background:var(--mk-m-superficie);color:var(--mk-m-texto)}" +
   ".mk-m-libro-plano-titulo{margin:0;font-size:1.4rem;font-weight:800;overflow-wrap:anywhere}" +
-  ".mk-m-libro-plano-bajada{margin:.2rem 0 0;color:var(--mk-m-suave);overflow-wrap:anywhere}";
+  ".mk-m-libro-plano-bajada{margin:.2rem 0 0;color:var(--mk-m-suave);overflow-wrap:anywhere}" +
+  CSS_LIBRO_CON_LUZ;
 
 /** Una página: el título del grupo y sus líneas, con el precio a la derecha. */
 function Pagina({ hoja, indice }: { hoja: Hoja; indice: number }) {

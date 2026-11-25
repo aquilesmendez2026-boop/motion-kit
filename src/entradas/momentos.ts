@@ -57,3 +57,10 @@ export { FuegosArtificiales, CarruselGiratorio, LibroQueSeAbre } from "../moment
 export type { LibroQueSeAbreProps } from "../momentos/LibroQueSeAbre";
 export type { FuegosArtificialesProps } from "../momentos/FuegosArtificiales";
 export type { CarruselGiratorioProps } from "../momentos/CarruselGiratorio";
+
+// «Con el dedo»: piezas que se manejan arrastrando (y con un botón, para quien no arrastra). Se bajan aparte.
+export { CuponQueSeArranca, StickerQueSeDespega, SellosConTimbre, RuletaDePremios } from "../momentos/perezosos-4";
+export type { CuponQueSeArrancaProps } from "../momentos/CuponQueSeArranca";
+export type { StickerQueSeDespegaProps } from "../momentos/StickerQueSeDespega";
+export type { SellosConTimbreProps } from "../momentos/SellosConTimbre";
+export type { RuletaDePremiosProps } from "../momentos/RuletaDePremios";

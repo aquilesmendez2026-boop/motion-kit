@@ -74,6 +74,8 @@ const idsEncabezado = await idsDe("src/entradas/encabezado.ts");
 const idsPagina = new Set([...(await idsDe("src/entradas/pagina.ts"))].filter((id) => !idsEncabezado.has(id)));
 // Los momentos van también sueltos (en una página de La Mente sin el encabezado del kit): su CSS completo.
 const idsMomentos = await idsDe("src/entradas/momentos.ts");
+// La luz va con cualquiera de las otras: solo lo suyo.
+const idsLuz = new Set([...(await idsDe("src/entradas/luz.ts"))].filter((id) => id === "luz"));
 
 // Un bloque por id (el mismo CSS se pide desde varios componentes). Primero la base de estilos, como en la página.
 const bloques = new Map();
@@ -95,3 +97,4 @@ escribir(SALIDA, ordenar([...bloques.keys()]), "todo el CSS que la librería ins
 escribir(join(dirname(SALIDA), "estilos-encabezado.css"), ordenar([...idsEncabezado]), "el CSS de motion-kit/encabezado");
 escribir(join(dirname(SALIDA), "estilos-pagina.css"), ordenar([...idsPagina]), "el CSS de motion-kit/pagina");
 escribir(join(dirname(SALIDA), "estilos-momentos.css"), ordenar([...idsMomentos]), "el CSS de motion-kit/momentos");
+escribir(join(dirname(SALIDA), "estilos-luz.css"), ordenar([...idsLuz]), "el CSS de motion-kit/luz");

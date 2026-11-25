@@ -68,24 +68,25 @@ const CSS = `
 .mk-btn:not(:disabled):hover .mk-btn-rodillo{transform:translateY(-50%)}
 }
 .mk-btn:focus-visible .mk-btn-flecha{transform:translateX(5px)}
-.mk-btn[data-forma=recto]:not(#\#){border-radius:5px}
-.mk-btn[data-forma=tecla]:not(#\#){border-radius:12px;box-shadow:0 6px 0 color-mix(in srgb,var(--a),#000 42%),0 8px 14px -6px rgba(0,0,0,.45);transform:translateY(-3px)}
-.mk-btn[data-forma=tecla]:not(#\#):active{transform:translateY(3px);box-shadow:0 0 0 color-mix(in srgb,var(--a),#000 42%)}
-.mk-btn[data-forma=ticket]:not(#\#){border-radius:6px;padding-inline:1.7em;-webkit-mask:radial-gradient(circle 8px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 8px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;mask:radial-gradient(circle 8px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 8px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;box-shadow:none}
-.mk-btn[data-forma=sello]:not(#\#){border-radius:4px;border:3px double currentColor;text-transform:uppercase;letter-spacing:.12em;transform:rotate(-3deg);box-shadow:none}
-.mk-btn[data-forma=sello][data-variante=solido]:not(#\#){border-color:var(--sa)}
-.mk-btn[data-forma=pixel]:not(#\#){border-radius:0;box-shadow:none;clip-path:polygon(0 8px,4px 8px,4px 4px,8px 4px,8px 0,calc(100% - 8px) 0,calc(100% - 8px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 8px,100% 8px,100% calc(100% - 8px),calc(100% - 4px) calc(100% - 8px),calc(100% - 4px) calc(100% - 4px),calc(100% - 8px) calc(100% - 4px),calc(100% - 8px) 100%,8px 100%,8px calc(100% - 4px),4px calc(100% - 4px),4px calc(100% - 8px),0 calc(100% - 8px))}
-.mk-btn[data-forma=subrayado]:not(#\#){background:transparent;border:0;border-radius:0;padding-inline:.15em;color:var(--mk-acento-texto,var(--a));box-shadow:none;text-shadow:none}
-.mk-btn[data-forma=subrayado]:not(#\#)::after{content:"";position:absolute;left:.15em;right:.15em;bottom:.55em;height:2px;background:currentColor;transform:scaleX(.35);transform-origin:left;transition:transform .3s cubic-bezier(.2,.8,.2,1);opacity:1;box-shadow:none;border:0;inset:auto .15em .55em .15em;animation:none}
-.mk-btn[data-forma=subrayado]:not(#\#):focus-visible::after{transform:scaleX(1)}
-.mk-btn[data-forma=circulo]:not(#\#){width:48px;min-width:48px;height:48px;min-height:48px;padding:0;border-radius:50%}
-.mk-btn[data-forma=circulo][data-tamano=lg]:not(#\#){width:58px;height:58px}
+.mk-btn[data-forma=recto]:not(#\\#){border-radius:5px}
+.mk-btn[data-forma=tecla]:not(#\\#){border-radius:12px;box-shadow:0 6px 0 color-mix(in srgb,var(--a),#000 42%),0 8px 14px -6px rgba(0,0,0,.45);transform:translateY(-3px)}
+.mk-btn[data-forma=tecla]:not(#\\#):active{transform:translateY(3px);box-shadow:0 0 0 color-mix(in srgb,var(--a),#000 42%)}
+.mk-btn[data-forma=ticket]:not(#\\#){border-radius:6px;padding-inline:1.7em;-webkit-mask:radial-gradient(circle 8px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 8px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;mask:radial-gradient(circle 8px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 8px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;box-shadow:none}
+.mk-btn[data-forma=sello]:not(#\\#){border-radius:4px;border:3px double currentColor;text-transform:uppercase;letter-spacing:.12em;transform:rotate(-3deg);box-shadow:none}
+.mk-btn[data-forma=sello][data-variante=solido]:not(#\\#){border-color:var(--sa)}
+.mk-btn[data-forma=pixel]:not(#\\#){border-radius:0;box-shadow:none;clip-path:polygon(0 8px,4px 8px,4px 4px,8px 4px,8px 0,calc(100% - 8px) 0,calc(100% - 8px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 8px,100% 8px,100% calc(100% - 8px),calc(100% - 4px) calc(100% - 8px),calc(100% - 4px) calc(100% - 4px),calc(100% - 8px) calc(100% - 4px),calc(100% - 8px) 100%,8px 100%,8px calc(100% - 4px),4px calc(100% - 4px),4px calc(100% - 8px),0 calc(100% - 8px))}
+.mk-btn[data-forma=subrayado]:not(#\\#){background:transparent;border:0;border-radius:0;padding-inline:.15em;color:var(--mk-acento-texto,var(--a));box-shadow:none;text-shadow:none}
+.mk-btn[data-forma=subrayado]:not(#\\#)::after{content:"";position:absolute;left:.15em;right:.15em;bottom:.55em;height:2px;background:currentColor;transform:scaleX(.35);transform-origin:left;transition:transform .3s cubic-bezier(.2,.8,.2,1);opacity:1;box-shadow:none;border:0;inset:auto .15em .55em .15em;animation:none}
+.mk-btn[data-forma=subrayado]:not(#\\#):focus-visible::after{transform:scaleX(1)}
+.mk-btn[data-forma=circulo]:not(#\\#){width:48px;min-width:48px;height:48px;min-height:48px;padding:0;border-radius:50%}
+.mk-btn[data-forma=circulo][data-tamano=lg]:not(#\\#){width:58px;height:58px}
+.mk-btn[data-forma=tecla]:not(#\\#):is(:disabled,[aria-disabled=true]){transform:none}
 @media (hover:hover){
-.mk-btn[data-forma=tecla]:not(#\#):not(:disabled):hover{transform:translateY(-5px)}
-.mk-btn[data-forma=sello]:not(#\#):not(:disabled):hover{transform:rotate(0) scale(1.05)}
-.mk-btn[data-forma=subrayado]:not(#\#):not(:disabled):hover::after{transform:scaleX(1)}
+.mk-btn[data-forma=tecla]:not(#\\#):not(:disabled):hover{transform:translateY(-5px)}
+.mk-btn[data-forma=sello]:not(#\\#):not(:disabled):hover{transform:rotate(0) scale(1.05)}
+.mk-btn[data-forma=subrayado]:not(#\\#):not(:disabled):hover::after{transform:scaleX(1)}
 }
-@media (prefers-reduced-motion:reduce){.mk-btn[data-forma]:not(#\#):hover{transform:none}}
+@media (prefers-reduced-motion:reduce){.mk-btn[data-forma]:not(#\\#):hover{transform:none}}
 @media (prefers-reduced-motion:reduce){
 .mk-btn,.mk-btn::before,.mk-btn::after,.mk-btn-flecha,.mk-btn-rodillo{transition-duration:.01ms!important;animation:none!important}
 .mk-btn:hover,.mk-btn:active{transform:none!important}

@@ -43,6 +43,11 @@
       "import": "./dist/partitura.js",
       "require": "./dist/partitura.cjs"
     },
+    "./luz": {
+      "types": "./dist/entradas/luz.d.ts",
+      "import": "./dist/luz.js",
+      "require": "./dist/luz.cjs"
+    },
     "./receta": {
       "types": "./dist/receta/index.d.ts",
       "import": "./dist/receta.js",
@@ -52,6 +57,7 @@
     "./estilos-encabezado.css": "./dist/estilos-encabezado.css",
     "./estilos-pagina.css": "./dist/estilos-pagina.css",
     "./estilos-momentos.css": "./dist/estilos-momentos.css",
+    "./estilos-luz.css": "./dist/estilos-luz.css",
     "./contrato/encabezado-motionkit.json": "./contrato/encabezado-motionkit.json",
     "./contrato/pagina-motionkit.json": "./contrato/pagina-motionkit.json",
     "./contrato/partitura-motionkit.json": "./contrato/partitura-motionkit.json",

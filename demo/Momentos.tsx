@@ -17,12 +17,13 @@ import {
 } from "../src/momentos/perezosos-2";
 // Los efectos vistosos, como en el paquete: cada pieza se baja aparte.
 import { CarruselGiratorio, FuegosArtificiales, LibroQueSeAbre } from "../src/momentos/perezosos-3";
+import { CuponQueSeArranca, RuletaDePremios, SellosConTimbre, StickerQueSeDespega } from "../src/momentos/perezosos-4";
 import type { EscenaLlamado } from "../src/momentos/escenas-llamado";
 import type { SeccionViva } from "../src/momentos/SeccionesVivas";
 
 /** Lo que recibe cada sección: el nivel elegido (o automático) y la semilla del negocio de ejemplo. */
 type Datos = { nivel?: NivelEscena; semilla: string };
-type Seccion = { id: string; titulo: string; dibujar: (d: Datos) => ReactNode; /** Ocupa toda la fila de la vitrina. */ ancha?: boolean };
+type Seccion = { id: string; titulo: string; dibujar: (d: Datos) => ReactNode; /** Ocupa toda la fila de la vitrina. */ ancha?: boolean; /** Un caso para las pruebas (datos raros, fallas): va aparte, debajo de las piezas. */ caso?: boolean };
 
 // Cada momento suma aquí su sección.
 const SELLOS: Seccion = {
@@ -377,6 +378,85 @@ const VISTOSOS: Seccion[] = [
     dibujar: (d) => <SorteoRaspe titulo="Sorteo de aniversario" premio="Desayuno para dos" ganador="Camila R." celebracion="fuegos" semilla={d.semilla} nivel={d.nivel} />,
   },
 ];
+/** Un cupón que cuenta cuántas veces avisó que lo arrancaron (para la prueba: tiene que ser una). */
+function CuponDemo({ nivel }: { nivel?: NivelEscena }) {
+  const [arrancados, setArrancados] = useState(0);
+  return (
+    <>
+      <CuponQueSeArranca nivel={nivel} titulo="2×1 en cafés" detalle="De lunes a jueves, hasta las 12:00" codigo="LUNA2X1" vence="2099-12-31" alArrancar={() => setArrancados((n) => n + 1)} respaldo={<Respaldo>2×1 en cafés.</Respaldo>} />
+      <output data-arrancados="" hidden>{arrancados}</output>
+    </>
+  );
+}
+
+/** Un sticker que cuenta cuántas veces avisó que lo despegaron (para la prueba: tiene que ser una). */
+function StickerDemo({ nivel, forma }: { nivel?: NivelEscena; forma?: "circulo" | "cuadrado" }) {
+  const [despegados, setDespegados] = useState(0);
+  return (
+    <>
+      <StickerQueSeDespega nivel={nivel} forma={forma} debajo={<strong>¡Un café gratis! <a href="#momentos">Cómo cobrarlo</a></strong>} alDespegar={() => setDespegados((n) => n + 1)} respaldo={<Respaldo>Un café gratis.</Respaldo>}>
+        Despégame
+      </StickerQueSeDespega>
+      <output data-despegados="" hidden>{despegados}</output>
+    </>
+  );
+}
+
+const PREMIOS = ["Café gratis", "10 % menos", "Medialuna", "Sigue participando", "2×1 en cafés", "Un kuchen"];
+
+/**
+ * Una ruleta con lo que la prueba necesita: anota cada aviso de `alTerminar`, deja pedir otra vuelta con otro premio
+ * y, con `servidor`, pide el resultado al lanzar («lenta»: llega al segundo y medio; «falla»: no llega).
+ */
+function RuletaDemo({ nivel, servidor, semilla, premios = PREMIOS, fijo }: { nivel?: NivelEscena; servidor?: "lenta" | "falla"; semilla: string; premios?: string[]; /** Un `resultado` fijo (para probar índices raros). */ fijo?: number }) {
+  const [vuelta, setVuelta] = useState({ vez: 0, resultado: 2 });
+  const [avisos, setAvisos] = useState<(number | null)[]>([]);
+  const [pedidos, setPedidos] = useState(0);
+  const [otros, setOtros] = useState(false);
+  const pedir = () => {
+    setPedidos((n) => n + 1);
+    return new Promise<number>((listo, falla) => setTimeout(() => (servidor === "falla" ? falla(new Error("sin red")) : listo(3)), servidor === "falla" ? 600 : 1500));
+  };
+  return (
+    <>
+      <RuletaDePremios
+        nivel={nivel}
+        premios={otros ? ["Sí", "No", "Quizás", "Otra vez"] : premios}
+        resultado={servidor ? undefined : fijo ?? vuelta.resultado}
+        alGirar={servidor ? pedir : undefined}
+        vez={vuelta.vez}
+        semilla={semilla}
+        celebracion="nada"
+        alTerminar={(i) => setAvisos((a) => [...a, i])}
+        respaldo={<Respaldo>La ruleta de premios.</Respaldo>}
+      />
+      <button type="button" className="mom-repetir" data-otra="" onClick={() => setVuelta((v) => ({ vez: v.vez + 1, resultado: (v.resultado + 5) % PREMIOS.length }))}>Otra vuelta</button>
+      <button type="button" className="mom-repetir" data-cambiar="" onClick={() => setOtros(true)}>Cambiar premios</button>
+      <output data-avisos="" data-pedido={vuelta.resultado} data-pedidos={pedidos} hidden>{JSON.stringify(avisos)}</output>
+    </>
+  );
+}
+
+/** «Con el dedo»: piezas que se manejan arrastrando. */
+const CON_EL_DEDO: Seccion[] = [
+  { id: "cupon", titulo: "Cupón que se arranca", dibujar: (d) => <CuponDemo nivel={d.nivel} /> },
+  { id: "cupon-vencido", caso: true, titulo: "Cupón: vencido", dibujar: (d) => <CuponQueSeArranca nivel={d.nivel} titulo="Desayuno a mitad de precio" codigo="VIEJO50" vence="2020-01-01" /> },
+  { id: "cupon-largo", caso: true, titulo: "Cupón: textos enormes", dibujar: (d) => <CuponQueSeArranca nivel={d.nivel} titulo={`Una promoción ${"larguísima ".repeat(20)}`} detalle={"Con una condición que no termina nunca ".repeat(8)} codigo="CODIGOLARGUISIMOQUENOTERMINANUNCA1234567890" vence="pronto" /> },
+  { id: "cupon-sin-codigo", caso: true, titulo: "Cupón: sin código (no se dibuja)", dibujar: (d) => <CuponQueSeArranca nivel={d.nivel} titulo="Sin código" codigo="  " /> },
+  { id: "sticker", titulo: "Sticker que se despega", dibujar: (d) => <StickerDemo nivel={d.nivel} /> },
+  { id: "sticker-cuadrado", caso: true, titulo: "Sticker: cuadrado", dibujar: (d) => <StickerDemo nivel={d.nivel} forma="cuadrado" /> },
+  { id: "timbre", titulo: "Sellos con timbre (dos sellos nuevos)", dibujar: (d) => <SellosConTimbre nivel={d.nivel} total={10} llenos={7} nuevos={2} premio="Café gratis" semilla={d.semilla} respaldo={<Respaldo>7 de 10 sellos.</Respaldo>} /> },
+  { id: "timbre-completa", caso: true, titulo: "Sellos con timbre: el último completa la tarjeta", dibujar: (d) => <SellosConTimbre nivel={d.nivel} total={6} llenos={6} nuevos={1} premio="Desayuno para dos" semilla={d.semilla} /> },
+  { id: "ruleta", titulo: "Ruleta de premios", dibujar: (d) => <RuletaDemo nivel={d.nivel} semilla={d.semilla} /> },
+  { id: "ruleta-servidor", caso: true, titulo: "Ruleta: el premio llega del servidor (tarda un segundo y medio)", dibujar: (d) => <RuletaDemo nivel={d.nivel} semilla={d.semilla} servidor="lenta" /> },
+  { id: "ruleta-falla", caso: true, titulo: "Ruleta: la consulta falla", dibujar: (d) => <RuletaDemo nivel={d.nivel} semilla={d.semilla} servidor="falla" /> },
+  { id: "ruleta-rara", caso: true, titulo: "Ruleta: 30 premios y textos enormes (quedan 12)", dibujar: (d) => <RuletaDePremios nivel={d.nivel} premios={Array.from({ length: 30 }, (_, i) => (i === 1 ? `Un premio ${"larguísimo ".repeat(12)}` : `Premio ${i + 1}`))} resultado={4} semilla={d.semilla} celebracion="nada" /> },
+  { id: "ruleta-huecos", caso: true, titulo: "Ruleta: un premio vacío en la lista (el índice es el de la lista original)", dibujar: (d) => <RuletaDemo nivel={d.nivel} semilla={d.semilla} premios={["Café gratis", "", "Té helado", "Pan amasado"]} fijo={2} /> },
+  { id: "ruleta-fuera", caso: true, titulo: "Ruleta: el resultado no existe (no anuncia premio)", dibujar: (d) => <RuletaDemo nivel={d.nivel} semilla={d.semilla} premios={["Café gratis", "", "Té helado", "Pan amasado"]} fijo={9} /> },
+  { id: "ruleta-uno", caso: true, titulo: "Ruleta: un solo premio (no se dibuja)", dibujar: (d) => <RuletaDePremios nivel={d.nivel} premios={["Solo uno"]} /> },
+  { id: "timbre-raro", caso: true, titulo: "Sellos con timbre: datos raros", dibujar: (d) => <SellosConTimbre nivel={d.nivel} total={5} llenos={9} nuevos={20} premio={`Un premio ${"larguísimo ".repeat(20)}`} semilla={d.semilla} /> },
+];
+
 /** Lo que se repite en la sección «suelto» (solo con las variables de La Mente, sin Estilo). */
 const SUELTOS: Seccion[] = [{ ...SELLOS, id: "sellos-suelto" }];
 
@@ -446,6 +526,15 @@ export function Momentos() {
       <h2 className="mom-tanda">Efectos vistosos</h2>
       <div className="mom-grilla" data-prueba="vistosos">
         {VISTOSOS.map((s) => <Tarjeta key={s.id} seccion={s} datos={datos} />)}
+      </div>
+      <h2 className="mom-tanda">Con el dedo</h2>
+      <div className="mom-grilla" data-prueba="con-el-dedo">
+        {CON_EL_DEDO.filter((s) => !s.caso).map((s) => <Tarjeta key={s.id} seccion={s} datos={datos} />)}
+      </div>
+      <h3 className="mom-casos">Casos de prueba de «Con el dedo»</h3>
+      <p className="enc-nota">Las mismas cuatro piezas con datos raros o fallas. Están aquí para las pruebas visuales.</p>
+      <div className="mom-grilla">
+        {CON_EL_DEDO.filter((s) => s.caso).map((s) => <Tarjeta key={s.id} seccion={s} datos={datos} />)}
       </div>
     </>
   );

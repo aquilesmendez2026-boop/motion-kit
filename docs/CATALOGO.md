@@ -712,6 +712,173 @@ Pendiente: la señal `dato` (cupos, sellos, precios); la capa gráfica y los pel
 Mente (encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-24_partitura-y-lenguaje.md`). Margen de `director`: 186 bytes
 (9.814 de 10.000); lo próximo grande que se sume ahí obliga a bajar aparte la inclinación de `verse`.
 
+## Luz y materia: una sola luz para la página (24-11-2026)
+
+Para que una página se vea como objetos sobre una mesa, iluminados por una sola luz. Diseño
+`docs/superpowers/specs/2026-11-24-luz-y-materia-design.md`, plan `docs/superpowers/plans/2026-11-24-luz-y-materia.md`.
+Entrada **`motion-kit/luz`** (6,6 KB gzip al cargar, con su CSS adentro; tope 8, fijado por Aquiles) y
+`motion-kit/estilos-luz.css` (2,7 KB). Vitrina `#luz`. No se exporta desde la entrada principal. Sin etiqueta todavía:
+está en `dev`, después de `v0.4.0`.
+
+| Qué | Dónde | Para qué |
+|---|---|---|
+| `Luz` | `src/luz/Luz.tsx` | Envuelve la página o una sección y deja la luz en variables CSS de su raíz |
+| `Materia` | `src/luz/Materia.tsx` | Una superficie que responde a la luz: sombra según su altura y brillo según su material |
+| `TarjetaHolografica`, `TituloConVolumen` | `src/luz/Piezas.tsx` | Dos piezas nuevas |
+| `usePermisoInclinacion` | `src/luz/Luz.tsx` | Para pedir, con un botón, el permiso de inclinación en iPhone |
+| Lo calculable | `src/luz/calculo-luz.ts` | Dónde está la luz, la luz de cada hora y la sombra de cada altura |
+| El seguidor | `src/luz/seguir-luz.ts` | Junta cursor, scroll e inclinación; duerme cuando nada cambia |
+
+**`Luz`** pone en su raíz `data-mk-luz` y:
+
+- `--mk-l0x`, `--mk-l0y`: de dónde viene la luz **en reposo** (cada eje de -1 a 1). Por defecto, de arriba a la
+  izquierda (-0,45; -0,8). La usan las sombras fijas.
+- `--mk-lx`, `--mk-ly`: la luz **ahora** (el reposo más lo que la persona la movió). La usan los brillos y las sombras
+  de las superficies.
+- `sigue`: `"puntero"` (cursor o dedo, medido contra la pantalla), `"scroll"`, `"inclinacion"` (el teléfono, según
+  cómo está girada la pantalla; sin probar en un teléfono de verdad) y `"hora"`. Por defecto `["puntero", "scroll"]`.
+- **Con `"scroll"`, cada superficie sabe por dónde va en la pantalla:** su brillo se corre mientras pasa, como bajo una
+  lámpara fija. Lo hace el navegador solo (una animación atada al scroll, sin código ni escuchadores) en Chrome y en
+  Safari desde la 26. Donde no existe, `Luz` corre la luz entera según por dónde va su raíz (0 cuando está al centro
+  de la pantalla): ahí, en una página larga, arriba del todo la luz parte corrida hacia arriba.
+- `rango` (0 a 1; por defecto 0,35): cuánto se aparta del reposo. La luz nunca cruza al otro lado de su reposo ni
+  llega a venir de abajo: las sombras no cambian de lado, con cualquier rango y a cualquier hora. `desde`: otro reposo.
+- **`"hora"`:** en la mañana la luz viene baja y cálida desde la izquierda; al mediodía, de arriba y blanca; en la
+  tarde, desde la derecha; de noche, tenue y fría. Suma `--mk-luz-tinte` y `--mk-luz-fuerza`. Se mira después de
+  montar (el servidor y el navegador dibujan lo mismo) y cada diez minutos.
+- Con «reducir movimiento» o ahorro de datos la luz queda fija. Solo trabaja mientras se ve; quieta, no pide cuadros.
+- Una `Luz` dentro de otra manda en su zona (también en el tinte y la fuerza de la hora).
+- **Costo, medido:** con el procesador frenado 6 veces y unas 25 superficies, mover la luz mantiene 60 cuadros por
+  segundo (el 95 % de los cuadros bajo 16,8 ms), con o sin capas propias (`will-change`). No se pusieron: gastarían
+  memoria sin ganar nada. Mover la luz con el cursor recalcula el estilo de lo que hay dentro de la `Luz`.
+
+**`Materia`** (`tipo`, `altura` 0 a 4, `alApuntar`, `inclina`, `como`):
+
+| Material | Cómo responde |
+|---|---|
+| `papel` | No brilla: luz pareja y grano fino |
+| `mate` (por defecto) | Claro hacia la luz y más oscuro al otro lado |
+| `vidrio` | Deja ver lo de atrás; una franja de luz lo cruza y el canto se ilumina del lado de la luz |
+| `metal` | Bandas de luz y de sombra que lo recorren |
+| `holografico` | Un arcoíris que cambia con el ángulo |
+
+- **La sombra dice la altura:** una de contacto (chica y oscura) y una proyectada, que se corre al lado contrario de la
+  luz 7 px por nivel, crece 2 px por lado y se aclara. Son capas ya difuminadas que solo se corren y se funden: nunca
+  se anima `box-shadow`.
+- Apuntarla la levanta (donde hay cursor). Si es un enlace, un botón o trae `onClick` (y no está apagada), apretarla
+  la hunde hacia su sombra.
+- `inclina` (grados): se vuelve hacia el cursor o el dedo. La profundidad va en su propia transformación, no en el padre.
+- El brillo se mezcla con el color de la superficie (`--mk-lz-color`; el del texto, `--mk-lz-texto`), así que el
+  contraste del texto se cuida solo. Medido con el brillo encima, en claro y en oscuro: mínimo 5 a 1. El vidrio no
+  tiene color propio: su texto es el de la página (medido también en una página oscura que no le dice nada).
+- Lo que la página puede cambiar con su clase (relleno, borde redondeado, `display`) va sin peso: cualquier clase le gana.
+- Fuera de una `Luz` usa la luz de siempre, quieta. Al imprimir, sin sombras.
+
+**Lo que ya existía, dentro de una `Luz`** (fuera de una, nada cambia):
+
+- `Tarjeta` `elevada` y `vidrio`, `Boton` `solido`, `degradado` y `vidrio`, la forma `tecla` y las sombras duras de
+  `retro` y `anime`: su sombra cae según la luz en reposo (es fija) y al apretar el botón se corre hacia ella. Lo plano
+  sigue plano; `ticket` y `pixel` no ganan sombra; `neon` no cambia. El efecto `elevar` también cae al lado contrario
+  de la luz. Un botón apagado no se mueve, y con «reducir movimiento» apretar no corre nada. Lo hace el CSS de la
+  entrada `luz`.
+- **Libro que se abre:** la hoja que gira se oscurece hasta ponerse de canto y se aclara al caer; la hoja de abajo
+  queda en sombra mientras la tapan. Son transiciones de `opacity` en un solo sentido (sin saltos si se cambia de
+  dirección a medio giro), y cada capa se esconde cuando su cara no se ve. En una sola página (teléfono) la hoja se
+  desvanece: no hay sombreado de giro, pero la hoja de abajo sí se aclara cuando queda a la vista.
+- **Carrusel giratorio:** cada ficha se oscurece según le dé la cara o la espalda a la luz (continuo, con `cos()` en
+  CSS; escalonado donde no existe), el lado de la luz queda más claro, y el anillo deja sombra y reflejo en el piso
+  (el reflejo, donde el navegador refleja).
+
+**`TituloConVolumen`** (`espesor` 2 a 12, `como`): el costado cae al lado contrario de la luz en reposo y toma su color
+del color del texto. Sigue siendo texto. **`TarjetaHolografica`**: una `Materia` holográfica que se inclina.
+
+Pruebas: `pruebas/luz.test.ts` (8) y `scripts/verificar-luz.mjs [url] [parte]`, con las partes `luz`, `materia`,
+`existe` y `piezas` (55 revisiones en Chromium; en WebKit, 51 y 4 saltadas con su razón: las que ese motor no deja
+medir). Una parte que no existe da error.
+
+Pendiente: la «foto profunda», los fondos y los encabezados no usan todavía esta luz; la física (vapor, tela, agua) y
+los dioramas son las tandas que siguen; en La Mente, un campo de la receta para la luz de página (encargo
+`cerebro-aquiles/lamente/ENCARGO_2026-11-24_luz-y-materia.md`).
+
+### Arreglo: las formas del botón nunca se aplicaban
+
+Las formas de `Boton` (`recto`, `tecla`, `ticket`, `sello`, `pixel`, `subrayado`, `circulo`) no se aplicaron nunca,
+desde que se crearon (23-11-2026) hasta `v0.4.0`: el selector que les da peso, `:not(#\#)`, perdía su barra al pasar
+por el texto del código y quedaba inválido, así que el navegador botaba las dieciséis reglas. Todos los botones salían
+como pastilla. Corregido en `src/piezas/Boton.tsx`; lo cubre la revisión «las formas del botón se ven como su forma»
+de `verificar-luz`. **Cambia cómo se ven** los botones con forma y los paquetes que las usan (`minimal`, `neon-tubo`,
+`arcade`, `tecla`, `sello`, `ticket`, `flecha`): ahora se ven como se diseñaron. Como las formas pesan más que los
+estilos (así se diseñaron), dentro de un estilo una `tecla` lleva su propia sombra y no la del estilo, y `sello`,
+`ticket`, `pixel` y `subrayado` van sin la sombra ni el resplandor del estilo. Una `tecla` apagada ya no queda
+levantada. Se revisó todo `src/` y `demo/`: no hay otro texto con una barra perdida.
+
+## Con el dedo: cupón, sticker, sellos con timbre y ruleta (25-11-2026)
+
+Cuatro piezas más de `motion-kit/momentos` que se manejan con el dedo y se sienten como objetos: tienen peso, roce y
+ceden. Se bajan aparte y aceptan `respaldo`. Diseño `docs/superpowers/specs/2026-11-24-con-el-dedo-design.md`, plan
+`docs/superpowers/plans/2026-11-24-con-el-dedo.md`. Vitrina `#momentos` («Con el dedo»). Prueba:
+`scripts/verificar-momentos4.mjs [url] [cupon|sticker|sello|ruleta]`.
+
+| Pieza | Para qué bloque | Qué hace |
+|---|---|---|
+| `CuponQueSeArranca` | Ofertas y cupones | Una franja con dientes que se arranca tirando de la lengüeta: los dientes se cortan de a uno y lo cortado cuelga. Al llegar al 85 % del corte se desprende sola (soltarla antes la deja donde va) y queda el código, con botón para copiarlo |
+| `StickerQueSeDespega` | Premios, mensajes, sorpresas | Un sticker que se despega desde la orilla que se toma: se dobla por donde va el dedo y deja ver su revés. Debajo está el premio |
+| `SellosConTimbre` | Tarjeta de sellos | Los sellos de antes ya están; los nuevos se timbran al verse: el timbre baja con su sombra, aprieta y deja la marca. Cada marca es distinta (giro, carga de tinta, borde) |
+| `RuletaDePremios` | Sorteos y promociones | Se lanza con el dedo o con «Girar»; gira con peso y roce, la lengüeta salta de clavo en clavo, y se detiene en el premio que le digan. Al detenerse, los demás premios se apagan |
+
+Qué reciben (todas, además, las comunes `nivel`, `ahorro`, `className`):
+
+| Pieza | Props |
+|---|---|
+| `CuponQueSeArranca` | `titulo`, `detalle?`, `codigo`, `vence?` (`AAAA-MM-DD`, inclusive), `vibracion?`, `alArrancar?` |
+| `StickerQueSeDespega` | `children` (la cara), `debajo` (lo que queda a la vista), `etiqueta?` («Despegar»), `forma?` (`circulo` o `cuadrado`), `vibracion?`, `alDespegar?` |
+| `SellosConTimbre` | `total`, `llenos` (contando los nuevos), `nuevos?` (los que se timbran), `premio`, `semilla?`, `vibracion?` |
+| `RuletaDePremios` | `premios` (de 2 a 12; textos o `{ texto }`), `resultado?` (índice donde se detiene), `alGirar?` (para pedirlo al lanzar; puede ser una promesa), `alTerminar?` (recibe el índice, o `null` si no se supo), `vez?` (cambia para permitir otra vuelta), `semilla?`, `celebracion?` (`confeti`, `fuegos`, `nada`), `vibracion?` |
+
+Reglas que cuidar:
+
+- **La ruleta no decide quién gana.** Se detiene donde le digan (`resultado`, o lo que devuelva `alGirar`): el premio
+  lo decide el servidor. Mientras llega, gira pareja; si la consulta falla o tarda más de 10 segundos, frena sola, no
+  anuncia premio y avisa con `null`. Sin `resultado` ni `alGirar` elige por la semilla (sirve para una vitrina, no
+  para un sorteo de verdad).
+- **Los índices son los de la lista que se pasa.** Los premios vacíos, o del 13 en adelante, no se dibujan, pero no
+  corren a los demás: `resultado`, lo que devuelve `alGirar` y lo que recibe `alTerminar` hablan siempre de la lista
+  original. Si ese índice no existe en la rueda, la ruleta no inventa otro: se detiene sin anunciar premio y avisa
+  con `null`.
+- **Nunca frena de golpe ni retrocede.** Lo que se ajusta para caer en el premio es el roce, apenas (a lo más media
+  vuelta de diferencia con lo que habría girado sola); da entre 3 y 7 vueltas. Un impulso flojo (menos de 500° por
+  segundo) no cuenta: la rueda vuelve a su lugar.
+- **El scroll manda.** El dedo que sube o baja sobre la rueda mueve la página, no la rueda: un scroll no gasta la
+  vuelta. Se lanza de lado (o con «Girar»). Si el navegador se queda con el gesto, la rueda vuelve a su lugar.
+- **Una vuelta por `vez`.** Si `vez` cambia a mitad de giro, ese giro termina y avisa igual; la vuelta nueva queda
+  lista cuando se detiene. Si cambia la lista de premios a mitad de giro, la rueda se detiene sin premio y avisa con
+  `null`; si cambia con la rueda detenida, el anuncio sigue diciendo lo que salió y ya no se destaca nada.
+- **El impulso se mide con la hora de cada toque,** no con la hora en que la página lo atiende: en un teléfono
+  ocupado los toques se atienden juntos y el lanzamiento cuenta igual.
+- **Sin dedo también.** Cada pieza tiene su botón: «Ver código», «Despegar», «Girar». Lo que queda a la vista se
+  anuncia a los lectores de pantalla; los premios de la ruleta van también como lista.
+- **Niveles.** En liviano: el cupón y el sticker se abren con una transición corta, las marcas aparecen sin timbre y
+  la ruleta da una vuelta corta. En quieto (o con «reducir movimiento»): el código del cupón y lo de abajo del
+  sticker están a la vista desde el principio (`alArrancar` y `alDespegar` avisan una vez, al mostrarlos), y la ruleta
+  muestra el premio con «Ver premio», sin pedir cuadros. Con «reducir movimiento» y un `nivel` forzado tampoco queda
+  nada esperando una animación que no corre.
+- **El foco no se pierde.** Al abrir con el teclado, pasa a «Copiar» (cupón) o a lo de abajo (sticker). Los sellos
+  dicen en su texto cuántos son nuevos («7 de 10 sellos (2 nuevos)»).
+- **Dentro de una `Luz`,** la sombra del timbre y el brillo de la ruleta caen según esa luz. La luz de la ruleta no
+  gira con la rueda.
+- **Datos raros.** Cupón vencido: no se arranca y lo dice. Sellos: `llenos` y `nuevos` se acotan al total. Ruleta:
+  más de 12 premios, quedan 12; menos de 2, no se dibuja; los rótulos achican la letra para caber y, pasado el mínimo,
+  se cortan con puntos.
+- **Solo `rotate`, `translate`, `scale` y `opacity`** en lo que se mueve. El borde irregular de los sellos es un
+  filtro fijo.
+
+Pesos (gzip): cupón 4,0 KB, sticker 3,8, sellos con timbre 3,1 y ruleta 5,7, cada uno en su archivo aparte (más
+0,4 KB que comparten el cupón, el sticker y la ruleta).
+`motion-kit/momentos` al cargar: 13,1 KB (tope 17, fijado por Aquiles). `estilos-momentos.css`: 11,3 KB.
+
+Pruebas: `pruebas/momentos4.test.ts` y `pruebas/momentos4-dibujo.test.ts` (15) y `scripts/verificar-momentos4.mjs`
+(69 revisiones; la ruleta se lanza 20 veces, con el botón y con el dedo, hacia los dos lados). Pasa entera también con el motor de Safari.
+
 ## Safari (sondeo del 24-11-2026)
 
 Las pruebas visuales están escritas para Chrome. El 24-11 se corrieron las quince, una vez, con el motor de Safari
@@ -724,6 +891,7 @@ sirve para buscar diferencias de verdad.
 | fotos | Un error real, arreglado | Al arrastrar sobre una foto de la galería, el navegador iniciaba su «arrastrar imagen» y se tragaba el toque siguiente: el visor no abría. Ahora las fotos con gestos lo evitan |
 | piezas, estilos, escena, momentos, momentos2 | Diferencias que no son errores | Safari no lleva el Tab a los enlaces por defecto; mide distinto lo que sobra dentro de una caja (nada se sale a la vista); la foto de prueba pesa menos; una revisión usa una herramienta que solo tiene Chrome |
 | relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Más simples, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, cada bloque de un relato hace una entrada simple al verse (el respaldo de `src/relatos/respaldo.ts`), y lo demás se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |
+| momentos3 (libro en dos páginas) | **Sin resolver; hay que mirarlo en un Safari de verdad** | En el WebKit de Playwright el libro abierto en dos páginas deja en blanco la página derecha (0 píxeles de tinta), con luz y sin luz: ese motor no oculta el revés de las hojas, y la última queda encima. Escondiendo los dorsos a mano aparece el texto. Se probaron seis causas (medidas de contenedor, animación de la mesa, `translate` de la pila, transición de la hoja, recorte y borde redondo, `preserve-3d` en la cara) y ninguna lo arregla. Las revisiones anteriores no lo vieron porque miran el texto, no los píxeles. En una página (teléfono) usa otro camino |
 | director | Resuelto en la fase 2 | Las 10 diferencias eran de la prueba (contaba como «vivas» las animaciones del respaldo manual). Ahora pasa entero en los dos motores |
 
 Lo que hay que saber:

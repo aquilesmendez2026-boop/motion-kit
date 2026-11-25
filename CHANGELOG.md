@@ -1,5 +1,57 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.4.0)
+
+### Luz y materia: una sola luz para la página
+
+- **Entrada nueva `motion-kit/luz`** (y `motion-kit/estilos-luz.css`): `Luz` (la luz de la página: la mueven el
+  cursor, el dedo, el scroll, la inclinación del teléfono o la hora del reloj), `Materia` (superficies de papel, mate,
+  vidrio, metal y holográfico, con su altura), `TarjetaHolografica`, `TituloConVolumen` y `usePermisoInclinacion`.
+- **Dentro de una `Luz`,** lo que ya existía mejora solo: las tarjetas y los botones dejan su sombra hacia el lado
+  contrario de la luz y los botones se hunden hacia ella; el libro sombrea la hoja que gira; el carrusel oscurece las
+  fichas que le dan la espalda a la luz y deja sombra y reflejo en el piso. Fuera de una `Luz` nada cambia.
+- Regla de la casa cumplida: solo se corren y se funden capas ya dibujadas; con la página quieta no se pide ningún
+  cuadro; con «reducir movimiento» la luz queda fija.
+- Pesos (gzip): `luz` 6,6 KB al cargar (tope 8, fijado por Aquiles). El tope de `momentos` pasa de 13 a 17 (lo fijó
+  Aquiles para la tanda que sigue, «Con el dedo»; hoy mide 12,9). Las demás entradas no suben al cargar
+  (`motion-kit` 79,4 de 80 por el arreglo de abajo); el libro y el carrusel, que se bajan aparte, suman 0,8 KB entre
+  los dos; `estilos-momentos.css` pasa de 8,3 a 8,9 KB.
+- Pruebas: `pruebas/luz.test.ts` y `scripts/verificar-luz.mjs` (55 revisiones), también con el motor de Safari.
+- Con el scroll, cada superficie se ilumina según por dónde va en la pantalla (lo lleva el navegador, sin código,
+  donde hay animaciones atadas al scroll).
+
+### Con el dedo: cuatro momentos que se manejan como objetos
+
+- **Cuatro piezas nuevas en `motion-kit/momentos`** (cada una se baja aparte): `CuponQueSeArranca` (una franja con
+  dientes que se arranca y deja el código), `StickerQueSeDespega` (se dobla por donde va el dedo y deja ver lo de
+  abajo), `SellosConTimbre` (los sellos nuevos se timbran al verse; cada marca es distinta) y `RuletaDePremios` (se
+  lanza con el dedo, gira con peso y se detiene en el premio que le digan).
+- **La ruleta no decide quién gana:** recibe `resultado` o lo pide con `alGirar` (puede ser una promesa). Nunca frena
+  de golpe ni retrocede. Si la consulta falla, frena sola y avisa con `null`.
+- Todas tienen su botón para quien no arrastra, anuncian lo que queda a la vista y, en quieto, lo muestran de
+  inmediato. Solo se mueven `rotate`, `translate`, `scale` y `opacity`.
+- El scroll manda: el dedo que sube o baja sobre la ruleta mueve la página y no gasta la vuelta. Los índices de la
+  ruleta son los de la lista que se pasa, aunque traiga premios vacíos.
+- Pesos (gzip): cupón 4,0 KB, sticker 3,8, sellos con timbre 3,1, ruleta 5,7 (aparte). `momentos` al cargar: 13,1 KB
+  (tope 17). `estilos-momentos.css` pasa de 8,9 a 11,3 KB.
+- Pruebas: `pruebas/momentos4.test.ts`, `pruebas/momentos4-dibujo.test.ts` y `scripts/verificar-momentos4.mjs` (69
+  revisiones), también con el motor de
+  Safari. Detalle en «Con el dedo» de `docs/CATALOGO.md`.
+
+### Arreglos
+
+- **Las formas de `Boton` nunca se aplicaban** (`recto`, `tecla`, `ticket`, `sello`, `pixel`, `subrayado`,
+  `circulo`): su selector perdía una barra en el código y el navegador botaba las reglas; todos salían como pastilla,
+  desde el 23-11-2026 hasta la 0.4.0. Corregido. **Cambia cómo se ven** los botones con forma y los paquetes que las
+  usan: ahora se ven como se diseñaron.
+- Vitrina del Director: el ejemplo «Paralaje» no dejaba ver el efecto (capas lisas, poco recorrido y la profundidad
+  al revés). Ahora es un amanecer por capas.
+
+### Conocido, sin resolver
+
+- En el motor de Safari de las pruebas, el libro en dos páginas deja en blanco la página derecha (con luz y sin luz;
+  es anterior a esta tanda). Falta mirarlo en un Safari de verdad. Ver «Safari» en `docs/CATALOGO.md`.
+
 ## 0.4.0 (24-11-2026)
 
 El Director (el motor de animación propio) con la Partitura versión 1 y su lenguaje en español, la foto profunda, los

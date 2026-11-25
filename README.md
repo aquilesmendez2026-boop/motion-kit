@@ -174,9 +174,10 @@ Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/moti
 Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
 `motion-kit/pagina` (los relatos y la receta de página), `motion-kit/momentos` (un momento por bloque),
 `motion-kit/escena`, `motion-kit/receta` (sin React), `motion-kit/director` (hace correr una partitura: un movimiento
-escrito como dato) y `motion-kit/partitura` (para quien crea partituras: el lenguaje en español y las de la casa); y
-los CSS `motion-kit/estilos.css`, `motion-kit/estilos-encabezado.css`, `motion-kit/estilos-pagina.css` y
-`motion-kit/estilos-momentos.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`; el detalle de
+escrito como dato), `motion-kit/partitura` (para quien crea partituras: el lenguaje en español y las de la casa) y
+`motion-kit/luz` (una sola luz para la página y las superficies que le responden; después de la `v0.4.0`); y
+los CSS `motion-kit/estilos.css`, `motion-kit/estilos-encabezado.css`, `motion-kit/estilos-pagina.css`,
+`motion-kit/estilos-momentos.css` y `motion-kit/estilos-luz.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`; el detalle de
 cada cosa, en `docs/CATALOGO.md`.
 
 ```tsx
