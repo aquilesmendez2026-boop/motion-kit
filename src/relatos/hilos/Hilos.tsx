@@ -8,11 +8,12 @@ import type { FiguraId } from "../catalogo";
 import { contenedorScroll, medirPagina, MIDIENDO } from "./medir";
 import { suave } from "./geometria";
 import { MATERIALES, materialDe, paralela, type Capa, type MaterialId } from "./material";
+import { FORMAS_RASTRO, RADIO_RASTRO, trazarRastro, type FormaRastro, type Huella } from "./rastro";
 import { trazarHilos, type TipoHilo, type Tramo, type Trazado } from "./trazar";
 
 export interface HilosProps {
   pagina: RefObject<HTMLElement | null>;
-  tipo: TipoHilo;
+  tipo: TipoHilo | "rastro";
   /** El `slug` del negocio: decide el lado, los rulos y el giro de la figura. */
   semilla?: string;
   figura?: FiguraId;
@@ -34,6 +35,9 @@ export const CSS_HILOS =
   `.mk-hilos{position:absolute;left:0;top:0;z-index:1;pointer-events:none;overflow:visible;color:${ACENTO}}` +
   ".mk-hilos path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.8}" +
   ".mk-hilos circle{fill:currentColor;opacity:.9}" +
+  // Las huellas del rastro: rellenas; cada una aparece cuando el scroll llega a ella.
+  ".mk-hilos [data-huella] path{fill:currentColor;stroke:none;stroke-dasharray:none;opacity:.9;transform-box:fill-box;transform-origin:center}" +
+  "@keyframes mk-hilos-huella{from{opacity:0;scale:1.5}}" +
   // Las capas del material (las del tramo, todas con el mismo tramo del scroll).
   ".mk-hilos [data-capas] path{opacity:1}" +
   // La puntada: un ojal por donde el hilo entra o sale.
@@ -46,6 +50,7 @@ export const CSS_HILOS =
   "@supports (animation-timeline:scroll()){" +
   ".mk-hilos[data-vivo] path{stroke-dashoffset:1;animation:mk-hilos-trazo linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) var(--mk-h-h)}" +
   ".mk-hilos[data-vivo] circle{animation:mk-hilos-sale linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) calc(var(--mk-h-d) + 1%)}" +
+  ".mk-hilos[data-vivo] [data-huella] path{stroke-dashoffset:0;animation:mk-hilos-huella linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) calc(var(--mk-h-d) + 1.5%)}" +
   ".mk-hilos-luz[data-vivo]{animation:mk-hilos-viaja linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) var(--mk-h-h)}" +
   // El final (la llegada y la figura) no va con el scroll: espera a que el remate se vea y se dibuja con tiempo.
   ".mk-hilos[data-vivo] path[data-tiempo]{animation:none;stroke-dashoffset:1}" +
@@ -71,7 +76,7 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
   useStyles("hilos", CSS_HILOS);
   const svg = useRef<SVGSVGElement>(null);
   /** Lo último medido: el tamaño de la página, su trazado, si no hay cómo dibujarlo al bajar y el material (el del estilo). */
-  const [hilo, setHilo] = useState<{ ancho: number; alto: number; trazado: Trazado; sinBajada: boolean; material: MaterialId } | null>(null);
+  const [hilo, setHilo] = useState<{ ancho: number; alto: number; trazado: Trazado; sinBajada: boolean; material: MaterialId; rastro: { forma: FormaRastro; huellas: Huella[] } | null } | null>(null);
   /** Si el remate ya se vio: entonces se dibuja el final. */
   const [final, setFinal] = useState(false);
 
@@ -122,15 +127,18 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
       const { medidas, bloques, baja } = medirPagina(el);
       // Lo que hizo la medición (el atributo, ida y vuelta) no es un cambio de la página.
       mo?.takeRecords();
-      const trazado = trazarHilos(medidas, { tipo, semilla, figura, acento: svg.current ? getComputedStyle(svg.current).color : "" });
+      const acento = svg.current ? getComputedStyle(svg.current).color : "";
+      // Con «rastro» no hay línea: van las huellas por el mismo recorrido.
+      const rastro = tipo === "rastro" ? trazarRastro(medidas, { semilla, acento, figura }) : null;
+      const trazado = tipo === "rastro" ? { tramos: [], nudos: [] } : trazarHilos(medidas, { tipo, semilla, figura, acento });
       bloques.forEach(mirar);
       // Solo se vuelve a dibujar si algo cambió de verdad.
       const sinBajada = !(medidas.recorrido > 0) || !baja;
       const material = materialDe(el.closest("[data-mk-estilo]")?.getAttribute("data-mk-estilo"));
-      const nueva = JSON.stringify([medidas.ancho, medidas.alto, sinBajada, material, trazado.tramos.map((t) => [t.d, t.desde, t.hasta, t.color, t.tiempo]), trazado.nudos]);
+      const nueva = JSON.stringify([medidas.ancho, medidas.alto, sinBajada, material, trazado.tramos.map((t) => [t.d, t.desde, t.hasta, t.color, t.tiempo]), trazado.nudos, rastro]);
       if (nueva === firma) return;
       firma = nueva;
-      setHilo({ ancho: medidas.ancho, alto: medidas.alto, trazado, sinBajada, material });
+      setHilo({ ancho: medidas.ancho, alto: medidas.alto, trazado, sinBajada, material, rastro });
     }
     // La barra del navegador del teléfono cambia el alto de la ventana al bajar: eso no es un cambio de página.
     const tactil = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
@@ -176,7 +184,7 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
   const [w, h] = [hilo?.ancho ?? 0, hilo?.alto ?? 0];
   return (
     <>
-      <svg ref={svg} className="mk-hilos" aria-hidden="true" data-tipo={tipo} data-material={material} data-vivo={vive ? "" : undefined} data-final={final ? "" : undefined} width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <svg ref={svg} className="mk-hilos" aria-hidden="true" data-tipo={tipo} data-forma={hilo?.rastro?.forma} data-material={material} data-vivo={vive ? "" : undefined} data-final={final ? "" : undefined} width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
         {tramos.map((t, i) =>
           material === "linea" ? (
             <path key={i} data-tramo="" data-clase={t.clase} data-tiempo={t.tiempo ? "" : undefined} d={t.d} pathLength={1} style={{ ...estiloDe(t), color: t.color } as CSSProperties} />
@@ -190,6 +198,11 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
             </g>
           ),
         )}
+        {hilo?.rastro?.huellas.map((u, i) => (
+          <g key={`h${i}`} data-huella="" data-x={u.x.toFixed(1)} data-y={u.y.toFixed(1)} data-radio={(RADIO_RASTRO * u.tamano).toFixed(2)} transform={`translate(${u.x.toFixed(1)} ${u.y.toFixed(1)}) rotate(${u.giro.toFixed(0)}) scale(${u.tamano.toFixed(2)})`} style={{ color: u.color } as CSSProperties}>
+            <path d={FORMAS_RASTRO[hilo.rastro!.forma]} style={{ "--mk-h-d": porciento(u.en) } as CSSProperties} />
+          </g>
+        ))}
         {nudos.map((n, i) => (
           <circle key={i} data-nudo="" data-clase={n.clase} cx={n.x} cy={n.y} r={n.clase === "nudo" ? 4 : 3.5} style={{ "--mk-h-d": porciento(n.en) } as CSSProperties} />
         ))}

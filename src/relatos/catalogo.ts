@@ -3,7 +3,7 @@
 import type { EstiloId } from "../estilos/estilos";
 
 export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos" | "pila";
-export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura";
+export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura" | "rastro";
 export type RelatoId = RelatoBloqueId | RelatoPaginaId;
 
 /** Marcas que un bloque pone en sus partes (`data-mk-parte`) para que un relato las encuentre. */
@@ -94,6 +94,7 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
   rulos: hilo("rulos", "Hilo con rulos", "Un hilo baja por la orilla y hace un rulo en cada cruce.", "Sin hilo."),
   hebras: hilo("hebras", "Hebras", "Además, se abre en hebras donde hay tarjetas y se junta.", "Sin hilo."),
   figura: hilo("figura", "Hilo que dibuja", "Además, al final dibuja una figura del rubro.", "Solo la figura."),
+  rastro: hilo("rastro", "Rastro", "Huellas del rubro que aparecen por el recorrido.", "Las huellas, quietas."),
 };
 
 export const RELATO_IDS = Object.keys(RELATOS) as RelatoId[];

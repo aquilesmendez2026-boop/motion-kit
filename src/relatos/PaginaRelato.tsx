@@ -86,8 +86,9 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
   // Inclinación por velocidad: su archivo se baja aparte y solo en nivel completo.
   const Impulso = useAparte(relatoPagina === "impulso" && nivel === "completo", () => import("../dedo/Impulso"));
   // Los hilos (rulos, hebras, figura): su archivo se baja aparte. En quieto también, por la figura del final.
-  const tipoHilo = relatoPagina === "rulos" || relatoPagina === "hebras" || relatoPagina === "figura" ? relatoPagina : null;
-  const Hilos = useAparte(tipoHilo === "figura" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
+  const tipoHilo = relatoPagina === "rulos" || relatoPagina === "hebras" || relatoPagina === "figura" || relatoPagina === "rastro" ? relatoPagina : null;
+  // En quieto, con «figura» queda la figura y con «rastro» las huellas, quietas; con los otros no hay nada que dibujar.
+  const Hilos = useAparte(tipoHilo === "figura" || tipoHilo === "rastro" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
   // Estela y chispas: igual, aparte y solo en completo.
   const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (

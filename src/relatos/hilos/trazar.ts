@@ -47,6 +47,8 @@ export type TipoHilo = "rulos" | "hebras" | "figura";
 export interface OpcionesHilo {
   tipo: TipoHilo;
   semilla: string;
+  /** Sin rulos en los cruces (el rastro: unas huellas no dan vueltas). Por defecto, con. */
+  rulos?: boolean;
   figura?: FiguraId;
   /** El color del hilo, para saber sobre qué fondos se pierde. */
   acento: string;
@@ -378,7 +380,7 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
     const libre = hasta - desde;
     if (!(libre >= CANAL_MINIMO)) return null;
     const medio = desde + libre / 2;
-    if (libre < CRUCE_CON_RULO) return { y: medio, medio, radio: 0, lado: 1, en: 0.5 };
+    if (libre < CRUCE_CON_RULO || o.rulos === false) return { y: medio, medio, radio: 0, lado: 1, en: 0.5 };
     const tope = Math.min(RULO_MAXIMO, (libre - 6) / 2);
     const radio = acota(tope * (0.75 + 0.25 * al(i * 7 + 1)), Math.min(RULO_MINIMO, tope), tope);
     const lado = al(i * 7 + 2) < 0.5 ? -1 : 1;

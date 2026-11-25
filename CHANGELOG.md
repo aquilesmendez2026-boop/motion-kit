@@ -1,5 +1,15 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.5.0)
+
+### Rastro: huellas por el recorrido
+
+- **`relatoPagina: "rastro"`**: sin línea, huellas que aparecen una tras otra por el recorrido del hilo, alternando el
+  lado y mirando hacia donde van. La forma sale de `figura` (patitas, granos de café, sésamo, puntadas, corazones,
+  pisadas, estrellitas). Nunca sobre el contenido: donde hay poco lugar se achican y donde no cabe, no van. Solo
+  `opacity` y `scale`. El contrato de página suma `rastro` a `relatoPagina` (solo agrega).
+- Pruebas: `pruebas/rastro.test.ts` y la parte `rastro` de `scripts/verificar-hilos.mjs`, también con el motor de Safari.
+
 ## 0.5.0 (25-11-2026)
 
 Una sola luz para la página (`motion-kit/luz`), cuatro momentos que se manejan con el dedo, tres hilos nuevos para la

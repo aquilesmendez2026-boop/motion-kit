@@ -2,12 +2,13 @@
 // Uso: npm run dev (en otra terminal) y después
 // `node scripts/verificar-hilos.mjs [http://localhost:5173] [parte]`, donde la parte (opcional) es rulos, hebras,
 // figura, niveles, marco (la página dentro de un marco con scroll propio, en #relatos) o lamente (la página como una de
-// La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden) o material (el hilo de cada estilo).
+// La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden), material (el hilo de cada estilo)
+// o rastro (huellas por el recorrido).
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:5173";
 const solo = process.argv[3];
-const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material"];
+const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -635,6 +636,78 @@ if (parte("material")) {
   }
   revisar(malos.length === 0, `en ningún estilo el hilo pisa el contenido${malos.length ? ` (${malos.slice(0, 3).join("; ")})` : ""}`);
   await ctx.close();
+}
+
+// --- Rastro: huellas que aparecen por el recorrido ---
+if (parte("rastro")) {
+  /** Las huellas: su forma, dónde están en la pantalla, su radio y cuánto se ven. */
+  const huellas = (pagina) =>
+    pagina.evaluate(() => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      if (!svg) return null;
+      const c = svg.getBoundingClientRect();
+      const k = c.width / (Number(svg.getAttribute("width")) || 1);
+      const todas = [...svg.querySelectorAll("[data-huella]")].map((g) => ({
+        x: c.left + Number(g.dataset.x) * k,
+        y: c.top + Number(g.dataset.y) * k,
+        radio: Number(g.dataset.radio) * k,
+        opacidad: Number(getComputedStyle(g.querySelector("path")).opacity),
+      }));
+      return { forma: svg.dataset.forma, vivo: svg.hasAttribute("data-vivo"), lineas: svg.querySelectorAll("path[data-tramo]").length, todas };
+    });
+  {
+    const { ctx, pagina, errores, alBajar } = await abrir({ hilo: "rastro" });
+    await pagina.selectOption("[data-prueba=hilo-figura]", "huella");
+    await pagina.waitForTimeout(700);
+    const arriba = await huellas(pagina);
+    revisar(Boolean(arriba) && arriba.forma === "patita" && arriba.todas.length > 40 && arriba.lineas === 0 && errores.length === 0, `con «rastro» hay huellas y no línea: ${arriba?.todas.length} ${arriba?.forma}s (la figura «huella» da patitas)${errores.length ? ` (${errores[0]})` : ""}`);
+    alBajar(arriba.todas.every((h) => h.opacidad < 0.05), "arriba de todo, las huellas todavía no aparecen");
+    // Al bajar, aparecen una tras otra, en orden, y a la vista.
+    const vistas = [];
+    let enOrden = true;
+    for (const k of ALTURAS) {
+      await bajar(pagina, k);
+      const h = await huellas(pagina);
+      const visibles = h.todas.filter((x) => x.opacidad > 0.5);
+      vistas.push(visibles.filter((x) => x.y >= 0 && x.y <= 844).length);
+      // Las que ya aparecieron son las primeras del recorrido: ninguna aparece antes que una anterior.
+      const ultima = h.todas.findLastIndex((x) => x.opacidad > 0.5);
+      if (h.todas.slice(0, Math.max(0, ultima - 2)).some((x) => x.opacidad < 0.5)) enOrden = false;
+    }
+    alBajar(vistas.every((n) => n >= 3) && enOrden, `al bajar, las huellas aparecen una tras otra, en orden y a la vista (a la vista en diez alturas: ${vistas.join(", ")})`);
+    // Otra figura, otra huella.
+    await pagina.selectOption("[data-prueba=hilo-figura]", "taza");
+    await pagina.waitForTimeout(700);
+    revisar((await huellas(pagina)).forma === "grano", "con la figura «taza» las huellas son granos de café");
+    // Ninguna pisa el contenido.
+    await asentar(pagina);
+    await pagina.waitForTimeout(500);
+    const malas = await pagina.evaluate(() => {
+      const cajas = window.__contenido();
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      const c = svg.getBoundingClientRect();
+      const k = c.width / Number(svg.getAttribute("width"));
+      const lejos = (x, y, b) => Math.hypot(Math.max(b.izq - x, 0, x - b.der), Math.max(b.arriba - y, 0, y - b.abajo));
+      return [...svg.querySelectorAll("[data-huella]")].flatMap((g) => {
+        const [x, y, r] = [c.left + Number(g.dataset.x) * k, c.top + Number(g.dataset.y) * k, Number(g.dataset.radio) * k];
+        const b = cajas.find((b) => lejos(x, y, b) < r - 0.5);
+        return b ? [`(${Math.round(x)}, ${Math.round(y)}) sobre «${b.que}»`] : [];
+      });
+    });
+    revisar(malas.length === 0, `ninguna huella pisa el contenido${malas.length ? ` (${malas.slice(0, 3).join("; ")})` : ""}`);
+    await ctx.close();
+  }
+  for (const [que, opciones, respaldo] of [["con movimiento reducido", { reducedMotion: "reduce" }, false], ["sin scroll nativo", {}, true]]) {
+    const { ctx, pagina, errores } = await abrir({ hilo: "rastro", opciones: { viewport: { width: 390, height: 844 }, ...opciones } });
+    if (respaldo) await pagina.locator("[data-prueba=hilo-respaldo]").check();
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "rulos");
+    await pagina.waitForTimeout(300);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "rastro");
+    await pagina.waitForTimeout(800);
+    const h = await huellas(pagina);
+    revisar(Boolean(h) && !h.vivo && h.todas.length > 40 && h.todas.every((x) => x.opacidad > 0.8) && errores.length === 0, `${que} las huellas están todas, quietas (${h?.todas.length})`);
+    await ctx.close();
+  }
 }
 
 await navegador.close();

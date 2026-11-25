@@ -915,13 +915,14 @@ Tres relatos de página más, hermanos del Hilo. Van **por delante** de los bloq
 relleno), y se ven en un teléfono con páginas de franjas pegadas como las de La Mente. Cada uno incluye al anterior.
 Diseño `docs/superpowers/specs/2026-11-25-hilos-design.md`, plan `docs/superpowers/plans/2026-11-25-hilos.md`.
 Vitrina `#hilos` (la página puede verse con un estilo del kit, como una de La Mente o en su vista previa). Prueba:
-`scripts/verificar-hilos.mjs [url] [rulos|hebras|figura|niveles|marco|lamente]`.
+`scripts/verificar-hilos.mjs [url] [rulos|hebras|figura|niveles|marco|lamente|material|rastro]`.
 
 | `relatoPagina` | Nombre | Qué hace |
 |---|---|---|
 | `rulos` | Hilo con rulos | Baja serpenteando por la orilla de cada bloque, cruza al otro lado en el paso al siguiente y hace un rulo en cada cruce |
 | `hebras` | Hebras | Además, en un bloque con dos o más tarjetas (`data-mk-parte="tarjeta"`) se abre en hebras por sus canales (las orillas y entre columnas; a lo más 5), deja un nudo junto a cada tarjeta y se junta abajo |
 | `figura` | Hilo que dibuja | Además, al final el mismo hilo dibuja una figura del rubro de un solo trazo, en una franja propia de 140 px (el remate) |
+| `rastro` | Rastro | Sin línea: huellas que aparecen una tras otra por el mismo recorrido (sin rulos), alternando el lado y mirando hacia donde van. La forma sale de `figura`: patitas (`huella`), granos de café (`taza`), sésamo (`hamburguesa`), puntadas (`tijera`, `lapiz`), corazones (`corazon`), pisadas (las demás) o estrellitas. Solo `opacity` y `scale`: no necesita la excepción del trazo. Donde hay poco lugar se achican; donde no cabe ni una chica, no van. Con «reducir movimiento», todas quietas |
 
 Qué recibe `PaginaRelato` (y la receta de página, con los mismos nombres):
 
@@ -976,12 +977,12 @@ Reglas que cuidar:
 - **Contrato.** `contrato/pagina-motionkit.json` suma los tres ids, la lista `figura`, los campos `figura` y `semilla`
   y `figuraDeRubro`. Solo agrega; quien valide con el contrato viejo rechaza lo nuevo.
 
-Pesos (gzip): los hilos van en un archivo aparte de 9,9 KB (el diseño pedía 5), que baja solo si la página eligió
-uno. Al cargar, `motion-kit/pagina` pasa de 15,5 a 16,2 KB (tope 17) y `motion-kit` de 79,4 a 80,3 KB (tope 90, fijado por Aquiles el
+Pesos (gzip): los hilos (y el rastro) van en un archivo aparte de 11,1 KB (el diseño pedía 5), que baja solo si la
+página eligió uno. Al cargar, `motion-kit/pagina` pasa de 15,5 a 16,2 KB (tope 17) y `motion-kit` de 79,4 a 80,3 KB (tope 90, fijado por Aquiles el
 25-11-2026).
 
-Pruebas: `pruebas/hilos.test.ts` (23) y `scripts/verificar-hilos.mjs` (53 revisiones). Con el motor de Safari pasan
-40 y 14 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
+Pruebas: `pruebas/hilos.test.ts` (23), `pruebas/rastro.test.ts` (5) y `scripts/verificar-hilos.mjs` (60 revisiones;
+parte `rastro`). Con el motor de Safari pasan 45 y 16 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
 
 ## Safari (sondeo del 24-11-2026)
 
@@ -992,7 +993,7 @@ sirve para buscar diferencias de verdad.
 | Prueba | En Safari | Qué era |
 |---|---|---|
 | efectos, encabezados, lamente, biblioteca, momentos3 | Pasan enteras | — |
-| hilos (25-11) | Pasan 40; 14 no aplican | El WebKit de Playwright no tiene animaciones atadas al scroll: el hilo va entero y quieto, y lo que se revisa «al bajar» se salta con su motivo |
+| hilos (25-11) | Pasan 45; 16 no aplican | El WebKit de Playwright no tiene animaciones atadas al scroll: el hilo va entero y quieto, y lo que se revisa «al bajar» se salta con su motivo |
 | fotos | Un error real, arreglado | Al arrastrar sobre una foto de la galería, el navegador iniciaba su «arrastrar imagen» y se tragaba el toque siguiente: el visor no abría. Ahora las fotos con gestos lo evitan |
 | piezas, estilos, escena, momentos, momentos2 | Diferencias que no son errores | Safari no lleva el Tab a los enlaces por defecto; mide distinto lo que sobra dentro de una caja (nada se sale a la vista); la foto de prueba pesa menos; una revisión usa una herramienta que solo tiene Chrome |
 | relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Más simples, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, cada bloque de un relato hace una entrada simple al verse (el respaldo de `src/relatos/respaldo.ts`), y lo demás se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |
