@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 
 import type { NivelEscena } from "../../escena/nivel";
 import { useStyles } from "../../utils/styles";
 import type { FiguraId } from "../catalogo";
-import { contenedorScroll, medirPagina, MIDIENDO } from "./medir";
+import { contenedorScroll, CSS_MIDIENDO, medirPagina, MIDIENDO } from "./medir";
 import { suave } from "./geometria";
 import { MATERIALES, materialDe, paralela, type Capa, type MaterialId } from "./material";
 import { FORMA_HOJA, FORMA_PETALO, REBOTE, TOPE_MECE, trazarEnredadera, type Hoja } from "./enredadera";
@@ -24,16 +24,10 @@ export interface HilosProps {
   sinScroll: boolean;
 }
 
-/** Lo que entra corrido o achicado y se mide en su lugar: los relatos, sus partes y lo que la página marca con `data-entrada`. */
-const ENTRA = ".mk-pagina[data-mk-midiendo] :is(.mk-relato,.mk-relato-in,[data-mk-parte],[data-mk-palabra],[data-entrada])";
 /** El acento: el del estilo del kit o, en una página de La Mente sin él, el suyo. */
 const ACENTO = "var(--mk-acento,var(--lm-acento,#e4572e))";
 
 export const CSS_HILOS =
-  // Mientras se mide, lo que entra va en su lugar y sin transición (si no, el cambio mismo se animaría y se mediría a
-  // medio camino). Al volver, todavía sin transición: así no corre de nuevo. Las animaciones no se tocan (se reiniciarían).
-  `${ENTRA}{transition:none!important}` +
-  `${ENTRA.replace("[data-mk-midiendo]", "[data-mk-midiendo=si]")}{transform:none!important;translate:none!important;scale:none!important;rotate:none!important}` +
   `.mk-hilos{position:absolute;left:0;top:0;z-index:1;pointer-events:none;overflow:visible;color:${ACENTO}}` +
   ".mk-hilos path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.8}" +
   ".mk-hilos circle{fill:currentColor;opacity:.9}" +
@@ -91,6 +85,7 @@ const capasDe = (t: Tramo, material: MaterialId) =>
 const estiloDe = (t: Tramo) => (t.tiempo ? { "--mk-h-espera": `${t.tiempo.espera}ms`, "--mk-h-dura": `${t.tiempo.dura}ms` } : { "--mk-h-d": porciento(t.desde), "--mk-h-h": porciento(t.hasta) });
 
 export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinScroll }: HilosProps) {
+  useStyles("hilos-medir", CSS_MIDIENDO);
   useStyles("hilos", CSS_HILOS);
   const svg = useRef<SVGSVGElement>(null);
   /** Lo último medido: el tamaño de la página, su trazado, si no hay cómo dibujarlo al bajar y el material (el del estilo). */

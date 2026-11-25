@@ -97,7 +97,8 @@ test("el contrato de página está al día", () => {
   const c = JSON.parse(archivo);
   assert.equal(c.listas.relato.length, 8);
   assert.ok(c.listas.relato.includes("pila"));
-  assert.deepEqual(c.listas.relatoPagina, ["hilo", "luz", "impulso", "rulos", "hebras", "figura", "rastro", "enredadera"]);
+  assert.deepEqual(c.listas.relatoPagina, ["hilo", "luz", "impulso", "rulos", "hebras", "figura", "rastro", "enredadera", "ramas"]);
+  assert.match(c.$comentario, /ramas/);
   assert.match(c.$comentario, /enredadera/);
   assert.equal(c.listas.figura.length, 11);
   assert.ok(c.listas.figura.includes("taza") && c.listas.figura.includes("estrella"));
@@ -113,7 +114,7 @@ test("el contrato de página está al día", () => {
 });
 
 test("hilos: los tres valen como relato de página, y solo ahí", () => {
-  for (const hilo of ["rulos", "hebras", "figura", "rastro", "enredadera"]) {
+  for (const hilo of ["rulos", "hebras", "figura", "rastro", "enredadera", "ramas"]) {
     const r = validarPagina({ version: 1, encabezado: enc, relatoPagina: hilo });
     assert.ok(r.ok, hilo);
     assert.equal(r.ok && r.pagina.relatoPagina, hilo);

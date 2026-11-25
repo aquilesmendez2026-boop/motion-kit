@@ -1,5 +1,20 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.5.2)
+
+### Ramas: el Hilo de fondo que se divide
+
+- **`relatoPagina: "ramas"`**: un tronco que baja ondulando hasta el fondo y de 4 a 9 ramas. Unas chocan justo antes
+  de un contenido (o con el borde) y se apagan con una chispa; otras se abren y se juntan con el tronco al fondo. Cada
+  una con su grosor, su opacidad y su tono (profundidad). Van sobre el fondo de los bloques y bajo su contenido (una
+  máscara las corta donde hay texto, fotos, tarjetas, botones o enlaces): se ven en las franjas sólidas del teléfono y
+  nunca tapan lo que se lee. Como los hilos, cada punto se dibuja cuando pasa por el 60 % de la pantalla: el encabezado
+  ya va dibujado al cargar. En la vista previa del Estudio, enteras y quietas. Sin scroll nativo o con «reducir
+  movimiento», no hay ramas. El contrato de página suma `ramas` (solo agrega).
+- `medirPagina` suma un modo fino (`{ fino: true }`) para la máscara de las ramas; los hilos miden igual que antes. El
+  CSS de la medición pasó a `hilos/medir.ts` (`CSS_MIDIENDO`).
+- Vitrinas: `#hilos` con «Con espacio entre bloques»; `#pagina` ofrece todos los relatos de página.
+
 ## 0.5.2 (25-11-2026)
 
 Un hilo de página nuevo, `enredadera`, y un arreglo para las páginas donde hace scroll el `body`. El contrato de

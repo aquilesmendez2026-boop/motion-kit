@@ -3,7 +3,7 @@
 import type { EstiloId } from "../estilos/estilos";
 
 export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos" | "pila";
-export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera";
+export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera" | "ramas";
 export type RelatoId = RelatoBloqueId | RelatoPaginaId;
 
 /** Marcas que un bloque pone en sus partes (`data-mk-parte`) para que un relato las encuentre. */
@@ -96,6 +96,11 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
   figura: hilo("figura", "Hilo que dibuja", "Además, al final dibuja una figura del rubro.", "Solo la figura."),
   rastro: hilo("rastro", "Rastro", "Huellas del rubro que aparecen por el recorrido.", "Las huellas, quietas."),
   enredadera: hilo("enredadera", "Enredadera", "Un tallo que baja con la página: le brotan hojas, se mecen al bajar rápido y al final se abre una flor.", "Solo la flor."),
+  ramas: {
+    id: "ramas", nombre: "Ramas", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
+    descripcion: "El hilo de fondo se divide: un tronco baja hasta el final; unas ramas chocan con el contenido, con una chispa, y otras se juntan con el tronco. Pasan por detrás del contenido.",
+    completo: "El tronco y las ramas se dibujan al bajar; las que chocan se apagan con una chispa.", liviano: "Enteras y quietas, sin chispas.", quieto: "Sin ramas.",
+  },
 };
 
 export const RELATO_IDS = Object.keys(RELATOS) as RelatoId[];

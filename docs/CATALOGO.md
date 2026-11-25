@@ -1004,6 +1004,42 @@ baja solo si la página eligió uno. Al cargar, `motion-kit/pagina` pasa de 15,5
 Pruebas: `pruebas/hilos.test.ts` (23), `pruebas/rastro.test.ts` (5), `pruebas/enredadera.test.ts` (8) y
 `scripts/verificar-hilos.mjs` (77 revisiones; partes `rastro` y `enredadera`). Con el motor de Safari pasan 53 y 24 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
 
+## Ramas: el Hilo de fondo que se divide (25-11-2026)
+
+Relato de página `ramas`. Diseño `docs/superpowers/specs/2026-11-25-ramas-design.md` (con sus cambios del 25-11), plan
+`docs/superpowers/plans/2026-11-25-ramas.md`. Vitrinas `#hilos` (con «Con espacio entre bloques») y `#pagina`, que ahora
+ofrece todos los relatos de página en «De fondo».
+
+- **El tronco** baja ondulando de arriba al fondo de la página (siempre llega); su forma sale de `semilla`. Va en tramos
+  de unos 160 px y, como los hilos, cada punto se dibuja cuando pasa por el 60 % de la pantalla (`scrollDe`, ahora en
+  `hilos/avance.ts`): lo que se ve al cargar, como el encabezado, ya va dibujado.
+- **Las ramas**, de 4 a 9 según el largo, de dos clases: las que **chocan** salen hacia un lado y terminan justo antes
+  de un contenido (a 12 px; o en el borde de la página), donde se abre y se apaga una chispa; las que **se juntan** se
+  abren y vuelven al tronco al fondo, cuando él termina. Cada una con su grosor (1 a 3,5 px), su opacidad (las delgadas,
+  más tenues: profundidad) y su tono (el acento más claro o más oscuro). Una que choca nace donde se ve, mide al menos
+  24 px y termina a más tardar en el 97 % del scroll (su chispa se ve entera); si no puede, se junta.
+- **Sobre el fondo, bajo el contenido.** Van sobre el fondo de los bloques (así se ven en las franjas sólidas del
+  teléfono), cortadas con una máscara donde hay contenido (con 4 px de margen): cada renglón de texto, fotos, tarjetas,
+  botones, enlaces, ítems de lista, íconos (también los `aria-hidden`), cosas con fondo o borde propio (un chip), y
+  enteros los bloques con foto de fondo, con algo pegado o con una tira que se desliza. Parecen pasar por detrás y nunca
+  tapan lo que se lee. Lo mide `medirPagina` en su modo fino (`{ fino: true }`; los hilos siguen con el de siempre), y se
+  vuelve a medir con los mismos avisos que los hilos: tamaño, orden de los bloques, estilo y fuentes. En el teléfono, el
+  vaivén de la barra del navegador (menos de 120 px) no cambia la forma. Sin punto de luz: no se puede cortar con la
+  máscara y pasaría sobre el texto. Límite conocido: lo que se agranda al bajar (la foto de «cuento») se mide en reposo.
+- **Niveles**, como el Hilo: completo, se dibuja al bajar; liviano, o donde la página no baja (la vista previa achicada
+  del Estudio), enteras y quietas, sin chispas; quieto o sin scroll nativo (el motor de Safari de las pruebas), no hay
+  ramas. Con el procesador frenado 4 veces, 60 cuadros por segundo al bajar la vitrina (el Hilo: 58).
+- **Contrato:** `relatoPagina` suma `ramas` (solo agrega).
+- **De paso:** el CSS de la medición pasó a `hilos/medir.ts` (`CSS_MIDIENDO`), compartido por los hilos y las ramas.
+  Los hilos miden igual que antes.
+
+Pesos (gzip, ESM): las ramas bajan aparte 7,6 KB (4,5 propios y 3,1 del archivo que comparten con los hilos: la
+medición, la geometría y el avance); los hilos, 16,1 KB (13,1 y los mismos 3,1; antes 15,3: el modo fino viaja en el
+archivo compartido). Al cargar, `motion-kit/pagina` mide 16,6 KB (tope 17).
+
+Pruebas: `pruebas/ramas.test.ts` (10) y la parte `ramas` de `scripts/verificar-hilos.mjs` (17 revisiones, también en
+`#pagina` en pantalla ancha; con el motor de Safari, que va sin scroll nativo, 3: no hay ramas).
+
 ## Safari (sondeo del 24-11-2026)
 
 Las pruebas visuales están escritas para Chrome. El 24-11 se corrieron las quince, una vez, con el motor de Safari

@@ -8,8 +8,8 @@ import { PaginaRelato } from "../src/relatos/PaginaRelato";
 import { Relato } from "../src/relatos/Relato";
 import { FIGURA_IDS, RELATOS, type FiguraId } from "../src/relatos/catalogo";
 
-type Hilo = "hilo" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera";
-const HILOS: Hilo[] = ["rulos", "hebras", "figura", "rastro", "enredadera", "hilo"];
+type Hilo = "hilo" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera" | "ramas";
+const HILOS: Hilo[] = ["rulos", "hebras", "figura", "rastro", "enredadera", "ramas", "hilo"];
 const CARTA = ["Clásica · $7.900", "Doble · $9.900", "Veggie · $8.500", "Papas · $3.500"];
 const HORARIOS = ["Lunes a jueves · 12:00 a 23:00", "Viernes y sábado · 12:00 a 01:00", "Domingo · 13:00 a 22:00"];
 /** Cómo se ve la página: con un estilo del kit, como una de La Mente (sin estilo del kit: sus colores en `--lm-*`), o en su vista previa (achicada, sin scroll propio). */
@@ -33,6 +33,8 @@ export function Hilos() {
   const [estilo, setEstilo] = useState<EstiloId>("retro");
   const [respaldo, setRespaldo] = useState(false);
   const [largo, setLargo] = useState(false);
+  /** Con espacio entre los bloques (ahí se ven los relatos que van detrás, como las ramas). */
+  const [separadas, setSeparadas] = useState(false);
   const [marco, setMarco] = useState<Marco>("kit");
   /** El orden de las franjas de abajo (la lista puede subir sobre la foto, como al ordenar los bloques en el Estudio). */
   const [listaArriba, setListaArriba] = useState(false);
@@ -102,6 +104,9 @@ export function Hilos() {
       {franja("cierre", "hil-superficie", (
         <>
           <h2>Te esperamos</h2>
+          {/* Un chip (con borde, sin marca) y un ícono decorativo: lo que se ve también es contenido. */}
+          <span className="hil-chip" data-prueba="hilo-chip">Abierto hoy</span>
+          <svg className="hil-icono" data-prueba="hilo-icono" aria-hidden="true" viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="10" r="4" fill="currentColor" /><path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
           <p>Av. Italia 1234, Providencia.</p>
           <a className="hil-boton" href="#hilos">Cómo llegar</a>
         </>
@@ -146,10 +151,13 @@ export function Hilos() {
         <label>
           <input type="checkbox" checked={respaldo} onChange={(e) => setRespaldo(e.target.checked)} data-prueba="hilo-respaldo" /> Sin scroll nativo
         </label>
+        <label>
+          <input type="checkbox" checked={separadas} onChange={(e) => setSeparadas(e.target.checked)} data-prueba="hilo-separadas" /> Con espacio entre bloques
+        </label>
         <button type="button" onClick={() => setLargo((v) => !v)} data-prueba="hilo-crece">{largo ? "Acortar el texto" : "Alargar el texto"}</button>
         <button type="button" onClick={() => setListaArriba((v) => !v)} data-prueba="hilo-orden">{listaArriba ? "Bajar los horarios" : "Subir los horarios"}</button>
       </div>
-      <div ref={raiz}>
+      <div ref={raiz} className={separadas ? "hil-separadas" : undefined}>
         {marco === "kit" && (
           <div className="hil-marco">
             <Estilo nombre={estilo} textura={false}>{pagina}</Estilo>

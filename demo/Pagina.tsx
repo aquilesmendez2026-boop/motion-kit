@@ -6,7 +6,7 @@ import {
 import { PaginaRelato } from "../src/relatos/PaginaRelato";
 import { Relato } from "../src/relatos/Relato";
 import { FraseRelato } from "../src/relatos/FraseRelato";
-import { RELATOS, RELATOS_DE_BLOQUE, RELATO_DE_ESTILO, type RelatoBloqueId, type RelatoPaginaId } from "../src/relatos/catalogo";
+import { RELATOS, RELATOS_DE_BLOQUE, RELATOS_DE_PAGINA, RELATO_DE_ESTILO, type RelatoBloqueId, type RelatoPaginaId } from "../src/relatos/catalogo";
 import { normalizarPagina, relatoDeBloque, validarPagina, type RecetaPagina } from "../src/relatos/receta-pagina";
 import { codificar, decodificar, enlaceDe, type ConfigVista } from "./compartir";
 
@@ -101,7 +101,7 @@ export function Pagina({ d }: { d?: string }) {
     const e = elige(ESTILO_IDS);
     setEstilo(e);
     setRelato(Math.random() < 0.5 ? "" : elige(RELATOS_DE_BLOQUE));
-    setRelatoPagina(elige(["", "", "hilo", "luz", "impulso"] as const));
+    setRelatoPagina(elige(["", "", ...RELATOS_DE_PAGINA] as const));
     setPorBloque(Object.fromEntries(BLOQUES.map((id) => {
       const quedan = RELATOS_DE_BLOQUE.filter((r) => RELATOS[r].para.includes(id) || RELATOS[r].para.includes("cualquiera"));
       return [id, Math.random() < 0.4 ? "" : elige(quedan)];
@@ -110,7 +110,8 @@ export function Pagina({ d }: { d?: string }) {
 
   const vista = (
     <Marco tema={lmTema} paleta={lmPaleta} estilo={estilo}>
-      <PaginaRelato relato={pagina.relato} relatoPagina={pagina.relatoPagina} estela={pagina.estela}>
+      {/* La figura y la semilla de esta hamburguesería (las usan los hilos: rulos, hebras, figura, rastro, enredadera y ramas). */}
+      <PaginaRelato relato={pagina.relato} relatoPagina={pagina.relatoPagina} estela={pagina.estela} figura="hamburguesa" semilla="smash-burgers">
         <Encabezado {...recetaAProps(pagina.encabezado)} />
         {BLOQUES.map((id) => (
           <Relato key={id} modo={relatoDeBloque(pagina, id)} className="pag-blq" data-bloque={id}>{contenido(id)}</Relato>
@@ -156,9 +157,7 @@ export function Pagina({ d }: { d?: string }) {
           <label>De fondo
             <select value={relatoPagina} onChange={(e) => setRelatoPagina(e.target.value as RelatoPaginaId | "")} data-prueba="relato-pagina">
               <option value="">Nada</option>
-              <option value="hilo">{RELATOS.hilo.nombre}</option>
-              <option value="luz">{RELATOS.luz.nombre}</option>
-              <option value="impulso">{RELATOS.impulso.nombre}</option>
+              {RELATOS_DE_PAGINA.map((r) => <option key={r} value={r}>{RELATOS[r].nombre}</option>)}
             </select>
           </label>
           <label className="estudio-check"><input type="checkbox" checked={estela} onChange={(e) => setEstela(e.target.checked)} data-prueba="estela" /> Estela y chispas (el cursor deja estela; un toque suelta chispas)</label>

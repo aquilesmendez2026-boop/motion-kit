@@ -83,8 +83,9 @@ const REGLAS = [
   [/^src\/efectos\//, ["efectos", "encabezados", "dedo"]],
   [/^demo\/(Encabezados|Vista|compartir)/, [...ENCABEZADO, "estilos"]],
   // Página, relatos, biblioteca, piezas y plantillas.
-  // Los hilos: su trazado, su pieza y su vitrina. Lo demás de la página (que los carga) corre también la prueba de hilos.
-  [/^(src\/relatos\/hilos\/|demo\/Hilos)/, ["hilos"]],
+  // Los hilos y las ramas: su trazado, su pieza y su vitrina (las ramas se prueban en verificar-hilos). Lo demás de la
+  // página (que los carga) corre también la prueba de hilos.
+  [/^(src\/relatos\/(hilos|ramas)\/|demo\/Hilos)/, ["hilos"]],
   [/^(src\/relatos\/|src\/entradas\/pagina|demo\/(Pagina|Relatos))/, ["relatos", "hilos", "dedo:impulso", "dedo:estela", "dedo:pila"]],
   [/^(src\/biblioteca\/|demo\/Biblioteca)/, ["biblioteca"]],
   // Los botones y las tarjetas cambian de sombra dentro de una luz, y los paquetes de botones van en el encabezado.

@@ -45,13 +45,13 @@ export function caminoHilo(w: number, h: number): string {
 
 /** Mide la página (para el camino del Hilo) y el alto visible (para el cielo). */
 function useMedidas(ref: React.RefObject<HTMLDivElement | null>, activo: boolean) {
-  const [m, setM] = useState({ w: 0, h: 0 });
+  const [m, setM] = useState({ w: 0, h: 0, v: 0 });
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || !activo) return;
     const caja = contenedorScroll(el);
     const medir = () => {
-      setM({ w: el.offsetWidth, h: el.offsetHeight });
+      setM({ w: el.offsetWidth, h: el.offsetHeight, v: altoVista(caja) });
       el.style.setProperty("--mk-alto-vista", `${altoVista(caja)}px`);
     };
     medir();
@@ -77,7 +77,7 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
   const sinScroll = respaldo || !soporta;
   const { observar } = useRespaldo(sinScroll && nivel !== "quieto");
   const ref = useRef<HTMLDivElement>(null);
-  const { w, h } = useMedidas(ref, Boolean(relatoPagina));
+  const { w, h, v } = useMedidas(ref, Boolean(relatoPagina));
   const valor = useMemo<ContextoRelatos>(
     () => ({ relato: relato ?? (estilo ? RELATO_DE_ESTILO[estilo.id] : "escenas"), nivel, sinScroll, observar }),
     [relato, estilo, nivel, sinScroll, observar],
@@ -92,6 +92,8 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
   // En quieto, con «figura» queda la figura, con «enredadera» la flor y con «rastro» las huellas, quietas; con los
   // otros no hay nada que dibujar.
   const Hilos = useAparte(conRemate || tipoHilo === "rastro" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
+  // Las ramas: aparte; como el Hilo, sin scroll nativo o en quieto no van (en liviano, enteras y quietas).
+  const Ramas = useAparte(relatoPagina === "ramas" && nivel !== "quieto" && !sinScroll, () => import("./ramas/Ramas"));
   // Estela y chispas: igual, aparte y solo en completo.
   const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (
@@ -118,6 +120,7 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
             <i className="mk-hilo-viajero" aria-hidden="true" style={{ offsetPath: `path("${camino}")` }} />
           </>
         )}
+        {Ramas && w > 0 && h > 0 && <Ramas pagina={ref} ancho={w} alto={h} vista={v} semilla={semilla} quieta={nivel !== "completo"} />}
         {valor.relato === "pelicula" && <div className="mk-cinta" aria-hidden="true"><i /></div>}
         {children}
         {/* El remate: la franja del final donde el hilo dibuja la figura (o se abre la flor). Está desde el principio, para que la página no salte. */}

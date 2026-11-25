@@ -6,10 +6,10 @@ import {
 import { ESTILO_IDS } from "../src/estilos/estilos";
 import { caminoHilo } from "../src/relatos/PaginaRelato";
 
-test("hay 16 relatos: 8 de bloque y 8 de página", () => {
-  assert.equal(RELATO_IDS.length, 16);
+test("hay 17 relatos: 8 de bloque y 9 de página", () => {
+  assert.equal(RELATO_IDS.length, 17);
   assert.deepEqual(RELATOS_DE_BLOQUE, ["escenas", "pelicula", "cuento", "profundidad", "iris", "carrete", "subtitulos", "pila"]);
-  assert.deepEqual(RELATOS_DE_PAGINA, ["hilo", "luz", "impulso", "rulos", "hebras", "figura", "rastro", "enredadera"]);
+  assert.deepEqual(RELATOS_DE_PAGINA, ["hilo", "luz", "impulso", "rulos", "hebras", "figura", "rastro", "enredadera", "ramas"]);
   for (const id of RELATOS_DE_BLOQUE) assert.equal(RELATOS[id].alcance, "bloque", id);
   for (const id of RELATOS_DE_PAGINA) assert.equal(RELATOS[id].alcance, "pagina", id);
 });
@@ -27,7 +27,7 @@ test("lo que requiere cada relato", () => {
   const req = Object.fromEntries(RELATO_IDS.map((id) => [id, RELATOS[id].requiere]));
   assert.deepEqual(req, {
     escenas: [], pelicula: [], cuento: ["linea"], profundidad: ["tarjeta"], iris: [], carrete: ["foto", "tarjeta"],
-    subtitulos: ["frase"], pila: [], hilo: [], luz: [], impulso: [], rulos: [], hebras: [], figura: [], rastro: [], enredadera: [],
+    subtitulos: ["frase"], pila: [], hilo: [], luz: [], impulso: [], rulos: [], hebras: [], figura: [], rastro: [], enredadera: [], ramas: [],
   });
 });
 

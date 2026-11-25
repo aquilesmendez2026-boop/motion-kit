@@ -1,14 +1,15 @@
-// Verifica los hilos (rulos, hebras, figura, rastro y enredadera) en #hilos: una página que imita una de La Mente en el teléfono.
+// Verifica los hilos (rulos, hebras, figura, rastro, enredadera y ramas) en #hilos: una página que imita una de La Mente en el teléfono.
 // Uso: npm run dev (en otra terminal) y después
 // `node scripts/verificar-hilos.mjs [http://localhost:5173] [parte]`, donde la parte (opcional) es rulos, hebras,
 // figura, niveles, marco (la página dentro de un marco con scroll propio, en #relatos) o lamente (la página como una de
 // La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden), material (el hilo de cada estilo)
-// rastro (huellas por el recorrido) o enredadera (tallo con hojas que se mecen y una flor al final).
+// rastro (huellas por el recorrido), enredadera (tallo con hojas que se mecen y una flor al final) o ramas (el Hilo de
+// fondo que se divide: ramas que chocan con los bloques y otras que se juntan al fondo).
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:5173";
 const solo = process.argv[3];
-const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro", "enredadera"];
+const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro", "enredadera", "ramas"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -927,6 +928,244 @@ if (parte("enredadera")) {
     const flor = h?.petalos.length >= 5 && h.petalos.every((q) => q.opacidad > 0.8);
     if (respaldo) revisar(Boolean(h) && !h.vivo && h.hojas.length > 40 && h.hojas.every((x) => x.opacidad > 0.8 && x.giro === 0) && h.tramos.length > 3 && flor && h.viento === "" && errores.length === 0, `${que} el tallo, las ${h?.hojas.length} hojas y la flor están enteros y quietos, sin viento`);
     else revisar(Boolean(h) && !h.vivo && h.hojas.length === 0 && h.tramos.length === 0 && flor && h.viento === "" && errores.length === 0, `${que} queda solo la flor, abierta y quieta`);
+    await ctx.close();
+  }
+}
+
+// --- Ramas: sobre el fondo de los bloques y bajo su contenido; unas chocan con el contenido (con su chispa) y otras se
+// juntan con el tronco al fondo ---
+if (parte("ramas")) {
+  /** Baja hasta esa parte del scroll (0 a 100), la que mueve las animaciones de las ramas. */
+  const alScroll = async (pagina, p) => {
+    await pagina.evaluate((q) => {
+      const e = document.scrollingElement;
+      e.scrollTo(0, ((e.scrollHeight - e.clientHeight) * q) / 100);
+      return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }, p);
+    await pagina.waitForTimeout(80);
+  };
+  /** El tronco y las ramas: cuánto va dibujado cada uno, dónde termina cada rama y sus chispas (en la pantalla). */
+  const ramas = (pagina) =>
+    pagina.evaluate(() => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-ramas");
+      if (!svg) return null;
+      const c = svg.getBoundingClientRect();
+      const k = c.width / (Number(svg.getAttribute("width")) || 1);
+      const trazo = (p) => {
+        const largo = p.getTotalLength();
+        const z = p.getPointAtLength(largo);
+        return { clase: p.dataset.clase ?? "tronco", dibujado: 1 - Math.min(1, Math.max(0, parseFloat(getComputedStyle(p).strokeDashoffset) || 0)), fin: { x: c.left + z.x * k, y: c.top + z.y * k }, grosor: parseFloat(getComputedStyle(p).strokeWidth), opacidad: Number(getComputedStyle(p).opacity), color: getComputedStyle(p).stroke };
+      };
+      // El tronco va en tramos: cuánto va dibujado (por su largo) y dónde termina el último.
+      const partes = [...svg.querySelectorAll("path[data-rama=tronco]")].map((t) => ({ ...trazo(t), largo: t.getTotalLength() }));
+      const largoTotal = partes.reduce((s, t) => s + t.largo, 0);
+      const tronco = { ...partes[partes.length - 1], dibujado: partes.reduce((s, t) => s + t.dibujado * t.largo, 0) / (largoTotal || 1), tramos: partes.length };
+      const todas = [...svg.querySelectorAll("path[data-rama=rama]")].map(trazo);
+      const huecos = [...svg.querySelectorAll("[data-hueco]")].map((h) => ({ izq: c.left + Number(h.getAttribute("x")) * k, arriba: c.top + Number(h.getAttribute("y")) * k, der: c.left + (Number(h.getAttribute("x")) + Number(h.getAttribute("width"))) * k, abajo: c.top + (Number(h.getAttribute("y")) + Number(h.getAttribute("height"))) * k }));
+      const chispas = [...svg.querySelectorAll("[data-chispa]")].map((g) => ({ x: c.left + Number(g.dataset.x) * k, y: c.top + Number(g.dataset.y) * k, opacidad: Number(getComputedStyle(g.firstElementChild).opacity), desde: parseFloat(g.style.getPropertyValue("--mk-r-d")) }));
+      const pagina = document.querySelector("[data-prueba=hilo-pagina]").getBoundingClientRect();
+      return { vivo: svg.hasAttribute("data-vivo"), z: getComputedStyle(svg).zIndex, alto: Number(svg.getAttribute("height")), altoPagina: pagina.height, tronco, ramas: todas, chispas, huecos, mascara: Boolean(svg.querySelector("mask")) && Boolean(svg.querySelector("g[mask] path[data-rama=tronco]")) };
+    });
+  const { nativo } = await (async () => {
+    const { ctx, nativo } = await abrir({});
+    await ctx.close();
+    return { nativo };
+  })();
+  if (!nativo) {
+    // Sin animaciones atadas al scroll la página va «sin scroll nativo»: como el Hilo, no hay ramas.
+    const { ctx, pagina, errores } = await abrir({ hilo: "ramas" });
+    await pagina.waitForTimeout(600);
+    const hay = await pagina.evaluate(() => document.querySelectorAll("[data-prueba=hilo-pagina] .mk-ramas").length);
+    revisar(hay === 0 && errores.length === 0, "sin animaciones atadas al scroll, como el Hilo, no hay ramas");
+    await ctx.close();
+  } else {
+    const { ctx, pagina, errores, alBajar } = await abrir({ hilo: "ramas" });
+    await pagina.locator("[data-prueba=hilo-separadas]").check();
+    await pagina.waitForTimeout(600);
+    const r = await ramas(pagina);
+    const clases = new Set(r?.ramas.map((x) => x.clase));
+    revisar(Boolean(r) && r.z === "1" && r.mascara && r.ramas.length >= 4 && r.ramas.length <= 9 && clases.has("choca") && clases.has("junta") && r.chispas.length === r.ramas.filter((x) => x.clase === "choca").length && errores.length === 0, `con «ramas» hay un tronco sobre el fondo de los bloques (con su máscara) y ${r?.ramas.length} ramas de las dos clases (${[...clases].join(" y ")}), con su chispa cada una que choca${errores.length ? ` (${errores[0]})` : ""}`);
+    // Profundidad y tonos: grosores distintos, las delgadas más tenues, y más de un color.
+    const orden = [...r.ramas].sort((a, b) => a.grosor - b.grosor);
+    revisar(orden[orden.length - 1].grosor - orden[0].grosor >= 1 && orden.slice(1).every((x, i) => x.opacidad >= orden[i].opacidad) && new Set(r.ramas.map((x) => x.color)).size >= 3, `cada rama con su grosor (de ${orden[0].grosor.toFixed(1)} a ${orden[orden.length - 1].grosor.toFixed(1)} px; las delgadas, más tenues) y su tono (${new Set(r.ramas.map((x) => x.color)).size} distintos)`);
+    // Las que chocan terminan en el borde de un bloque con fondo (o de la página), justo donde está su chispa. Los
+    // bloques, en su lugar (sin la entrada de su relato, que con el scroll los corre).
+    await asentar(pagina);
+    await pagina.waitForTimeout(300);
+    // El contenido, y las franjas con foto de fondo (enteras: sobre una foto tampoco se dibuja).
+    const contenido = await pagina.evaluate(() => [
+      ...window.__contenido(),
+      ...[...document.querySelectorAll("[data-prueba=hilo-pagina] .hil-con-fondo")].map((f) => { const c = f.getBoundingClientRect(); return { izq: c.left, arriba: c.top, der: c.right, abajo: c.bottom, que: "foto de fondo" }; }),
+    ]);
+    const pag = await pagina.evaluate(() => { const c = document.querySelector("[data-prueba=hilo-pagina]").getBoundingClientRect(); return { izq: c.left, der: c.right }; });
+    /** A cuánto queda un punto de una caja (0 si está adentro). */
+    const lejos = (p, b) => Math.hypot(Math.max(b.izq - p.x, 0, p.x - b.der), Math.max(b.arriba - p.y, 0, p.y - b.abajo));
+    // Choca a 12 px del contenido (la chispa no lo alcanza a pisar) o en el borde de la página.
+    const enBorde = (p) => Math.abs(p.x - pag.izq) < 1 || Math.abs(p.x - pag.der) < 1 || (contenido.every((b) => lejos(p, b) >= 10) && contenido.some((b) => lejos(p, b) <= 14));
+    // Todo medido en el mismo momento (son posiciones en la pantalla).
+    const ya = await ramas(pagina);
+    const chocan = ya.ramas.filter((x) => x.clase === "choca");
+    const juntas = chocan.every((x, i) => Math.hypot(x.fin.x - ya.chispas[i].x, x.fin.y - ya.chispas[i].y) < 1);
+    revisar(juntas && chocan.every((x) => enBorde(x.fin)) && chocan.some((x) => Math.abs(x.fin.x - pag.izq) > 1 && Math.abs(x.fin.x - pag.der) > 1), `las que chocan terminan justo antes del contenido (o en el borde de la página), donde está su chispa`);
+    // Cada texto, foto, botón y tarjeta tiene su hueco en la máscara: ahí las ramas no se ven.
+    const sinHueco = contenido.filter((b) => !ya.huecos.some((h) => h.izq <= b.izq + 1 && h.der >= b.der - 1 && h.arriba <= b.arriba + 1 && h.abajo >= b.abajo - 1));
+    revisar(ya.huecos.length > 10 && sinHueco.length === 0, `las ramas no se ven sobre el contenido: cada uno de los ${contenido.length} elementos tiene su hueco${sinHueco.length ? ` (faltan: ${sinHueco.slice(0, 3).map((b) => b.que).join(", ")})` : ""}`);
+    // Las que se juntan terminan donde termina el tronco.
+    const juntan = ya.ramas.filter((x) => x.clase === "junta");
+    revisar(juntan.every((x) => Math.hypot(x.fin.x - ya.tronco.fin.x, x.fin.y - ya.tronco.fin.y) < 1), "las que se juntan terminan en el tronco, al fondo");
+    // Al bajar se dibujan: arriba casi nada, después más y más.
+    await alScroll(pagina, 0);
+    const arriba = await ramas(pagina);
+    const vistos = [];
+    for (const p of [20, 40, 60, 80, 100]) {
+      await alScroll(pagina, p);
+      vistos.push((await ramas(pagina)).tronco.dibujado);
+    }
+    // Al cargar va dibujado solo lo que ya se ve (sobre el 60 % de la pantalla); después, cada vez más.
+    alBajar(arriba.tronco.dibujado < 0.2 && vistos.every((v, i) => (i === 0 ? v > arriba.tronco.dibujado : v > vistos[i - 1])) && vistos[vistos.length - 1] > 0.99, `al bajar se dibujan el tronco y las ramas (el tronco: ${arriba.tronco.dibujado.toFixed(2)} al cargar; después ${vistos.map((v) => v.toFixed(2)).join(", ")})`);
+    // La chispa aparece recién cuando su rama llega, y se apaga.
+    const c0 = r.chispas[0];
+    await alScroll(pagina, Math.max(0, c0.desde - 3));
+    const antes = await ramas(pagina);
+    await alScroll(pagina, c0.desde + 0.9);
+    const durante = await ramas(pagina);
+    await alScroll(pagina, Math.min(100, c0.desde + 8));
+    const despues = await ramas(pagina);
+    alBajar(antes.chispas[0].opacidad < 0.1 && antes.ramas.find((x) => x.clase === "choca").dibujado < 0.98 && durante.chispas[0].opacidad > 0.5 && durante.ramas.find((x) => x.clase === "choca").dibujado > 0.98 && despues.chispas[0].opacidad < 0.1, `la chispa aparece cuando su rama llega a chocar, y se apaga (${antes.chispas[0].opacidad.toFixed(2)} → ${durante.chispas[0].opacidad.toFixed(2)} → ${despues.chispas[0].opacidad.toFixed(2)})`);
+    // Si la página crece, el tronco vuelve a llegar al fondo.
+    await pagina.click("[data-prueba=hilo-crece]");
+    await pagina.waitForTimeout(500);
+    const crecida = await ramas(pagina);
+    revisar(Math.abs(crecida.alto - crecida.altoPagina) < 1 && crecida.alto > r.alto, `si la página crece, las ramas se vuelven a trazar hasta el nuevo fondo (${r.alto} → ${crecida.alto} px)`);
+    await ctx.close();
+  }
+  // En #pagina, en pantalla ancha: el encabezado marca sus partes, y la que envuelve a las demás («contenido») no es
+  // contenido entero: las ramas se ven en su espacio libre (solo se cortan en el texto, los botones y las fotos).
+  if (nativo) {
+    const { ctx, pagina, errores } = await abrir({ ruta: "#pagina", raiz: ".pag-vista .mk-pagina", opciones: { viewport: { width: 1400, height: 900 } } });
+    await pagina.selectOption("[data-prueba=relato-pagina]", "ramas");
+    await pagina.waitForSelector(".pag-vista .mk-ramas [data-hueco]", { timeout: 4000 }).catch(() => {});
+    await pagina.waitForTimeout(600);
+    const r = await pagina.evaluate(() => {
+      const pag = document.querySelector(".pag-vista .mk-pagina");
+      const svg = pag.querySelector("svg.mk-ramas");
+      const caja = pag.querySelector('.mk-enc [data-mk-parte="contenido"]');
+      if (!svg || !caja) return null;
+      const c = svg.getBoundingClientRect();
+      const k = c.width / Number(svg.getAttribute("width"));
+      const e = caja.getBoundingClientRect();
+      const envuelve = [...svg.querySelectorAll("[data-hueco]")].some((h) => {
+        const [x, y, w, a] = ["x", "y", "width", "height"].map((n) => Number(h.getAttribute(n)) * k);
+        return c.left + x <= e.left + 2 && c.top + y <= e.top + 2 && c.left + x + w >= e.right - 2 && c.top + y + a >= e.bottom - 2;
+      });
+      return { envuelve, huecos: svg.querySelectorAll("[data-hueco]").length };
+    });
+    revisar(Boolean(r) && !r.envuelve && r.huecos > 5 && errores.length === 0, `en el encabezado, la parte que envuelve a las otras no tapa las ramas (solo se cortan en lo que lleva adentro)${r ? "" : " (no se encontró)"}`);
+    await ctx.close();
+  }
+  // Lo que la revisión pidió probar con el contenido real (sin `asentar` donde no hace falta).
+  if (nativo) {
+    /** Si una caja de la pantalla queda dentro de algún hueco de la máscara. */
+    const tapada = (pagina, raiz, sel) =>
+      pagina.evaluate(([raiz, sel]) => {
+        const svg = document.querySelector(`${raiz} svg.mk-ramas`);
+        const e = document.querySelector(sel);
+        if (!svg || !e) return null;
+        const c = svg.getBoundingClientRect();
+        const k = c.width / Number(svg.getAttribute("width"));
+        const r = e.getBoundingClientRect();
+        return [...svg.querySelectorAll("[data-hueco]")].some((h) => {
+          const [x, y, w, a] = ["x", "y", "width", "height"].map((n) => Number(h.getAttribute(n)) * k);
+          return c.left + x <= r.left + 1 && c.top + y <= r.top + 1 && c.left + x + w >= r.right - 1 && c.top + y + a >= r.bottom - 1;
+        });
+      }, [raiz, sel]);
+    // Un chip con borde (sin marca) y un ícono decorativo (`aria-hidden`) tienen su hueco.
+    {
+      const { ctx, pagina } = await abrir({ hilo: "ramas" });
+      await pagina.waitForTimeout(600);
+      await asentar(pagina);
+      await pagina.waitForTimeout(400);
+      const [chip, icono] = [await tapada(pagina, P, "[data-prueba=hilo-chip]"), await tapada(pagina, P, "[data-prueba=hilo-icono]")];
+      revisar(chip === true && icono === true, `un chip con borde y un ícono decorativo también tienen su hueco (chip: ${chip}, ícono: ${icono})`);
+      // Al cambiar el orden de los bloques (sin cambiar el alto), los huecos siguen al contenido.
+      await pagina.click("[data-prueba=hilo-orden]");
+      await pagina.waitForTimeout(900);
+      const sinHueco = await pagina.evaluate(() => {
+        const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-ramas");
+        const c = svg.getBoundingClientRect();
+        const k = c.width / Number(svg.getAttribute("width"));
+        const huecos = [...svg.querySelectorAll("[data-hueco]")].map((h) => ["x", "y", "width", "height"].map((n) => Number(h.getAttribute(n)) * k));
+        return window.__contenido().filter((b) => !huecos.some(([x, y, w, a]) => c.left + x <= b.izq + 1 && c.top + y <= b.arriba + 1 && c.left + x + w >= b.der - 1 && c.top + y + a >= b.abajo - 1)).map((b) => b.que);
+      });
+      revisar(sinHueco.length === 0, `al cambiar el orden de los bloques, los huecos siguen al contenido${sinHueco.length ? ` (sin hueco: ${sinHueco.slice(0, 3).join(", ")})` : ""}`);
+      await ctx.close();
+    }
+    // En la vista previa (achicada, sin scroll propio) van enteras y quietas, sin chispas.
+    {
+      const { ctx, pagina } = await abrir({ hilo: "ramas" });
+      await pagina.selectOption("[data-prueba=hilo-marco]", "previa");
+      await pagina.waitForTimeout(900);
+      const r = await ramas(pagina);
+      revisar(Boolean(r) && !r.vivo && r.tronco.dibujado > 0.99 && r.ramas.every((x) => x.dibujado > 0.99) && r.chispas.length === 0, `en la vista previa del Estudio van enteras y quietas, sin chispas${r ? ` (tronco ${r.tronco.dibujado.toFixed(2)})` : ""}`);
+      await ctx.close();
+    }
+    // En el teléfono, la barra del navegador cambia el alto visible al bajar: la forma no cambia por eso.
+    {
+      const { ctx, pagina } = await abrir({ hilo: "ramas", opciones: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } });
+      await pagina.waitForTimeout(700);
+      const forma = () => pagina.evaluate(() => [...document.querySelectorAll("[data-prueba=hilo-pagina] svg.mk-ramas path[data-rama=tronco]")].map((t) => t.getAttribute("d")).join(" ") || null);
+      const antes = await forma();
+      await pagina.setViewportSize({ width: 390, height: 784 });
+      await pagina.waitForTimeout(300);
+      // Algo cambia de tamaño y vuelve (como una foto que carga): la página se mide otra vez con el alto nuevo.
+      await pagina.click("[data-prueba=hilo-crece]");
+      await pagina.waitForTimeout(400);
+      await pagina.click("[data-prueba=hilo-crece]");
+      await pagina.waitForTimeout(700);
+      const despues = await forma();
+      revisar(Boolean(antes) && antes === despues, "en el teléfono, cuando la barra del navegador cambia el alto visible, la forma no salta");
+      await ctx.close();
+    }
+    // En #pagina, en pantalla ancha: en el encabezado se ve el tronco (la máscara corta solo los renglones y los botones).
+    {
+      const { ctx, pagina } = await abrir({ ruta: "#pagina", raiz: ".pag-vista .mk-pagina", opciones: { viewport: { width: 1400, height: 900 } } });
+      await pagina.selectOption("[data-prueba=relato-pagina]", "ramas");
+      await pagina.waitForSelector(".pag-vista .mk-ramas [data-hueco]", { timeout: 4000 }).catch(() => {});
+      await pagina.waitForTimeout(700);
+      const visto = await pagina.evaluate(() => {
+        const pag = document.querySelector(".pag-vista .mk-pagina");
+        const svg = pag.querySelector("svg.mk-ramas");
+        const enc = pag.querySelector(".mk-enc");
+        if (!svg || !enc) return -1;
+        const huecos = [...svg.querySelectorAll("[data-hueco]")].map((h) => ["x", "y", "width", "height"].map((n) => Number(h.getAttribute(n))));
+        const alto = enc.offsetHeight;
+        // Lo que se ve del tronco en el encabezado recién cargada la página: fuera de los huecos y ya dibujado.
+        let libres = 0;
+        for (const t of svg.querySelectorAll("path[data-rama=tronco]")) {
+          const L = t.getTotalLength();
+          const dibujado = 1 - Math.min(1, Math.max(0, parseFloat(getComputedStyle(t).strokeDashoffset) || 0));
+          for (let s = 0; s < L * dibujado; s += 4) {
+            const q = t.getPointAtLength(s);
+            if (q.y <= alto && !huecos.some(([x, y, w, a]) => q.x >= x && q.x <= x + w && q.y >= y && q.y <= y + a)) libres += 4;
+          }
+        }
+        return libres;
+      });
+      revisar(visto >= 200, `en el encabezado de #pagina se ve el tronco apenas carga la página (${visto} px dibujados a la vista)`);
+      // Una tira que se desliza al bajar (el relato «carrete» en la galería) es un hueco entero: sus fotos se mueven.
+      await pagina.selectOption("[data-prueba=relato-galeria]", "carrete");
+      await pagina.waitForTimeout(900);
+      const tira = await tapada(pagina, ".pag-vista .mk-pagina", '.pag-vista [data-bloque="galeria"]');
+      revisar(tira === true, `una tira que se desliza al bajar queda entera bajo un hueco (${tira})`);
+      await ctx.close();
+    }
+  }
+  for (const [que, opciones, respaldo] of [["con movimiento reducido", { reducedMotion: "reduce" }, false], ["sin scroll nativo", {}, true]]) {
+    const { ctx, pagina, errores } = await abrir({ hilo: "ramas", opciones: { viewport: { width: 390, height: 844 }, ...opciones } });
+    if (respaldo) await pagina.locator("[data-prueba=hilo-respaldo]").check();
+    await pagina.waitForTimeout(700);
+    const hay = await pagina.evaluate(() => document.querySelectorAll("[data-prueba=hilo-pagina] .mk-ramas").length);
+    revisar(hay === 0 && errores.length === 0, `${que} no hay ramas`);
     await ctx.close();
   }
 }
