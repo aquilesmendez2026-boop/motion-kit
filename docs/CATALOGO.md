@@ -101,6 +101,13 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.1 (25-11-2026)
+
+Etiqueta `v0.5.1`: suma el hilo de página `rastro` (huellas del rubro por el recorrido, sin línea). Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.5.1`. El contrato de página suma `rastro` a `relatoPagina` (solo agrega);
+los del encabezado y la partitura no cambian. Antes de la etiqueta: 318 pruebas calculables, pesos dentro de sus topes
+y la batería visual completa.
+
 ## Paquete v0.5.0 (25-11-2026)
 
 Etiqueta `v0.5.0`: suma la entrada `motion-kit/luz` («Luz y materia»), cuatro momentos que se manejan con el dedo

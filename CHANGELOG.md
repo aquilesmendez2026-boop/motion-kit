@@ -1,6 +1,9 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.5.0)
+## 0.5.1 (25-11-2026)
+
+Un hilo de página nuevo, `rastro`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la
+partitura no cambian.
 
 ### Rastro: huellas por el recorrido
 
