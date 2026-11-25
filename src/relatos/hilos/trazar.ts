@@ -3,7 +3,8 @@
 // El hilo va por lo libre: baja por la orilla de cada bloque (entre el borde y su contenido), cruza al otro lado en el
 // paso de un bloque al siguiente (con un rulo, si cabe), se abre en hebras por los canales de un bloque con tarjetas y
 // se junta abajo. Donde no cabe, pasa por debajo: ese tramo no se dibuja y queda una puntada donde entra y otra donde
-// sale. Con «figura», termina dibujando la figura en el remate del final de la página.
+// sale. Con «figura», termina dibujando la figura en el remate del final de la página. Con «enredadera», va sin hebras
+// y en el remate llega a una flor por abajo (las hojas las pone `enredadera.ts`).
 // Cada tramo dice en qué parte del scroll se dibuja (de 0 a 100): el navegador hace el resto.
 import type { FiguraId } from "../catalogo";
 import { puntosDeFigura } from "./figuras";
@@ -43,7 +44,7 @@ export interface Medidas {
   /** Con «figura»: dónde está el remate (la franja del final). Sin esto, se supone que es lo último de la página. */
   remate?: { arriba: number; alto: number } | null;
 }
-export type TipoHilo = "rulos" | "hebras" | "figura";
+export type TipoHilo = "rulos" | "hebras" | "figura" | "enredadera";
 export interface OpcionesHilo {
   tipo: TipoHilo;
   semilla: string;
@@ -74,9 +75,18 @@ export interface Nudo extends Punto {
   en: number;
   clase: "nudo" | "puntada";
 }
+/** La flor del final de la enredadera: su centro, su radio, cuántos pétalos y cuándo se abre (ms, desde que el remate se ve). */
+export interface Flor extends Punto {
+  radio: number;
+  /** En grados: cuánto va girado el primer pétalo. */
+  giro: number;
+  petalos: number;
+  espera: number;
+}
 export interface Trazado {
   tramos: Tramo[];
   nudos: Nudo[];
+  flor?: Flor;
 }
 
 /** Lo mínimo libre para que pase una línea. */
@@ -105,12 +115,12 @@ const cajaVale = (c: unknown): c is Caja => {
  * Un número repetible entre 0 y 1 (el mismo de `efectos/semilla`, copiado: si este archivo, que se baja aparte, lo
  * importara, el empaquetador lo separaría de la página y ella pesaría más al cargar).
  */
-function azar(i: number, sal: number): number {
+export function azar(i: number, sal: number): number {
   const x = Math.sin((i + 1) * 12.9898 + sal * 78.233) * 43758.5453;
   return x - Math.floor(x);
 }
 /** Un número del texto (para la semilla). */
-function numeroDe(texto: string): number {
+export function numeroDe(texto: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 0x01000193);
   return h >>> 0;
@@ -336,9 +346,10 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
   const sal = numeroDe(typeof o.semilla === "string" ? o.semilla : "") % 9973;
   const al = (i: number) => azar(i, sal);
   const conFigura = o.tipo === "figura";
-  /** Con «figura»: el remate, donde va la figura. Lo que se midió; si no, lo último de la página. */
+  const enredadera = o.tipo === "enredadera";
+  /** Con «figura» o «enredadera»: el remate, donde va la figura o la flor. Lo que se midió; si no, lo último de la página. */
   const medido = m.remate && fin(m.remate.arriba) && fin(m.remate.alto) && m.remate.alto > 0 ? m.remate : null;
-  const remate = conFigura ? (medido ?? { arriba: m.alto - REMATE, alto: REMATE }) : null;
+  const remate = conFigura || enredadera ? (medido ?? { arriba: m.alto - REMATE, alto: REMATE }) : null;
   /** Hasta dónde llegan los bloques. */
   const fondo = remate ? remate.arriba : m.alto;
   const en = (y: number) => scrollDe(y, m);
@@ -350,7 +361,7 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
     const [y0, y1] = alturas ?? [puntos[0].y, Math.max(...puntos.map((q) => q.y))];
     // Cada tramo ocupa al menos 2 puntos del scroll: uno que cabe en un instante se dibujaría de golpe. Y lo que
     // llega al final de la página termina de dibujarse cuando se termina de bajar.
-    let hasta = Math.max(en(!conFigura && y1 >= fondo - 8 ? m.alto : y1), Math.min(100, en(y0) + 2));
+    let hasta = Math.max(en(!remate && y1 >= fondo - 8 ? m.alto : y1), Math.min(100, en(y0) + 2));
     let desde = Math.max(0, Math.min(en(y0), hasta - 2));
     if (clase === "tronco") {
       desde = Math.min(98, Math.max(desde, dibujado));
@@ -446,12 +457,12 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
     /** Desde dónde queda libre la orilla para abrirse: bajo el doblez y bajo el rulo. */
     const techo = Math.max(ahora.y + (esquina ? DOBLEZ : 0), cruce ? cruce.medio + cruce.radio : -Infinity) + 3;
     /** Hasta dónde llega el hilo de este bloque si es el último. */
-    const final = conFigura ? fondo + 14 : Math.min(b.abajo, fondo) - 6;
+    const final = remate ? fondo + 14 : Math.min(b.abajo, fondo) - 6;
     // Hasta dónde pueden llegar las hebras para juntarse. Si el bloque de abajo cruza en su propio relleno, hasta el
     // borde entre los dos. Si no, el cruce de abajo va en este mismo espacio: las hebras toman un poco menos de la mitad.
     const libre = ultimoDe(b);
     const piso = !abajo ? final - 3 : cruzaEnLoSuyo(abajo) ? abajo.caja.arriba - 3 : libre + (primero(abajo) - libre) * 0.45;
-    let hebras = o.tipo === "rulos" ? null : abrir(b, techo, piso);
+    let hebras = o.tipo === "rulos" || enredadera ? null : abrir(b, techo, piso);
     // El cruce que sigue parte bajo lo que ocuparon las hebras al juntarse.
     let sigue = cruceDe(i + 1, hebras ? hebras.junta + hebras.holgura : undefined);
     // La bajada termina un poco antes del cruce que sigue: así el tramo siguiente parte doblando, no en una esquina.
@@ -502,6 +513,31 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
     cruce = sigue;
   }
 
+  const largo = (ps: Punto[]) => ps.slice(1).reduce((t, q, k) => t + Math.hypot(q.x - ps[k].x, q.y - ps[k].y), 0);
+  if (remate && enredadera) {
+    // La flor, arriba en el remate y un poco corrida según la semilla. El tallo llega por abajo: baja por su orilla
+    // hasta bajo la flor, va hacia ella y sube derecho hasta su centro (así no la cruza; los pétalos lo tapan). En un
+    // remate chico (menos de 76 px; el de la página mide 140) no cabe el tallo: va la flor sola, más chica.
+    const conTallo = remate.alto >= 76;
+    const radio = Math.max(1, Math.min(30, conTallo ? (remate.alto - 60) / 2 : (remate.alto - 8) / 2, m.ancho * 0.12));
+    const x = m.ancho / 2 + (al(98) - 0.5) * 0.3 * m.ancho;
+    const y = remate.arriba + (conTallo ? 12 : 4) + radio;
+    const base = Math.min(remate.arriba + remate.alto - 10, y + radio + 40);
+    // Si el último bloque no dejaba lugar (una foto de lado a lado), el tallo pasó por debajo: sale al empezar el
+    // remate, con su ojal, por el mismo lado.
+    let desde: Punto | null = null;
+    if (punta && !porDebajo && punta.y >= fondo - 1) desde = punta;
+    else if (punta) {
+      desde = { x: acota(punta.x, 7, m.ancho - 7), y: fondo + 6 };
+      puntada(desde);
+    }
+    const llegada = conTallo && desde && desde.y < base - DOBLEZ ? quebrada([desde, { x: desde.x, y: base }, { x, y: base }, { x, y: y + radio * 0.3 }], 8, DOBLEZ) : [];
+    if (!llegada.length && desde && desde !== punta) nudos.pop();
+    const dura = llegada.length > 1 ? Math.round(acota((largo(llegada) / PASO_FINAL) * 1000, 300, 900)) : 0;
+    if (dura) tramos.push({ d: suave(llegada), puntos: llegada, desde: 100, hasta: 100, clase: "tronco", tiempo: { espera: 0, dura } });
+    const petalos = al(97) < 0.5 ? 5 : 6;
+    return { tramos, nudos, flor: { x, y, radio, giro: Math.round(al(96) * (360 / petalos)), petalos, espera: dura } };
+  }
   if (remate) {
     // La figura, en el remate: centrada, girada un poco según la semilla, y de corrido desde la punta del hilo.
     const tamano = Math.max(24, Math.min(96, remate.alto - 44, m.ancho * 0.6));
@@ -514,7 +550,6 @@ export function trazarHilos(m: Medidas, o: OpcionesHilo): Trazado {
     // Al punto de partida de la figura se llega por arriba (de lado por lo alto del remate y después derecho hacia
     // abajo): así el hilo no la cruza. Esa llegada es hilo, no figura: en quieto, donde no hay hilo, queda la figura sola.
     const llegada = punta && !porDebajo && punta.y >= fondo - 1 ? quebrada([punta, { x: figura[0].x, y: punta.y }, figura[0]], 8, DOBLEZ) : [];
-    const largo = (ps: Punto[]) => ps.slice(1).reduce((t, q, k) => t + Math.hypot(q.x - ps[k].x, q.y - ps[k].y), 0);
     // El final va con tiempo: primero la llegada, después la figura, al mismo paso.
     const espera = llegada.length > 1 ? Math.round(acota((largo(llegada) / PASO_FINAL) * 1000, 200, 700)) : 0;
     if (llegada.length > 1) tramos.push({ d: suave(llegada), puntos: llegada, desde: 100, hasta: 100, clase: "tronco", tiempo: { espera: 0, dura: espera } });

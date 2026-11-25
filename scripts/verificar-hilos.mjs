@@ -1,14 +1,14 @@
-// Verifica los hilos (rulos, hebras y figura) en #hilos: una página que imita una de La Mente en el teléfono.
+// Verifica los hilos (rulos, hebras, figura, rastro y enredadera) en #hilos: una página que imita una de La Mente en el teléfono.
 // Uso: npm run dev (en otra terminal) y después
 // `node scripts/verificar-hilos.mjs [http://localhost:5173] [parte]`, donde la parte (opcional) es rulos, hebras,
 // figura, niveles, marco (la página dentro de un marco con scroll propio, en #relatos) o lamente (la página como una de
 // La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden), material (el hilo de cada estilo)
-// o rastro (huellas por el recorrido).
+// rastro (huellas por el recorrido) o enredadera (tallo con hojas que se mecen y una flor al final).
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:5173";
 const solo = process.argv[3];
-const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro"];
+const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro", "enredadera"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -706,6 +706,227 @@ if (parte("rastro")) {
     await pagina.waitForTimeout(800);
     const h = await huellas(pagina);
     revisar(Boolean(h) && !h.vivo && h.todas.length > 40 && h.todas.every((x) => x.opacidad > 0.8) && errores.length === 0, `${que} las huellas están todas, quietas (${h?.todas.length})`);
+    await ctx.close();
+  }
+}
+
+// --- Enredadera: un tallo con hojas que brotan al bajar, se mecen con el viento del scroll y una flor al final ---
+if (parte("enredadera")) {
+  /**
+   * Las hojas y la flor: dónde está la base de cada hoja (según su dibujo, con lo que la mece incluido), su contorno en
+   * la pantalla, cuánto se ve y cuánto se mece; y de la flor, sus pétalos.
+   */
+  const planta = (pagina) =>
+    pagina.evaluate(() => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      if (!svg) return null;
+      const c = svg.getBoundingClientRect();
+      const k = c.width / (Number(svg.getAttribute("width")) || 1);
+      const hojas = [...svg.querySelectorAll("[data-hoja]")].map((g) => {
+        const path = g.querySelector("path");
+        const m = path.getScreenCTM();
+        const base = new DOMPoint(0, 0).matrixTransform(m);
+        const largo = path.getTotalLength();
+        const contorno = Array.from({ length: 13 }, (_, i) => {
+          const q = path.getPointAtLength((largo * i) / 12);
+          const e = new DOMPoint(q.x, q.y).matrixTransform(m);
+          return { x: e.x, y: e.y };
+        });
+        const rot = getComputedStyle(g.querySelector("[data-mece]")).rotate;
+        return {
+          x: c.left + Number(g.dataset.x) * k, y: c.top + Number(g.dataset.y) * k, base: { x: base.x, y: base.y }, contorno,
+          opacidad: Number(getComputedStyle(path).opacity), giro: rot === "none" ? 0 : parseFloat(rot), tiempo: g.hasAttribute("data-tiempo"),
+        };
+      });
+      const flor = svg.querySelector("[data-flor]");
+      const petalos = flor ? [...flor.querySelectorAll("[data-petalo]")].map((q) => { const r = q.getBoundingClientRect(); return { opacidad: Number(getComputedStyle(q).opacity), ancho: r.width, x: r.left + r.width / 2, y: r.top + r.height / 2 }; }) : [];
+      return {
+        vivo: svg.hasAttribute("data-vivo"), final: svg.hasAttribute("data-final"), viento: svg.querySelector("[data-hojas]")?.style.getPropertyValue("--mk-viento") ?? "",
+        tramos: [...svg.querySelectorAll("path[data-tramo]")].map((t) => t.dataset.clase), hojas, petalos,
+        flor: flor ? (() => { const r = flor.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, ancho: r.width }; })() : null,
+      };
+    });
+  {
+    const { ctx, pagina, errores, alBajar, nativo } = await abrir({ hilo: "enredadera" });
+    await pagina.waitForTimeout(500);
+    const arriba = await planta(pagina);
+    revisar(Boolean(arriba) && arriba.hojas.length > 40 && arriba.tramos.length > 3 && arriba.tramos.every((t) => t === "tronco") && arriba.petalos.length >= 5 && errores.length === 0, `con «enredadera» hay un tallo (sin hebras), ${arriba?.hojas.length} hojas y una flor de ${arriba?.petalos.length} pétalos${errores.length ? ` (${errores[0]})` : ""}`);
+    // Cada hoja nace en el tallo: su base (la de su dibujo) es el punto que dice el trazado.
+    const lejosBase = Math.max(...arriba.hojas.map((h) => Math.hypot(h.base.x - h.x, h.base.y - h.y)));
+    revisar(lejosBase < 0.6, `cada hoja nace en su punto del tallo (a lo más ${lejosBase.toFixed(2)} px)`);
+    alBajar(arriba.hojas.filter((h) => h.y > 844 * 1.6).every((h) => h.opacidad < 0.05) && arriba.petalos.every((q) => q.opacidad < 0.05), "arriba de todo, las hojas de más abajo y la flor todavía no están");
+    // Al bajar, brotan en orden y a la vista.
+    const vistas = [];
+    let enOrden = true;
+    for (const k of ALTURAS) {
+      await bajar(pagina, k);
+      const h = await planta(pagina);
+      const alScroll = h.hojas.filter((x) => !x.tiempo);
+      vistas.push(alScroll.filter((x) => x.opacidad > 0.5 && x.y >= 0 && x.y <= 844).length);
+      const ultima = alScroll.findLastIndex((x) => x.opacidad > 0.5);
+      if (alScroll.slice(0, Math.max(0, ultima - 2)).some((x) => x.opacidad < 0.5)) enOrden = false;
+    }
+    alBajar(vistas.filter((n) => n >= 3).length >= 7 && enOrden, `al bajar, las hojas brotan una tras otra, en orden y a la vista (a la vista en diez alturas: ${vistas.join(", ")})`);
+    // El viento: bajando rápido las hojas se inclinan, cada una a su lado, sin despegarse del tallo; al parar se calman.
+    await bajar(pagina, 0.35);
+    await pagina.waitForTimeout(400);
+    const viento = () => {
+      const g = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos [data-hojas]");
+      return g ? parseFloat(g.style.getPropertyValue("--mk-viento")) || 0 : 0;
+    };
+    const rafaga = await pagina.evaluate(async (leer) => {
+      const viento = new Function(`return (${leer})()`);
+      let maximo = 0;
+      for (let i = 0; i < 18; i++) {
+        window.scrollBy(0, 70);
+        await new Promise((r) => requestAnimationFrame(r));
+        maximo = Math.max(maximo, Math.abs(viento()));
+      }
+      return maximo;
+    }, viento.toString());
+    const enRafaga = await planta(pagina);
+    // Al soltar, cada cuadro: se pasa un poco hacia afuera y vuelve, sin quedar cortado en el tope del rebote.
+    const rebote = await pagina.evaluate(async (leer) => {
+      const viento = new Function(`return (${leer})()`);
+      let minimo = 0;
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => requestAnimationFrame(r));
+        minimo = Math.min(minimo, viento());
+      }
+      return minimo;
+    }, viento.toString());
+    alBajar(rebote < -0.2 && rebote > -1.99, `al soltar, las hojas rebotan un poco hacia afuera y vuelven (hasta ${rebote.toFixed(2)}°, sin quedar cortadas en el tope de 2°)`);
+    const inclinadas = enRafaga.hojas.filter((h) => Math.abs(h.giro) > 1);
+    const lados = new Set(inclinadas.map((h) => Math.sign(h.giro)));
+    const pegadas = Math.max(...enRafaga.hojas.map((h) => Math.hypot(h.base.x - h.x, h.base.y - h.y)));
+    await pagina.waitForTimeout(2200);
+    const calma = await planta(pagina);
+    // La punta se mueve (la hoja gira de verdad) y la base no (gira desde ahí): es la hoja la que se mece, no su lugar.
+    const puntas = enRafaga.hojas.map((h, i) => Math.hypot(h.contorno[6].x - calma.hojas[i].contorno[6].x, h.contorno[6].y - calma.hojas[i].contorno[6].y));
+    alBajar(rafaga > 4 && inclinadas.length > 10 && lados.size === 2 && pegadas < 0.6 && Math.max(...puntas) > 1, `bajando rápido, las hojas se mecen (viento de ${rafaga.toFixed(1)}°, ${inclinadas.length} inclinadas, a uno y otro lado; la punta se corre hasta ${Math.max(...puntas).toFixed(1)} px) sin despegarse del tallo (${pegadas.toFixed(2)} px)`);
+    revisar(calma.viento === "" && calma.hojas.every((h) => Math.abs(h.giro) < 0.01), `al parar, las hojas vuelven a su lugar y el viento se apaga${calma.viento ? ` (queda ${calma.viento})` : ""}`);
+    // El final (en una página recién abierta, que llega de una al final): la flor se abre cuando el remate se ve,
+    // después de que llega el tallo, y brotan las hojas de su tallo.
+    // Si ya se vio el final de «figura» y se cambia a «enredadera», el final suyo parte de cero: la flor se abre, no
+    // aparece abierta.
+    {
+      const { ctx: c4, pagina: p4, alBajar: alBajar4 } = await abrir({ hilo: "figura" });
+      await bajar(p4, 1);
+      await p4.waitForTimeout(2500);
+      await p4.selectOption("[data-prueba=hilo-tipo]", "enredadera");
+      await p4.waitForSelector(`${P} svg.mk-hilos [data-flor]`);
+      await p4.waitForTimeout(120);
+      const recien = await planta(p4);
+      await p4.waitForTimeout(2600);
+      const luego = await planta(p4);
+      alBajar4(recien.petalos.every((q) => q.opacidad < 0.5) && luego.final && luego.petalos.every((q) => q.opacidad > 0.8), "después de ver el final de «figura», al cambiar a «enredadera» la flor se abre (no aparece abierta)");
+      await c4.close();
+    }
+    const { ctx: ctx2, pagina: p2, alBajar: alBajar2 } = await abrir({ hilo: "enredadera" });
+    await bajar(p2, 1);
+    await p2.waitForTimeout(150);
+    const recien = await planta(p2);
+    await p2.waitForTimeout(2600);
+    const fin = await planta(p2);
+    await ctx2.close();
+    const finales = fin.hojas.filter((h) => h.tiempo);
+    alBajar2(recien.final && recien.petalos.every((q) => q.opacidad < 0.5) && fin.petalos.every((q) => q.opacidad > 0.8) && finales.length >= 1 && finales.every((h) => h.opacidad > 0.8), `al llegar al final la flor se abre con tiempo (recién: cerrada; después: abierta, de ${Math.round(fin.flor?.ancho ?? 0)} px) y brotan las ${finales.length} hojas de su tallo` + ``);
+    // Si lo último del tallo se dibuja tarde (aquí, a propósito, en el último 1 % del scroll), la flor espera a que
+    // termine aunque el remate ya se vea.
+    {
+      const { ctx: c3, pagina: p3, alBajar: alBajar3 } = await abrir({ hilo: "enredadera" });
+      await p3.evaluate(() => {
+        const ultimo = [...document.querySelectorAll("[data-prueba=hilo-pagina] svg.mk-hilos path[data-tramo]:not([data-tiempo])")].pop();
+        for (const q of ultimo.closest("[data-capas]")?.querySelectorAll("path") ?? [ultimo]) {
+          q.style.setProperty("--mk-h-d", "99%");
+          q.style.setProperty("--mk-h-h", "100%");
+        }
+      });
+      const casi = await p3.evaluate(() => {
+        const r = document.querySelector("[data-prueba=hilo-pagina] .mk-hilos-remate").getBoundingClientRect();
+        const e = document.scrollingElement;
+        e.scrollTo(0, scrollY + r.bottom - innerHeight + 4);
+        return (100 * e.scrollTop) / (e.scrollHeight - e.clientHeight);
+      });
+      await p3.waitForTimeout(700);
+      const antes = await planta(p3);
+      await bajar(p3, 1);
+      await p3.waitForTimeout(400);
+      const despues = await planta(p3);
+      alBajar3(casi < 99 && !antes.final && despues.final, `con el remate a la vista pero el tallo sin terminar (scroll en ${casi.toFixed(1)} %), la flor espera; al terminar de bajar, se abre`);
+      await c3.close();
+    }
+    revisar(Boolean(fin.flor) && fin.flor.y > 0 && fin.flor.y < 844 && fin.flor.ancho >= 40, `la flor queda entera a la vista al terminar de bajar (centro en y = ${Math.round(fin.flor?.y ?? -1)})`);
+    // Cada pétalo en su lugar, alrededor del centro (no todos encima del primero).
+    const angulos = (fin.petalos ?? []).map((q) => Math.atan2(q.y - fin.flor.y, q.x - fin.flor.x));
+    const separados = angulos.every((a, i) => angulos.every((b, j) => i === j || Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))) > 0.6));
+    revisar(angulos.length >= 5 && separados, `los ${angulos.length} pétalos quedan repartidos alrededor del centro`);
+    // Ni el tallo ni las hojas pisan el contenido.
+    await asentar(pagina);
+    await pagina.waitForTimeout(500);
+    const tallo = await pisados(pagina);
+    const malas = await pagina.evaluate(() => {
+      const cajas = window.__contenido();
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      return [...svg.querySelectorAll("[data-hoja] path")].flatMap((path) => {
+        const m = path.getScreenCTM();
+        const largo = path.getTotalLength();
+        for (let i = 0; i <= 12; i++) {
+          const q = path.getPointAtLength((largo * i) / 12);
+          const e = new DOMPoint(q.x, q.y).matrixTransform(m);
+          const b = cajas.find((c) => e.x > c.izq + 0.5 && e.x < c.der - 0.5 && e.y > c.arriba + 0.5 && e.y < c.abajo - 0.5);
+          if (b) return [`(${Math.round(e.x)}, ${Math.round(e.y)}) sobre «${b.que}»`];
+        }
+        return [];
+      });
+    });
+    revisar(tallo.malos.length === 0 && malas.length === 0, `ni el tallo ni las hojas pisan el contenido${[...tallo.malos, ...malas].length ? ` (${[...tallo.malos, ...malas].slice(0, 3).join("; ")})` : ""}`);
+    void nativo;
+    await ctx.close();
+  }
+  // Una página donde quien hace scroll es el `body` (`html` con `overflow: hidden`): el hilo igual se dibuja al bajar y
+  // las hojas se mecen.
+  {
+    const { ctx, pagina, errores, alBajar } = await abrir({ hilo: "enredadera" });
+    await pagina.addStyleTag({ content: "html{overflow:hidden;height:100%}body{overflow:auto;height:100%;margin:0}" });
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "rulos");
+    await pagina.waitForTimeout(300);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "enredadera");
+    await pagina.waitForTimeout(900);
+    const r = await pagina.evaluate(async () => {
+      const svg = document.querySelector("[data-prueba=hilo-pagina] svg.mk-hilos");
+      const g = svg.querySelector("[data-hojas]");
+      document.body.scrollTo(0, 1200);
+      await new Promise((x) => setTimeout(x, 300));
+      let maximo = 0;
+      for (let i = 0; i < 18; i++) {
+        document.body.scrollBy(0, 70);
+        await new Promise((x) => requestAnimationFrame(x));
+        maximo = Math.max(maximo, Math.abs(parseFloat(g.style.getPropertyValue("--mk-viento")) || 0));
+      }
+      return { vivo: svg.hasAttribute("data-vivo"), maximo, baja: document.body.scrollTop > 1200 };
+    });
+    alBajar(r.baja && r.vivo && r.maximo > 4 && errores.length === 0, `con el scroll en el \`body\` el hilo se dibuja al bajar y las hojas se mecen (vivo: ${r.vivo}, viento de ${r.maximo.toFixed(1)}°)`);
+    await ctx.close();
+  }
+  // Con movimiento reducido: solo la flor, abierta y quieta; sin viento. Sin scroll nativo: todo entero y quieto.
+  for (const [que, opciones, respaldo] of [["con movimiento reducido", { reducedMotion: "reduce" }, false], ["sin scroll nativo", {}, true]]) {
+    const { ctx, pagina, errores } = await abrir({ hilo: "enredadera", opciones: { viewport: { width: 390, height: 844 }, ...opciones } });
+    if (respaldo) await pagina.locator("[data-prueba=hilo-respaldo]").check();
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "rulos");
+    await pagina.waitForTimeout(300);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "enredadera");
+    await pagina.waitForTimeout(800);
+    await pagina.evaluate(async () => {
+      for (let i = 0; i < 10; i++) {
+        window.scrollBy(0, 80);
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+    });
+    const h = await planta(pagina);
+    const flor = h?.petalos.length >= 5 && h.petalos.every((q) => q.opacidad > 0.8);
+    if (respaldo) revisar(Boolean(h) && !h.vivo && h.hojas.length > 40 && h.hojas.every((x) => x.opacidad > 0.8 && x.giro === 0) && h.tramos.length > 3 && flor && h.viento === "" && errores.length === 0, `${que} el tallo, las ${h?.hojas.length} hojas y la flor están enteros y quietos, sin viento`);
+    else revisar(Boolean(h) && !h.vivo && h.hojas.length === 0 && h.tramos.length === 0 && flor && h.viento === "" && errores.length === 0, `${que} queda solo la flor, abierta y quieta`);
     await ctx.close();
   }
 }

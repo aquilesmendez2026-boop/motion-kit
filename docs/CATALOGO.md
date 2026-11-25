@@ -922,7 +922,7 @@ Tres relatos de página más, hermanos del Hilo. Van **por delante** de los bloq
 relleno), y se ven en un teléfono con páginas de franjas pegadas como las de La Mente. Cada uno incluye al anterior.
 Diseño `docs/superpowers/specs/2026-11-25-hilos-design.md`, plan `docs/superpowers/plans/2026-11-25-hilos.md`.
 Vitrina `#hilos` (la página puede verse con un estilo del kit, como una de La Mente o en su vista previa). Prueba:
-`scripts/verificar-hilos.mjs [url] [rulos|hebras|figura|niveles|marco|lamente|material|rastro]`.
+`scripts/verificar-hilos.mjs [url] [rulos|hebras|figura|niveles|marco|lamente|material|rastro|enredadera]`.
 
 | `relatoPagina` | Nombre | Qué hace |
 |---|---|---|
@@ -930,6 +930,7 @@ Vitrina `#hilos` (la página puede verse con un estilo del kit, como una de La M
 | `hebras` | Hebras | Además, en un bloque con dos o más tarjetas (`data-mk-parte="tarjeta"`) se abre en hebras por sus canales (las orillas y entre columnas; a lo más 5), deja un nudo junto a cada tarjeta y se junta abajo |
 | `figura` | Hilo que dibuja | Además, al final el mismo hilo dibuja una figura del rubro de un solo trazo, en una franja propia de 140 px (el remate) |
 | `rastro` | Rastro | Sin línea: huellas que aparecen una tras otra por el mismo recorrido (sin rulos), alternando el lado y mirando hacia donde van. La forma sale de `figura`: patitas (`huella`), granos de café (`taza`), sésamo (`hamburguesa`), puntadas (`tijera`, `lapiz`), corazones (`corazon`), pisadas (las demás) o estrellitas. Solo `opacity` y `scale`: no necesita la excepción del trazo. Donde hay poco lugar se achican; donde no cabe ni una chica, no van. Con «reducir movimiento», todas quietas |
+| `enredadera` | Enredadera | El hilo como un tallo, por el recorrido de `rulos` (los rulos son sus zarcillos). Le brotan hojas al bajar, una cada 30 px más o menos, cuando el tallo pasa por ellas, alternando el lado y apuntando hacia donde crece; donde hay poco lugar se achican o se pegan al tallo, y donde no caben, no van. **Se mecen con el viento del scroll**: mientras más rápido se baja (o se sube), más se pliegan hacia el tallo (hasta 20°, cada una con su fuerza, nunca al otro lado del tallo) y al parar vuelven con un rebote chico; plegadas o en el rebote tampoco tocan el contenido. Al final, en el remate de 140 px, el tallo llega por abajo a una **flor** de 5 o 6 pétalos que se abre con tiempo, cuando el tallo de arriba ya está entero. Si el último bloque no deja lugar (una foto de lado a lado), el tallo sale de bajo él al empezar el remate, con su ojal. En un remate de menos de 76 px va la flor sola, más chica. No usa `figura`. Hojas y pétalos: solo `rotate`, `scale` y `opacity` |
 
 Qué recibe `PaginaRelato` (y la receta de página, con los mismos nombres):
 
@@ -957,7 +958,8 @@ Reglas que cuidar:
   una tarjeta levantada.
 - **Se vuelve a medir** cuando algo cambia de tamaño (una foto que carga, un bloque que crece) o de orden (bloques que
   se reordenan sin cambiar de tamaño). Varios cambios seguidos se miden una sola vez, cuando se calman.
-- **Dentro de un marco con su propio scroll** sigue al scroll del marco. En una **vista previa achicada y sin scroll
+- **Dentro de un marco con su propio scroll** sigue al scroll del marco. Si quien hace scroll es el `body` (con `html`
+  en `overflow: hidden`), sigue al del `body` (desde la enredadera; antes ahí iba entero y quieto). En una **vista previa achicada y sin scroll
   propio** (como la del Estudio: la página dentro de `overflow: hidden` con `transform: scale`) va entera y quieta,
   medida en su lugar: ahí el scroll no la dibujaría nunca. En pantalla ancha va por las orillas de la página.
 - **Color.** Es el acento: `--mk-acento` o, en una página sin el estilo del kit (La Mente), `--lm-acento`. Sobre un
@@ -974,22 +976,25 @@ Reglas que cuidar:
   contenido) y todas se dibujan juntas. Si cambia el estilo, se vuelve a medir.
 - **El encabezado no lleva hilo.** Parte en el paso al segundo bloque.
 - **Sin código al bajar.** Se mide al montar y cuando algo cambia de tamaño (una foto que carga, un bloque que crece);
-  después lo dibuja el navegador, atado al scroll. Con la página quieta no pide cuadros.
+  después lo dibuja el navegador, atado al scroll. Con la página quieta no pide cuadros. La excepción es el viento de
+  la enredadera: mientras la página se mueve, un cuadro por vez deja una sola variable (`--mk-viento`) en el dibujo;
+  al calmarse, la quita y deja de pedir cuadros.
 - **Excepción a «solo `transform` y `opacity`».** Dibujar una línea no se puede con `transform`: como el Hilo de
   siempre, estos animan `stroke-dashoffset` (el trazo) y `offset-distance` (la luz), además de `opacity`. Medido en
   Chromium con el procesador frenado 4 veces: 60 cuadros por segundo al bajar la vitrina, igual que con el Hilo.
 - **Niveles.** Completo con animaciones atadas al scroll (Chrome, Safari 26): todo. Liviano, o un navegador sin ellas:
   el hilo entero y quieto, sin luces. Quieto: sin hilo (con `rulos` o `hebras` el archivo ni se baja); con `figura`,
-  solo la figura, dibujada, en su remate.
+  solo la figura, dibujada, en su remate; con `enredadera`, solo la flor, abierta. Las hojas se mecen solo en completo.
 - **Contrato.** `contrato/pagina-motionkit.json` suma los tres ids, la lista `figura`, los campos `figura` y `semilla`
   y `figuraDeRubro`. Solo agrega; quien valide con el contrato viejo rechaza lo nuevo.
 
-Pesos (gzip): los hilos (y el rastro) van en un archivo aparte de 11,1 KB (el diseño pedía 5), que baja solo si la
-página eligió uno. Al cargar, `motion-kit/pagina` pasa de 15,5 a 16,2 KB (tope 17) y `motion-kit` de 79,4 a 80,3 KB (tope 90, fijado por Aquiles el
+Pesos (gzip): los hilos (con el rastro y la enredadera) van en un archivo aparte de 15,3 KB en ESM, el formato que baja
+el navegador (12,9 antes de la enredadera; el 11,1 que se anotó antes era el de CommonJS; el diseño pedía 5), que
+baja solo si la página eligió uno. Al cargar, `motion-kit/pagina` pasa de 15,5 a 16,3 KB (tope 17) y `motion-kit` de 79,4 a 80,3 KB (tope 90, fijado por Aquiles el
 25-11-2026).
 
-Pruebas: `pruebas/hilos.test.ts` (23), `pruebas/rastro.test.ts` (5) y `scripts/verificar-hilos.mjs` (60 revisiones;
-parte `rastro`). Con el motor de Safari pasan 45 y 16 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
+Pruebas: `pruebas/hilos.test.ts` (23), `pruebas/rastro.test.ts` (5), `pruebas/enredadera.test.ts` (8) y
+`scripts/verificar-hilos.mjs` (77 revisiones; partes `rastro` y `enredadera`). Con el motor de Safari pasan 53 y 24 no aplican: ese motor no tiene animaciones atadas al scroll, así que ahí el hilo va entero y quieto.
 
 ## Safari (sondeo del 24-11-2026)
 

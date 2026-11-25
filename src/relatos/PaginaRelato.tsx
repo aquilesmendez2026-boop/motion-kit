@@ -86,9 +86,12 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
   // Inclinación por velocidad: su archivo se baja aparte y solo en nivel completo.
   const Impulso = useAparte(relatoPagina === "impulso" && nivel === "completo", () => import("../dedo/Impulso"));
   // Los hilos (rulos, hebras, figura): su archivo se baja aparte. En quieto también, por la figura del final.
-  const tipoHilo = relatoPagina === "rulos" || relatoPagina === "hebras" || relatoPagina === "figura" || relatoPagina === "rastro" ? relatoPagina : null;
-  // En quieto, con «figura» queda la figura y con «rastro» las huellas, quietas; con los otros no hay nada que dibujar.
-  const Hilos = useAparte(tipoHilo === "figura" || tipoHilo === "rastro" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
+  const tipoHilo = relatoPagina === "rulos" || relatoPagina === "hebras" || relatoPagina === "figura" || relatoPagina === "rastro" || relatoPagina === "enredadera" ? relatoPagina : null;
+  /** Con «figura» y «enredadera», el final de la página lleva un remate (la figura o la flor). */
+  const conRemate = tipoHilo === "figura" || tipoHilo === "enredadera";
+  // En quieto, con «figura» queda la figura, con «enredadera» la flor y con «rastro» las huellas, quietas; con los
+  // otros no hay nada que dibujar.
+  const Hilos = useAparte(conRemate || tipoHilo === "rastro" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
   // Estela y chispas: igual, aparte y solo en completo.
   const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (
@@ -117,8 +120,8 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
         )}
         {valor.relato === "pelicula" && <div className="mk-cinta" aria-hidden="true"><i /></div>}
         {children}
-        {/* El remate: la franja del final donde el hilo dibuja la figura. Está desde el principio, para que la página no salte. */}
-        {tipoHilo === "figura" && <div className="mk-hilos-remate" aria-hidden="true" />}
+        {/* El remate: la franja del final donde el hilo dibuja la figura (o se abre la flor). Está desde el principio, para que la página no salte. */}
+        {conRemate && <div className="mk-hilos-remate" aria-hidden="true" />}
         {Hilos && tipoHilo && <Hilos pagina={ref} tipo={tipoHilo} semilla={semilla} figura={figura} nivel={nivel} sinScroll={sinScroll} />}
         {Impulso && <Impulso pagina={ref} />}
         {Estela && <Estela pagina={ref} />}

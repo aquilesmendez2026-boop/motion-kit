@@ -4,7 +4,9 @@
  * computa overflow-y auto sin hacer scroll, y medir su alto haría crecer la página sin límite.
  */
 export function contenedorScroll(el: HTMLElement): HTMLElement | null {
-  for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+  for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+    // El `body` tiene scroll propio solo si `html` no se lo pasa a la ventana (con un `overflow` que no es visible).
+    if (p === document.body && getComputedStyle(document.documentElement).overflowY === "visible") break;
     const o = getComputedStyle(p).overflowY;
     if ((o === "auto" || o === "scroll") && p.scrollHeight > p.clientHeight + 1) return p;
   }

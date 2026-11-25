@@ -1,5 +1,20 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.5.1)
+
+### Enredadera: un tallo con hojas y una flor
+
+- **`relatoPagina: "enredadera"`**: el hilo como un tallo, por el recorrido de `rulos`. Le brotan hojas al bajar,
+  alternando el lado; nunca sobre el contenido (se achican, se pegan al tallo o no van). **Se mecen con el viento del
+  scroll**: mientras más rápido se baja, más se pliegan hacia el tallo, y al parar vuelven con un rebote. Al final el
+  tallo llega por abajo a una flor que se abre con tiempo. Con «reducir movimiento», solo la flor, quieta. El contrato
+  de página suma `enredadera` (solo agrega).
+- El archivo aparte de los hilos sube a 15,3 KB gzip (ESM; antes 12,9).
+- **Arreglo, para todos los relatos:** cuando quien hace scroll es el `body` (con `html` en `overflow: hidden`), se
+  toma como el contenedor de scroll. Antes los hilos iban enteros y quietos ahí, y los relatos medían la ventana.
+- Pruebas: `pruebas/enredadera.test.ts` y la parte `enredadera` de `scripts/verificar-hilos.mjs`, también con el motor
+  de Safari.
+
 ## 0.5.1 (25-11-2026)
 
 Un hilo de página nuevo, `rastro`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la

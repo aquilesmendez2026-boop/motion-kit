@@ -1,6 +1,7 @@
-// Los hilos de una página (rulos, hebras, figura): mide la página, arma el trazado y lo dibuja en un SVG de su mismo
-// tamaño, por delante de los bloques. El navegador lo dibuja atado al scroll: después de medir no corre código.
-// Se vuelve a medir solo cuando algo cambia de tamaño. Se baja aparte (lo carga `PaginaRelato`).
+// Los hilos de una página (rulos, hebras, figura, rastro, enredadera): mide la página, arma el trazado y lo dibuja en un SVG de su mismo
+// tamaño, por delante de los bloques. El navegador lo dibuja atado al scroll: después de medir no corre código, salvo
+// el viento de la enredadera (mientras la página se mueve). Se vuelve a medir solo cuando algo cambia de tamaño. Se baja
+// aparte (lo carga `PaginaRelato`).
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import type { NivelEscena } from "../../escena/nivel";
 import { useStyles } from "../../utils/styles";
@@ -8,6 +9,7 @@ import type { FiguraId } from "../catalogo";
 import { contenedorScroll, medirPagina, MIDIENDO } from "./medir";
 import { suave } from "./geometria";
 import { MATERIALES, materialDe, paralela, type Capa, type MaterialId } from "./material";
+import { FORMA_HOJA, FORMA_PETALO, REBOTE, TOPE_MECE, trazarEnredadera, type Hoja } from "./enredadera";
 import { FORMAS_RASTRO, RADIO_RASTRO, trazarRastro, type FormaRastro, type Huella } from "./rastro";
 import { trazarHilos, type TipoHilo, type Tramo, type Trazado } from "./trazar";
 
@@ -38,6 +40,12 @@ export const CSS_HILOS =
   // Las huellas del rastro: rellenas; cada una aparece cuando el scroll llega a ella.
   ".mk-hilos [data-huella] path{fill:currentColor;stroke:none;stroke-dasharray:none;opacity:.9;transform-box:fill-box;transform-origin:center}" +
   "@keyframes mk-hilos-huella{from{opacity:0;scale:1.5}}" +
+  // La enredadera: hojas y pétalos rellenos, que brotan desde su base (el origen de cada uno). Las hojas se mecen con
+  // el viento que deja el scroll (`--mk-viento`, en grados; cada una con su fuerza).
+  ".mk-hilos :is([data-hoja],[data-flor]) path{fill:currentColor;stroke:none;stroke-dasharray:none;opacity:.85;transform-origin:0 0}" +
+  ".mk-hilos [data-flor] circle{fill:color-mix(in srgb,currentColor 35%,#fff);opacity:1;transform-origin:0 0}" +
+  ".mk-hilos [data-mece]{transform-origin:0 0;rotate:calc(var(--mk-viento,0)*var(--mk-mece,0)*1deg)}" +
+  "@keyframes mk-hilos-brota{from{opacity:0;scale:0}}" +
   // Las capas del material (las del tramo, todas con el mismo tramo del scroll).
   ".mk-hilos [data-capas] path{opacity:1}" +
   // La puntada: un ojal por donde el hilo entra o sale.
@@ -52,6 +60,12 @@ export const CSS_HILOS =
   ".mk-hilos[data-vivo] circle{animation:mk-hilos-sale linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) calc(var(--mk-h-d) + 1%)}" +
   ".mk-hilos[data-vivo] [data-huella] path{stroke-dashoffset:0;animation:mk-hilos-huella linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) calc(var(--mk-h-d) + 1.5%)}" +
   ".mk-hilos-luz[data-vivo]{animation:mk-hilos-viaja linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) var(--mk-h-h)}" +
+  ".mk-hilos[data-vivo] [data-hoja] path{stroke-dashoffset:0;animation:mk-hilos-brota linear both;animation-timeline:scroll(nearest);animation-range:var(--mk-h-d) calc(var(--mk-h-d) + 2%)}" +
+  // Las hojas del final y la flor esperan a que el remate se vea; después brotan y se abren con tiempo.
+  ".mk-hilos[data-vivo] :is([data-hoja][data-tiempo] path,[data-flor] path,[data-flor] circle){animation:none;opacity:0}" +
+  ".mk-hilos[data-vivo][data-final] [data-hoja][data-tiempo] path{opacity:.85;animation:mk-hilos-brota var(--mk-h-dura) ease-out var(--mk-h-espera) both;animation-timeline:auto;animation-range:normal}" +
+  ".mk-hilos[data-vivo][data-final] [data-flor] path{opacity:.85;animation:mk-hilos-brota 520ms cubic-bezier(.3,1.4,.5,1) var(--mk-h-espera) both;animation-timeline:auto;animation-range:normal}" +
+  ".mk-hilos[data-vivo][data-final] [data-flor] circle{opacity:1;animation:mk-hilos-brota 420ms cubic-bezier(.3,1.4,.5,1) var(--mk-h-espera) both;animation-timeline:auto;animation-range:normal}" +
   // El final (la llegada y la figura) no va con el scroll: espera a que el remate se vea y se dibuja con tiempo.
   ".mk-hilos[data-vivo] path[data-tiempo]{animation:none;stroke-dashoffset:1}" +
   ".mk-hilos-luz[data-vivo][data-tiempo]{animation:none;opacity:0}" +
@@ -59,6 +73,10 @@ export const CSS_HILOS =
   ".mk-hilos-luz[data-vivo][data-final]{animation:mk-hilos-viaja var(--mk-h-dura) linear var(--mk-h-espera) both;animation-timeline:auto;animation-range:normal}}";
 
 const porciento = (n: number) => `${Math.round(n * 100) / 100}%`;
+/** Con qué velocidad de bajada (px/s) las hojas se pliegan del todo (`TOPE_MECE`). */
+const VIENTO_LLENO = 1800;
+/** Cada cuánto se abre un pétalo después del anterior (ms). */
+const PETALO_TRAS_PETALO = 70;
 /** Los colores de las capas del material. */
 const TINTA: Record<Capa["tinta"], string> = {
   hilo: "currentColor",
@@ -76,9 +94,13 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
   useStyles("hilos", CSS_HILOS);
   const svg = useRef<SVGSVGElement>(null);
   /** Lo último medido: el tamaño de la página, su trazado, si no hay cómo dibujarlo al bajar y el material (el del estilo). */
-  const [hilo, setHilo] = useState<{ ancho: number; alto: number; trazado: Trazado; sinBajada: boolean; material: MaterialId; rastro: { forma: FormaRastro; huellas: Huella[] } | null } | null>(null);
-  /** Si el remate ya se vio: entonces se dibuja el final. */
+  const [hilo, setHilo] = useState<{ ancho: number; alto: number; trazado: Trazado; sinBajada: boolean; material: MaterialId; rastro: { forma: FormaRastro; huellas: Huella[] } | null; hojas: Hoja[] } | null>(null);
+  /** Si el remate ya se vio (y lo de arriba ya se dibujó): entonces se dibuja el final. */
   const [final, setFinal] = useState(false);
+  /** Las hojas de la enredadera: ahí va el viento (así cada cuadro solo recalcula las hojas, no todo el dibujo). */
+  const grupoHojas = useRef<SVGGElement>(null);
+  // Otro hilo, otro final: parte de cero.
+  useEffect(() => setFinal(false), [tipo]);
 
   useEffect(() => {
     const el = pagina.current;
@@ -130,15 +152,18 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
       const acento = svg.current ? getComputedStyle(svg.current).color : "";
       // Con «rastro» no hay línea: van las huellas por el mismo recorrido.
       const rastro = tipo === "rastro" ? trazarRastro(medidas, { semilla, acento, figura }) : null;
-      const trazado = tipo === "rastro" ? { tramos: [], nudos: [] } : trazarHilos(medidas, { tipo, semilla, figura, acento });
+      // Con «enredadera», el tallo (el recorrido de los rulos, hasta la flor) y sus hojas.
+      const enredadera = tipo === "enredadera" ? trazarEnredadera(medidas, { semilla, acento }) : null;
+      const trazado = enredadera ? enredadera.trazado : tipo === "rastro" ? { tramos: [], nudos: [] } : trazarHilos(medidas, { tipo, semilla, figura, acento });
+      const hojas = enredadera?.hojas ?? [];
       bloques.forEach(mirar);
       // Solo se vuelve a dibujar si algo cambió de verdad.
       const sinBajada = !(medidas.recorrido > 0) || !baja;
       const material = materialDe(el.closest("[data-mk-estilo]")?.getAttribute("data-mk-estilo"));
-      const nueva = JSON.stringify([medidas.ancho, medidas.alto, sinBajada, material, trazado.tramos.map((t) => [t.d, t.desde, t.hasta, t.color, t.tiempo]), trazado.nudos, rastro]);
+      const nueva = JSON.stringify([medidas.ancho, medidas.alto, sinBajada, material, trazado.tramos.map((t) => [t.d, t.desde, t.hasta, t.color, t.tiempo]), trazado.nudos, rastro, trazado.flor, hojas]);
       if (nueva === firma) return;
       firma = nueva;
-      setHilo({ ancho: medidas.ancho, alto: medidas.alto, trazado, sinBajada, material, rastro });
+      setHilo({ ancho: medidas.ancho, alto: medidas.alto, trazado, sinBajada, material, rastro, hojas });
     }
     // La barra del navegador del teléfono cambia el alto de la ventana al bajar: eso no es un cambio de página.
     const tactil = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
@@ -164,15 +189,37 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
     };
   }, [pagina, tipo, semilla, figura]);
 
-  // El final se dibuja cuando el remate se ve (una vez).
-  const conTiempo = Boolean(hilo?.trazado.tramos.some((t) => t.tiempo));
+  // El final se dibuja cuando el remate se ve (una vez), y no antes de que lo último del hilo que va con el scroll esté
+  // entero: si ese tramo se dibuja tarde, la llegada y la flor esperan.
+  const conTiempo = Boolean(hilo?.trazado.tramos.some((t) => t.tiempo) || hilo?.trazado.flor);
   useEffect(() => {
     const remate = pagina.current?.querySelector(".mk-hilos-remate");
     if (!conTiempo || final || !remate || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && setFinal(true), { threshold: 0.6 });
+    let visto = false;
+    let cuadro = 0;
+    const entero = () => {
+      const ultimo = [...(svg.current?.querySelectorAll("path[data-tramo]:not([data-tiempo])") ?? [])].pop();
+      return !ultimo || (parseFloat(getComputedStyle(ultimo).strokeDashoffset) || 0) < 0.02;
+    };
+    const mirar = () => {
+      cuadro = 0;
+      if (visto && entero()) setFinal(true);
+    };
+    const pedir = () => {
+      if (visto && !cuadro) cuadro = requestAnimationFrame(mirar);
+    };
+    const io = new IntersectionObserver((e) => {
+      visto = e.some((x) => x.isIntersecting);
+      pedir();
+    }, { threshold: 0.6 });
     io.observe(remate);
-    return () => io.disconnect();
-  }, [pagina, conTiempo, final]);
+    document.addEventListener("scroll", pedir, { capture: true, passive: true });
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(cuadro);
+      document.removeEventListener("scroll", pedir, { capture: true });
+    };
+  }, [pagina, conTiempo, final, hilo]);
 
   const quieto = nivel === "quieto";
   const material = hilo?.material ?? "linea";
@@ -181,6 +228,64 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
   // En quieto no hay hilo: con «figura», solo la figura, dibujada.
   const tramos = hilo ? (quieto ? hilo.trazado.tramos.filter((t) => t.clase === "figura") : hilo.trazado.tramos) : [];
   const nudos = hilo && !quieto ? hilo.trazado.nudos : [];
+  // En quieto, de la enredadera queda la flor (abierta): sin tallo, no hay hojas.
+  const hojas = hilo && !quieto ? hilo.hojas : [];
+  const flor = hilo?.trazado.flor;
+  const mece = vive && tipo === "enredadera" && hojas.length > 0;
+
+  // Las hojas se mecen con el viento del scroll: mientras más rápido se baja (o se sube), más se pliegan hacia el tallo,
+  // y al parar vuelven meciéndose (un resorte). Solo corre mientras se mueven; en reposo no hay variable.
+  useEffect(() => {
+    const s = grupoHojas.current;
+    const el = pagina.current;
+    if (!mece || !s || !el || typeof requestAnimationFrame === "undefined") return;
+    /** Lo que hace scroll: lo dice el último evento (la ventana, el `body` o un contenedor que envuelve la página). */
+    let fuente: Element | null = null;
+    const leer = () => (fuente && fuente !== document.scrollingElement ? fuente.scrollTop : window.scrollY);
+    let cuadro = 0;
+    let antes = 0;
+    let ultimaY = leer();
+    let viento = 0;
+    let rapidez = 0;
+    const paso = (t: number) => {
+      cuadro = 0;
+      const dt = antes ? Math.min(0.05, Math.max(0.004, (t - antes) / 1000)) : 1 / 60;
+      antes = t;
+      const y = leer();
+      const objetivo = Math.min(1, Math.abs(y - ultimaY) / dt / VIENTO_LLENO) * TOPE_MECE;
+      ultimaY = y;
+      // Un resorte que se pasa poco (menos que REBOTE): al soltar, la hoja vuelve meciéndose sin llegar al tope.
+      rapidez += (70 * (objetivo - viento) - 11 * rapidez) * dt;
+      viento += rapidez * dt;
+      if (objetivo === 0 && Math.abs(viento) < 0.05 && Math.abs(rapidez) < 0.2) {
+        antes = 0;
+        viento = rapidez = 0;
+        s.style.removeProperty("--mk-viento");
+        return;
+      }
+      s.style.setProperty("--mk-viento", Math.max(-REBOTE, Math.min(TOPE_MECE, viento)).toFixed(2));
+      cuadro = requestAnimationFrame(paso);
+    };
+    // El scroll de la página (de la ventana, del `body` o de lo que la envuelve) despierta al viento; el de una tira de
+    // adentro, no.
+    const alBajar = (e: Event) => {
+      const t = e.target;
+      const nueva = t === document ? null : t instanceof Element && t.contains(el) ? t : undefined;
+      if (nueva === undefined) return;
+      if (nueva !== fuente) {
+        fuente = nueva;
+        ultimaY = leer();
+        antes = 0;
+      }
+      if (!cuadro) cuadro = requestAnimationFrame(paso);
+    };
+    document.addEventListener("scroll", alBajar, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("scroll", alBajar, { capture: true });
+      cancelAnimationFrame(cuadro);
+      s.style.removeProperty("--mk-viento");
+    };
+  }, [mece, pagina]);
   const [w, h] = [hilo?.ancho ?? 0, hilo?.alto ?? 0];
   return (
     <>
@@ -203,6 +308,26 @@ export default function Hilos({ pagina, tipo, semilla = "", figura, nivel, sinSc
             <path d={FORMAS_RASTRO[hilo.rastro!.forma]} style={{ "--mk-h-d": porciento(u.en) } as CSSProperties} />
           </g>
         ))}
+        <g ref={grupoHojas} data-hojas="">
+        {hojas.map((u, i) => (
+          <g key={`o${i}`} data-hoja="" data-x={u.x.toFixed(1)} data-y={u.y.toFixed(1)} data-giro={u.giro.toFixed(0)} data-tamano={u.tamano} data-tiempo={u.tiempo ? "" : undefined} transform={`translate(${u.x.toFixed(1)} ${u.y.toFixed(1)}) rotate(${u.giro.toFixed(0)}) scale(${u.tamano})`} style={{ color: u.color } as CSSProperties}>
+            <g data-mece="" style={{ "--mk-mece": u.mece.toFixed(2) } as CSSProperties}>
+              <path d={FORMA_HOJA} style={(u.tiempo ? { "--mk-h-espera": `${u.tiempo.espera}ms`, "--mk-h-dura": `${u.tiempo.dura}ms` } : { "--mk-h-d": porciento(u.en) }) as unknown as CSSProperties} />
+            </g>
+          </g>
+        ))}
+        </g>
+        {flor && (
+          <g data-flor="" data-x={flor.x.toFixed(1)} data-y={flor.y.toFixed(1)} data-radio={flor.radio.toFixed(1)} transform={`translate(${flor.x.toFixed(1)} ${flor.y.toFixed(1)}) rotate(${flor.giro}) scale(${(flor.radio / 20).toFixed(3)})`}>
+            {Array.from({ length: flor.petalos }, (_, k) => (
+              // El giro va en un grupo: el pétalo se abre con `scale` (CSS), y en un mismo elemento WebKit puede botar el giro del atributo.
+              <g key={k} transform={`rotate(${Math.round((360 * k) / flor.petalos)})`}>
+                <path data-petalo="" d={FORMA_PETALO} style={{ "--mk-h-espera": `${flor.espera + k * PETALO_TRAS_PETALO}ms` } as CSSProperties} />
+              </g>
+            ))}
+            <circle r={5.5} style={{ "--mk-h-espera": `${flor.espera + flor.petalos * PETALO_TRAS_PETALO}ms` } as CSSProperties} />
+          </g>
+        )}
         {nudos.map((n, i) => (
           <circle key={i} data-nudo="" data-clase={n.clase} cx={n.x} cy={n.y} r={n.clase === "nudo" ? 4 : 3.5} style={{ "--mk-h-d": porciento(n.en) } as CSSProperties} />
         ))}

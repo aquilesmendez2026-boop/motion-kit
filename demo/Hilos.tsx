@@ -1,4 +1,4 @@
-// #hilos: los hilos (rulos, hebras, figura) sobre una página que imita una de La Mente en el teléfono: franjas de lado a
+// #hilos: los hilos (rulos, hebras, figura, rastro, enredadera) sobre una página que imita una de La Mente en el teléfono: franjas de lado a
 // lado, pegadas una a la otra, cada una con su relleno, y que entran corridas hasta que se ven (`data-entrada`, como
 // las de La Mente). Es la vitrina de scripts/verificar-hilos.mjs.
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -8,8 +8,8 @@ import { PaginaRelato } from "../src/relatos/PaginaRelato";
 import { Relato } from "../src/relatos/Relato";
 import { FIGURA_IDS, RELATOS, type FiguraId } from "../src/relatos/catalogo";
 
-type Hilo = "hilo" | "rulos" | "hebras" | "figura" | "rastro";
-const HILOS: Hilo[] = ["rulos", "hebras", "figura", "rastro", "hilo"];
+type Hilo = "hilo" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera";
+const HILOS: Hilo[] = ["rulos", "hebras", "figura", "rastro", "enredadera", "hilo"];
 const CARTA = ["Clásica · $7.900", "Doble · $9.900", "Veggie · $8.500", "Papas · $3.500"];
 const HORARIOS = ["Lunes a jueves · 12:00 a 23:00", "Viernes y sábado · 12:00 a 01:00", "Domingo · 13:00 a 22:00"];
 /** Cómo se ve la página: con un estilo del kit, como una de La Mente (sin estilo del kit: sus colores en `--lm-*`), o en su vista previa (achicada, sin scroll propio). */
