@@ -101,6 +101,15 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.4.0 (24-11-2026)
+
+Etiqueta `v0.4.0`: suma el Director (`motion-kit/director`) con la Partitura **versión 1** y su contrato
+(`contrato/partitura-motionkit.json`), la entrada `motion-kit/partitura` (el lenguaje en español, las partituras de
+la casa y «Sorpréndeme»), la foto profunda, los efectos vistosos (fuegos artificiales, carrusel giratorio y libro que
+se abre), la segunda tanda de momentos y cinco fondos vivos de lienzo. Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.4.0`. Los contratos del encabezado y de la página siguen en su versión
+(suman valores). Antes de la etiqueta: 262 pruebas calculables, pesos dentro de sus topes y la batería visual completa.
+
 ## Paquete v0.3.0 (24-11-2026)
 
 Etiqueta `v0.3.0`: la primera con la receta del encabezado **v2**, los relatos y la receta de página, la entrada
@@ -376,7 +385,7 @@ que caen en `encabezadoPorRubro`.
 Los catorce bloques de La Mente que no tenían momento, y cinco fondos del tipo de la constelación. Diseño
 `docs/superpowers/specs/2026-11-24-momentos-2-y-fondos-design.md`, plan
 `docs/superpowers/plans/2026-11-24-momentos-2-y-fondos.md`. Vitrinas `#momentos` («Segunda tanda») y `#efectos`.
-Sin etiqueta todavía: está en `dev`, después de `v0.3.0`.
+Viaja desde la etiqueta `v0.4.0`.
 
 Los ocho bloques con datos. Todas las piezas salen de `motion-kit/momentos`, se bajan aparte y aceptan `respaldo`
 (lo que se ve mientras llega el archivo, y si no llega):

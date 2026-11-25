@@ -169,11 +169,15 @@ npm install github:aquilesmendez2026-boop/motion-kit
 
 Al instalarla así se compila sola (script `prepare`); no hace falta subir `dist/`.
 
-Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.3.0`.
+Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.4.0`.
 
 Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
-`motion-kit/escena`, `motion-kit/receta` (sin React) y los CSS `motion-kit/estilos.css` y
-`motion-kit/estilos-encabezado.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`.
+`motion-kit/pagina` (los relatos y la receta de página), `motion-kit/momentos` (un momento por bloque),
+`motion-kit/escena`, `motion-kit/receta` (sin React), `motion-kit/director` (hace correr una partitura: un movimiento
+escrito como dato) y `motion-kit/partitura` (para quien crea partituras: el lenguaje en español y las de la casa); y
+los CSS `motion-kit/estilos.css`, `motion-kit/estilos-encabezado.css`, `motion-kit/estilos-pagina.css` y
+`motion-kit/estilos-momentos.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`; el detalle de
+cada cosa, en `docs/CATALOGO.md`.
 
 ```tsx
 import { Reveal, MagneticButton, TiltCard } from "motion-kit";

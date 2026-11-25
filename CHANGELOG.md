@@ -1,6 +1,13 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.3.0)
+## 0.4.0 (24-11-2026)
+
+El Director (el motor de animación propio) con la Partitura versión 1 y su lenguaje en español, la foto profunda, los
+efectos vistosos, la segunda tanda de momentos y los fondos vivos de lienzo. Los contratos del encabezado y de la
+página no cambian de versión (solo suman valores); se suma un tercero, `contrato/partitura-motionkit.json`.
+
+Lo que puede cambiar para quien venía de la 0.3.0: con cinco fondos más, «Sorpréndeme» puede dar otro encabezado con
+la misma semilla. Nada más cambia de lo que ya existía.
 
 ### Director, fase 2: el lenguaje en español, Partitura versión 1 e inclinación en 3D
 
@@ -128,7 +135,7 @@
   una sección mucho más alta que la pantalla igual parte; el texto cortado vuelve a estar entero cuando termina la
   entrada; un actor con transformación propia en el CSS no salta de lugar; al rearmar no se repite lo que ya pasó.
 
-Segunda tanda de momentos (los bloques que faltaban) y cinco fondos vivos de lienzo. Sin etiqueta todavía.
+Segunda tanda de momentos (los bloques que faltaban) y cinco fondos vivos de lienzo.
 
 ### Momentos, segunda tanda
 
