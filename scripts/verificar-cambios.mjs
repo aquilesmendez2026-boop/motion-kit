@@ -59,7 +59,7 @@ const REGLAS = [
   [/^demo\/(Profundidad|fotos\/)/, ["fotos:profunda"]],
   [/^demo\/Galeria/, ["fotos:galeria", "fotos:visor"]],
   // Director.
-  [/^(src\/director\/|src\/entradas\/director|demo\/Director)/, ["director"]],
+  [/^(src\/director\/|src\/partitura\/|src\/entradas\/(director|partitura)|demo\/Director)/, ["director"]],
   // Dedo y física.
   [/^src\/dedo\/resorte/, ["dedo", "momentos2:cinta", "momentos3:carrusel"]],
   [/^src\/dedo\/calculo-impulso/, ["dedo:impulso", "momentos2:cinta"]],

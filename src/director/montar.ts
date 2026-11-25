@@ -5,7 +5,8 @@
 import { inicios } from "./calendario";
 import { cortar, MARCA, type Corte } from "./cortar";
 import { avanceEn, curvaCss, fotogramasSueltos, fotogramasTiempo, tramoLocal, tramoScroll, type Nivel } from "./fotogramas";
-import { TOPES, type Partitura, type PasoSeguir, type PasoTiempo, type Por } from "./modelo";
+import { TOPES, type Cambio, type Partitura, type PasoTiempo, type Por } from "./modelo";
+import { darProfundidad } from "./profundidad";
 import type { Seguimiento } from "./seguir";
 import { validarPartitura, type ErrorPartitura } from "./validar";
 
@@ -42,7 +43,7 @@ export function duenosDeOpacidad(p: Partitura): Map<string, number> {
   const duenos = new Map<string, number>();
   p.escenas.forEach((e, i) => {
     for (const paso of e.pasos) {
-      const toca = e.con === "puntero" || e.con === "velocidad" ? (paso as PasoSeguir).opacidad !== undefined : (paso as PasoTiempo).de?.opacidad !== undefined || (paso as PasoTiempo).a?.opacidad !== undefined;
+      const toca = (paso as PasoTiempo).de?.opacidad !== undefined || (paso as PasoTiempo).a?.opacidad !== undefined;
       if (toca && !duenos.has(paso.actor)) duenos.set(paso.actor, i);
     }
   });
@@ -50,11 +51,12 @@ export function duenosDeOpacidad(p: Partitura): Map<string, number> {
 }
 
 /** Con varias piezas, cada una ocupa la mitad del tramo y parten en cascada: la primera al inicio, la última al medio. */
-export function rangoDePieza(entre: [number, number] | undefined, k: number, n: number): [number, number] {
+export function rangoDePieza(entre: [number, number] | undefined, k: number, n: number, reparto = 0.5): [number, number] {
   const [a, b] = entre ?? [0, 1];
   if (n <= 1) return [a, b];
-  const largo = (b - a) / 2;
-  const inicio = a + (largo * k) / (n - 1);
+  // `reparto`: qué parte del tramo ocupa cada pieza. Lo que sobra es lo que se demora la cascada entera.
+  const largo = (b - a) * reparto;
+  const inicio = a + ((b - a - largo) * k) / (n - 1);
   return [inicio, inicio + largo];
 }
 
@@ -63,7 +65,7 @@ type ConLineas = {
   ScrollTimeline?: new (o: { source: Element }) => AnimationTimeline;
 };
 
-/** Monta una partitura sobre `raiz`. Nunca lanza: si algo no se puede, la página queda como está. */
+/** Monta una partitura sobre `raiz`. Con un dato (lo que sale de un JSON) nunca lanza: si algo no se puede, la página queda como está. */
 export function montar(raiz: HTMLElement, partitura: Partitura, opciones: OpcionesMontar = {}): Montaje {
   if (typeof document === "undefined" || !raiz || typeof raiz.animate !== "function") {
     // Aun así se revisa, para avisar de una partitura mala también fuera del navegador.
@@ -165,19 +167,23 @@ export function montar(raiz: HTMLElement, partitura: Partitura, opciones: Opcion
     const msDelEstilo = parseFloat(estilo.getPropertyValue("--mk-resorte-ms"));
     const resorteDelEstilo = /^(linear|cubic-bezier)\(/.test(curvaDelEstilo) && msDelEstilo > 0 ? { curva: curvaDelEstilo, ms: Math.min(msDelEstilo, TOPES.dura) } : null;
     /** Anima sin lanzar: una curva que este navegador no entiende cae a la de siempre. */
-    const animar = (el: HTMLElement, f: Keyframe[], o: KeyframeAnimationOptions): Animation | null => {
+    /** `id`: el nombre de la animación (`mk-verse`, `mk-estado`, `mk-vista`, `mk-scroll`), para depurar y para las pruebas. */
+    const animar = (el: HTMLElement, f: Keyframe[], o: KeyframeAnimationOptions, id: string): Animation | null => {
       if (quedanAnimaciones <= 0) return null;
       quedanAnimaciones--;
       try {
-        return el.animate(f, o);
+        return el.animate(f, { ...o, id });
       } catch {
         try {
-          return el.animate(f, { ...o, easing: curvaCss("suave").easing });
+          return el.animate(f, { ...o, id, easing: curvaCss("suave").easing });
         } catch {
           return null;
         }
       }
     };
+    /** Lo que se inclina en una escena continua o de estado necesita profundidad en su padre. */
+    const inclinado = (paso: { de?: Cambio; a?: Cambio }) => [paso.de, paso.a].some((c) => c && (c.inclinaX !== undefined || c.inclinaY !== undefined));
+    const conProfundidad = (el: HTMLElement) => limpiar.push(darProfundidad(el.parentElement));
 
     // --- Lo que se ve y lo que se toca ---
     let aLaVista = manual || typeof IntersectionObserver === "undefined";
@@ -221,7 +227,7 @@ export function montar(raiz: HTMLElement, partitura: Partitura, opciones: Opcion
           if (!propias.has(el)) propias.set(el, getComputedStyle(el).transform);
           const propia = propias.get(el);
           const cuadros = propia && propia !== "none" ? f.map((c) => (typeof c.transform === "string" ? { ...c, transform: `${propia} ${c.transform}` } : c)) : f;
-          const a = animar(el, cuadros, { duration: turnos[k].dura, delay: inicio, easing: curva.easing, fill: primera ? "both" : paso.a ? "forwards" : "none" });
+          const a = animar(el, cuadros, { duration: turnos[k].dura, delay: inicio, easing: curva.easing, fill: primera ? "both" : paso.a ? "forwards" : "none" }, "mk-verse");
           if (!a) return;
           a.pause();
           const turno = { a, el, repetir, inicio, fin, escena: i, termino: false };
@@ -290,12 +296,13 @@ export function montar(raiz: HTMLElement, partitura: Partitura, opciones: Opcion
         for (const el of buscar(paso.actor)) {
           const zona = zonas ? (zonas.find((z) => z.contains(el)) ?? zonas[0]) : el;
           if (!zona) continue;
+          if (inclinado(paso)) conProfundidad(el);
           let a: Animation | null = null;
           const ir = (hacia: 1 | -1) => () => {
             // Volver sin haber ido no es nada (el cursor pasó por encima sin apretar): si no, saltaría al final y volvería.
             if (hacia < 0 && !a) return;
             // La animación se crea la primera vez y se suelta al volver al reposo.
-            a ??= animar(el, f, { duration: paso.dura ?? 180, easing: curvaCss(paso.curva, resorteDelEstilo).easing, fill: "both" });
+            a ??= animar(el, f, { duration: paso.dura ?? 180, easing: curvaCss(paso.curva, resorteDelEstilo).easing, fill: "both" }, "mk-estado");
             if (!a) return;
             // Ir cuando ya llegó tampoco: partiría de nuevo desde el reposo.
             if (hacia > 0 && a.playbackRate > 0 && a.playState === "finished") return;
@@ -304,6 +311,8 @@ export function montar(raiz: HTMLElement, partitura: Partitura, opciones: Opcion
               if (esta.playbackRate < 0) {
                 esta.cancel();
                 a = null;
+                // Se devuelve al tope: apuntar muchas veces no lo gasta.
+                quedanAnimaciones++;
               }
             };
             esta.playbackRate = hacia;
@@ -347,11 +356,12 @@ export function montar(raiz: HTMLElement, partitura: Partitura, opciones: Opcion
           // Lo atado al scroll necesita sus piezas mientras la partitura viva.
           const cortado = corteDe.get(el);
           if (cortado) cortado.fijo = true;
-          const rango = rangoDePieza(paso.entre, k, piezas.length);
+          const rango = rangoDePieza(paso.entre, k, piezas.length, paso.reparto);
           const { inicio, fin } = tramoScroll(tramo, rango);
           const o = { fill: "both", easing: curvaCss(paso.curva ?? "lineal").easing, ...(linea ? { timeline: linea, rangeStart: inicio, rangeEnd: fin } : { duration: 1000 }) } as KeyframeAnimationOptions;
-          const a = animar(el, f, o);
+          const a = animar(el, f, o, tramo ? "mk-vista" : "mk-scroll");
           if (!a) return;
+          if (inclinado(paso)) conProfundidad(el);
           limpiar.push(() => a.cancel());
           if (!linea) {
             a.pause();

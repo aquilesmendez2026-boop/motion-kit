@@ -1,8 +1,13 @@
-// Vitrina del Director (fase 1 del motor de animación): seis partituras de ejemplo. Cada una es un dato: se ve, se
-// repite y se edita aquí mismo. `#director?d=…` muestra una sola, con lo que pida la prueba genérica.
+// Vitrina del Director (el motor de animación): seis partituras de ejemplo y las de la casa. Cada una es un dato: se
+// ve, se repite y se edita aquí mismo, en español o como JSON. `#director?d=…` muestra una sola, con lo que pida la
+// prueba genérica.
 import { useState, type ReactNode } from "react";
 import { ConPartitura, validarPartitura, type ErrorPartitura, type Montaje, type Nivel, type Partitura } from "../src/entradas/director";
 import { PARTITURAS, type PartituraDeEjemplo } from "../src/director/partituras";
+// Lo de quien crea (en el paquete, `motion-kit/partitura`): el lenguaje, las partituras de la casa y «Sorpréndeme».
+import { CASA, escribirPartitura, leerPartitura, sorprender, type DeLaCasa, type ErrorTexto } from "../src/entradas/partitura";
+import { TextoCinetico } from "../src/estilos/TextoCinetico";
+import type { TextoEfecto } from "../src/estilos/estilos";
 
 /** Lo que cambia en un escenario desde afuera (para las pruebas). */
 interface Extra {
@@ -100,6 +105,13 @@ function Tarjeta({ nombre, nivel }: { nombre: PartituraDeEjemplo; nivel: Nivel }
   const [partitura, setPartitura] = useState<Partitura>(PARTITURAS[nombre]);
   const [texto, setTexto] = useState(() => JSON.stringify(PARTITURAS[nombre], null, 2));
   const [errores, setErrores] = useState<ErrorPartitura[]>([]);
+  // La misma partitura, en español. Lo que se escribe en un lado se refleja en el otro.
+  const [espanol, setEspanol] = useState(() => escribirPartitura(PARTITURAS[nombre]));
+  const [erroresTexto, setErroresTexto] = useState<ErrorTexto[]>([]);
+  const aplicar = (nueva: Partitura) => {
+    setPartitura(nueva);
+    setVez((v) => v + 1);
+  };
   const editar = (t: string) => {
     setTexto(t);
     let dato: unknown;
@@ -111,8 +123,19 @@ function Tarjeta({ nombre, nivel }: { nombre: PartituraDeEjemplo; nivel: Nivel }
     const r = validarPartitura(dato);
     setErrores(r.ok ? [] : r.errores);
     if (r.ok) {
-      setPartitura(r.partitura);
-      setVez((v) => v + 1);
+      aplicar(r.partitura);
+      setEspanol(escribirPartitura(r.partitura));
+      setErroresTexto([]);
+    }
+  };
+  const editarEspanol = (t: string) => {
+    setEspanol(t);
+    const r = leerPartitura(t);
+    setErroresTexto(r.ok ? [] : r.errores);
+    if (r.ok) {
+      aplicar(r.partitura);
+      setTexto(JSON.stringify(r.partitura, null, 2));
+      setErrores([]);
     }
   };
   const e = EJEMPLOS[nombre];
@@ -129,7 +152,13 @@ function Tarjeta({ nombre, nivel }: { nombre: PartituraDeEjemplo; nivel: Nivel }
         {e.escenario({ titulo: "Café de" })}
       </ConPartitura>
       <details className="dir-dato">
-        <summary>Ver y editar el dato ({texto.length} letras)</summary>
+        <summary>Ver y editar: en español o como dato ({texto.length} letras)</summary>
+        <textarea value={espanol} onChange={(ev) => editarEspanol(ev.target.value)} spellCheck={false} aria-label={`Partitura de ${e.titulo}, en español`} rows={Math.min(16, espanol.split("\n").length + 1)} data-prueba="dir-espanol" />
+        {erroresTexto.length > 0 && (
+          <ul className="dir-errores" data-prueba="dir-errores-texto">
+            {erroresTexto.slice(0, 6).map((x, i) => <li key={i}>Línea {x.linea}: {x.mensaje}</li>)}
+          </ul>
+        )}
         <textarea value={texto} onChange={(ev) => editar(ev.target.value)} spellCheck={false} aria-label={`Partitura de ${e.titulo}`} rows={14} />
         {errores.length > 0 && (
           <ul className="dir-errores" data-prueba="dir-errores">
@@ -138,6 +167,90 @@ function Tarjeta({ nombre, nivel }: { nombre: PartituraDeEjemplo; nivel: Nivel }
         )}
       </details>
     </section>
+  );
+}
+
+const GRUPOS: Record<DeLaCasa["grupo"], string> = { texto: "Efectos de texto", encabezado: "Entradas del encabezado", momento: "Momentos", especial: "Nuevas, con inclinación" };
+
+/** El escenario de una partitura de la casa, según su grupo: trae las partes que ella espera. */
+function escenarioDeLaCasa(c: DeLaCasa): ReactNode {
+  if (c.grupo === "texto") return <h2 className="dir-titulo" data-mk-parte="titulo">Café de especialidad en Ñuñoa</h2>;
+  if (c.grupo === "momento") return EJEMPLOS.tarjetas.escenario({ titulo: "Café de" });
+  if (c.id === "titulo-con-volumen") return <h2 className="dir-titulo dir-volumen" data-mk-parte="titulo">Café Luna</h2>;
+  if (c.id === "tarjeta-holografica") return <div className="dir-holo">{EJEMPLOS.iman.escenario({ titulo: "Café de" })}</div>;
+  return (
+    <div className="dir-casa-portada">
+      {EJEMPLOS.portada.escenario({ titulo: "Café de" })}
+      <div className="dir-casa-media" data-mk-parte="media" aria-hidden="true">☕</div>
+    </div>
+  );
+}
+
+/** Las partituras de la casa: se elige una, se ve correr y se lee en español. Y «Sorpréndeme», que arma una entrada con una semilla. */
+function DeLaCasaVitrina({ nivel }: { nivel: Nivel }) {
+  const [id, setId] = useState(CASA[0].id);
+  const [vez, setVez] = useState(0);
+  const [semilla, setSemilla] = useState(0);
+  const elegida = CASA.find((c) => c.id === id) ?? CASA[0];
+  const sorpresa = semilla ? sorprender(semilla, ["antetitulo", "titulo", "bajada", "botones"]) : null;
+  return (
+    <>
+      <section className="dir-ejemplo" data-prueba="dir-casa">
+        <header>
+          <div>
+            <h2>De la casa</h2>
+            <p>Los movimientos de siempre, escritos como partituras, y dos nuevos con inclinación. Sirven para elegir y combinar.</p>
+          </div>
+          <button type="button" className="mom-repetir" onClick={() => setVez((v) => v + 1)}>Repetir</button>
+        </header>
+        <label>
+          Partitura{" "}
+          <select value={id} onChange={(ev) => { setId(ev.target.value); setVez((v) => v + 1); }} data-prueba="dir-casa-elegir">
+            {(Object.keys(GRUPOS) as DeLaCasa["grupo"][]).map((g) => (
+              <optgroup key={g} label={GRUPOS[g]}>
+                {CASA.filter((c) => c.grupo === g).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </optgroup>
+            ))}
+          </select>
+        </label>
+        <ConPartitura partitura={elegida.partitura} nivel={nivel} clave={`${id}-${vez}`} className="dir-escenario" data-prueba="dir-casa-escenario">
+          {escenarioDeLaCasa(elegida)}
+        </ConPartitura>
+        {elegida.nota && <p className="enc-nota">{elegida.nota}</p>}
+        <pre className="dir-texto" data-prueba="dir-casa-texto">{escribirPartitura(elegida.partitura)}</pre>
+      </section>
+      <section className="dir-ejemplo" data-prueba="dir-sorpresa">
+        <header>
+          <div>
+            <h2>Sorpréndeme</h2>
+            <p>Arma una entrada para las partes de la página con una semilla. La misma semilla da siempre la misma.</p>
+          </div>
+          <button type="button" className="mom-repetir" data-prueba="dir-sorprender" onClick={() => setSemilla((n) => n + 1)}>Sorpréndeme</button>
+        </header>
+        <ConPartitura partitura={sorpresa} nivel={nivel} clave={semilla} className="dir-escenario">
+          {EJEMPLOS.portada.escenario({ titulo: "Café de" })}
+        </ConPartitura>
+        <pre className="dir-texto" data-prueba="dir-sorpresa-texto">{sorpresa ? escribirPartitura(sorpresa) : "Aprieta «Sorpréndeme»."}</pre>
+      </section>
+    </>
+  );
+}
+
+/** Para la prueba: el efecto de texto original y, al lado, la partitura de la casa que dice lo mismo, con reloj manual. */
+function Comparar({ id }: { id: string }) {
+  const c = CASA.find((x) => x.id === id && x.grupo === "texto");
+  if (!c) return <p>No hay una partitura de texto con ese nombre.</p>;
+  const guardar = (m: Montaje | null) => {
+    (window as unknown as { __mkDirectores?: (Montaje | null)[] }).__mkDirectores = [m];
+  };
+  const frase = "Café de especialidad en Ñuñoa";
+  return (
+    <div className="dir-comparar">
+      <div data-prueba="dir-original"><TextoCinetico como="h2" className="dir-titulo" texto={frase} efecto={id as TextoEfecto} cuando="siempre" /></div>
+      <ConPartitura partitura={c.partitura} reloj="manual" alMontar={guardar} className="dir-escenario" data-prueba="dir-escenario">
+        <h2 className="dir-titulo" data-mk-parte="titulo">{frase}</h2>
+      </ConPartitura>
+    </div>
   );
 }
 
@@ -157,6 +270,8 @@ interface Pedido {
   alto?: number;
   /** Sin el espacio de abajo: la página no tiene scroll. */
   corta?: boolean;
+  /** Muestra un efecto de texto original y la partitura de la casa del mismo nombre, para compararlos. */
+  comparar?: string;
 }
 
 function leer(d: string | undefined): Pedido {
@@ -170,6 +285,11 @@ function leer(d: string | undefined): Pedido {
 
 /** Un solo ejemplo, con espacio para bajar y los botones que usa la prueba. */
 function Uno({ pedido }: { pedido: Pedido }) {
+  if (pedido.comparar) return <Comparar id={pedido.comparar} />;
+  return <UnEjemplo pedido={pedido} />;
+}
+
+function UnEjemplo({ pedido }: { pedido: Pedido }) {
   const nombre = pedido.ejemplo && pedido.ejemplo in EJEMPLOS ? pedido.ejemplo : "portada";
   const [titulo, setTitulo] = useState("Café de");
   const [montado, setMontado] = useState(true);
@@ -223,8 +343,7 @@ export function Director({ d }: { d?: string }) {
       <a href="#">← Demo</a>
       <h1>Director</h1>
       <p className="enc-nota">
-        El motor de animación propio (fase 1). Cada movimiento es un dato, una <strong>partitura</strong>: abre «Ver y editar el dato» y cámbiale un número.
-        Versión 0, experimental.
+        El motor de animación propio. Cada movimiento es un dato, una <strong>partitura</strong>: abre «Ver y editar» y cámbiale una frase en español, o un número en el dato.
       </p>
       <div className="mom-controles">
         <label>
@@ -236,6 +355,7 @@ export function Director({ d }: { d?: string }) {
       </div>
       <div className="dir-lista">
         {NOMBRES.map((n) => <Tarjeta key={n} nombre={n} nivel={nivel} />)}
+        <DeLaCasaVitrina nivel={nivel} />
       </div>
     </main>
   );

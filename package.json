@@ -38,6 +38,11 @@
       "import": "./dist/director.js",
       "require": "./dist/director.cjs"
     },
+    "./partitura": {
+      "types": "./dist/entradas/partitura.d.ts",
+      "import": "./dist/partitura.js",
+      "require": "./dist/partitura.cjs"
+    },
     "./receta": {
       "types": "./dist/receta/index.d.ts",
       "import": "./dist/receta.js",

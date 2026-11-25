@@ -494,11 +494,11 @@ Para La Mente: `cerebro-aquiles/lamente/ENCARGO_2026-11-24_efectos-vistosos.md`.
 Un movimiento deja de ser una pieza escrita a mano y pasa a ser un **dato**: una partitura. El Director la hace correr
 con lo que el navegador ya trae. Análisis y plan general: `docs/superpowers/specs/2026-11-24-motor-de-animacion-analisis-y-plan.md`.
 Diseño de esta fase: `docs/superpowers/specs/2026-11-24-director-fase-1-design.md`. Plan:
-`docs/superpowers/plans/2026-11-24-director-fase-1.md`. **Versión 0, experimental:** el modelo puede cambiar hasta la
-fase 2 y La Mente todavía no copia su contrato.
+`docs/superpowers/plans/2026-11-24-director-fase-1.md`. **Desde la fase 2 (más abajo) el modelo es la versión 1:** lo
+que sigue al puntero lleva su cambio en `a`, y hay inclinación en 3D. Lo demás de esta sección sigue valiendo.
 
-Entrada `motion-kit/director` (9,1 KB gzip al cargar, tope 10; 1,5 KB más se bajan aparte si la partitura sigue al
-cursor o a la velocidad). Vitrina `#director`.
+Entrada `motion-kit/director` (9,8 KB gzip al cargar desde la fase 2, tope 10; 1,5 KB más se bajan aparte si la
+partitura sigue al cursor o a la velocidad). Vitrina `#director`.
 
 | Qué | Dónde | Para qué |
 |---|---|---|
@@ -527,7 +527,7 @@ Cómo se usa:
 import { ConPartitura, type Partitura } from "motion-kit/director";
 
 const portada: Partitura = {
-  version: 0,
+  version: 1,
   escenas: [
     { con: "verse", pasos: [
       { actor: "antetitulo", de: { y: 28, opacidad: 0 }, dura: 800, en: 50 },
@@ -574,16 +574,134 @@ Pruebas: `pruebas/director.test.ts` y `scripts/verificar-director.mjs [url] [par
 (diez reglas de la casa sobre cada ejemplo), `senales`, `react`, `sin` (sin observadores ni animaciones nativas),
 `hostil` (partituras rotas) y `vitrina`.
 
-Lo que **no** está todavía (fases 2 a 6 del plan): el lenguaje en texto, traspasar piezas existentes, la capa gráfica
-compartida, los peldaños continuos y el Estudio en La Mente. Solo se probó en Chromium.
+Lo que **no** está todavía (fases 3 a 6 del plan): la capa gráfica compartida, los peldaños continuos y el Estudio en
+La Mente. El lenguaje en texto llegó en la fase 2; traspasar piezas existentes se descartó ahí (pesan menos como están).
 
-Para el diseño de la fase 2 (recomendaciones de la revisión final, sin hacer): que lo que sigue use un `Cambio` igual
-que lo demás; llevar al contrato los números de las curvas y los resortes (para que la app en Kotlin los reproduzca);
-definir los tramos de scroll con su fórmula; hacer explícita la cascada de `por` en scroll; y cómo se pasa de la
-versión 0 a la 1. Limitaciones conocidas: mientras un texto está cortado pierde el subrayado de los enlaces y el
+Las recomendaciones de la revisión final de esta fase se hicieron en la fase 2 (lo que sigue usa un `Cambio`; el
+contrato trae los números de las curvas, los resortes y las fórmulas de los tramos; `reparto`; `subirPartitura`).
+Limitaciones conocidas: mientras un texto está cortado pierde el subrayado de los enlaces y el
 ajuste entre letras; una partitura dentro de otra no comparte actores; lo que sigue al cursor escribe en el estilo en
 línea del elemento (si React también lo usa para `scale` u `opacity`, se pisan); y con render en el servidor el texto
 se ve entero un instante antes de entrar.
+
+## Director, fase 2: el lenguaje en español, la versión 1 y la inclinación (24-11-2026)
+
+Lo que permite **crear** partituras rápido. Diseño `docs/superpowers/specs/2026-11-24-director-fase-2-design.md`, plan
+`docs/superpowers/plans/2026-11-24-director-fase-2.md`. No reemplaza ninguna pieza que ya existe: medido el 24-11, los
+12 efectos de texto pesan 3,4 KB y el Director 9; por la regla de Aquiles («pesa menos o se detiene»), el traspaso no va.
+
+**Dos entradas:**
+
+| Entrada | Para quién | Peso al cargar |
+|---|---|---|
+| `motion-kit/director` | Las páginas: hace correr una partitura | 9,8 KB (9.814 bytes; tope 10) |
+| `motion-kit/partitura` | Quien crea (el Estudio, nosotros): el lenguaje, la subida de versión, las de la casa y «Sorpréndeme» | 8,1 KB (8.133 bytes; tope 9, fijado por Aquiles el 24-11-2026) |
+
+**Partitura versión 1** (el Director corre solo esta):
+
+- `Cambio` suma `inclinaX` (se vuelca) e `inclinaY` (se ladea), en grados. La profundidad (900 px) la pone el
+  Director: en `verse` va dentro del movimiento; en lo continuo y en `estado`, en el padre de lo que se inclina
+  (`perspective`), con cuenta de quién la puso, y se quita al desmontar (si la página puso la suya, antes o después,
+  no se toca).
+- **Límite conocido de esa profundidad:** mientras la partitura está montada, el padre de lo que se inclina ordena y
+  ubica a sus hijos como lo haría uno con `transform`: un hijo `position: fixed` se ubica respecto de él (medido: de
+  10,10 pasa a 100,2050 en la prueba) y los `z-index` de sus hijos no salen de él. Si el actor es la raíz de la
+  partitura, ese padre queda fuera de la raíz. Solo pasa con partituras que inclinan en lo continuo o en `estado`.
+  Para evitarlo: que lo fijo no viva dentro del padre de un actor que se inclina.
+- Un texto cortado **por palabra** lleva cada palabra en una caja propia (antes, solo con máscara): sin ella la
+  profundidad no se veía. Medido: cada pieza volcada 60° se ve 2 % más ancha, por letra y por palabra.
+- `estado` inclina también en nivel `liviano` (a lo más 4°): un estado es chico y lo manda la persona, así que va
+  igual en todos los niveles menos `quieto`, como ya pasaba con lo demás del estado.
+- Lo que sigue al puntero o a la velocidad lleva su cambio en `a` (`{ actor, a: { x: 16, inclinaY: 8 }, resorte }`).
+  Se inclina hacia donde está el cursor.
+- En lo continuo un paso **gira o se inclina**, no las dos cosas (comparten `rotate`).
+- `reparto` (0,05 a 1) en lo atado al scroll: qué parte del tramo ocupa cada pieza cuando un paso reparte con `por`.
+- Topes de inclinación: 90° de partida, 15° en lo que una entrada deja puesto, 25° siguiendo al puntero, 4° en `estado`.
+- Una partitura de la versión 0 se sube con `subirPartitura` (de `motion-kit/partitura`). No viaja con el Director,
+  para no pesarle a las páginas: nadie fuera de este repo guardó versión 0.
+- El contrato (`contrato/partitura-motionkit.json`) es versión 1, ya no dice experimental, y trae lo necesario para
+  reproducir el movimiento fuera del navegador: las curvas, los resortes, la profundidad, cómo se aplica la
+  inclinación (`inclinacion`), lo que vale por defecto (`porDefecto`), cómo se sigue al puntero y a la velocidad
+  (`seguir`: las señales, los signos, el paso del resorte) y las fórmulas de los tramos. Trae además **casos
+  calculados por el mismo código** (`seguir.casos`, `seguir.casoResorte`, `tramos.casos`) para que la app compare.
+- Cada animación del Director lleva nombre (`id`): `mk-verse`, `mk-estado`, `mk-vista`, `mk-scroll`.
+
+**El lenguaje en español** (`leerPartitura(texto)` y `escribirPartitura(partitura)`): otra forma de escribir el mismo
+dato. No ejecuta nada. Lo leído pasa por `validarPartitura`; los errores vuelven con su línea.
+
+```
+partitura portada
+
+al verse:
+  antetitulo desde abajo 28px, aparece, 800ms, en 50ms
+  titulo desde abajo 135%, por palabra, con máscara, 800ms, cada 90ms, en 150ms
+
+al salir de la vista:
+  contenido sube 14%, se apaga
+
+con el puntero:
+  tarjeta se inclina 6 grados, resorte firme
+```
+
+| Escena | Se escribe |
+|---|---|
+| `verse` | `al verse:` · `cada vez que se ve:` (con `repetir`) |
+| `vista` | `al entrar a la vista:` · `al salir de la vista:` · `al cruzar la pantalla:` · `con la vista:` |
+| `scroll`, `puntero`, `velocidad` | `con el scroll:` · `con el puntero:` · `con la velocidad:` |
+| `estado` | `al apuntar <actor>:` · `al enfocar <actor>:` · `al apretar <actor>:` (el actor es opcional) |
+
+| Frases | Qué ponen |
+|---|---|
+| `desde abajo 28px` · `desde arriba 20px` · `desde la izquierda 40px` · `desde la derecha 120%` · `aparece` · `aparece desde 0.15` · `crece desde 0.8` · `gira desde -8 grados` · `se levanta desde -70 grados` · `se abre desde 60 grados` | De dónde parte (`de`) |
+| `sube 14%` · `baja 20px` · `va a la izquierda 30px` · `va a la derecha 30px` · `se apaga` · `se apaga a 0.6` · `se enciende` · `crece a 1.05` · `se achica a 0.95` · `gira 6 grados` · `se inclina 6 grados` · `se vuelca 8 grados` · `se ladea 10 grados` | A dónde llega, o cuánto cambia con la señal (`a`) |
+| `por letra` · `por palabra` · `por hijo` · `con máscara` · `800ms` · `1.2s` · `cada 90ms` · `en 150ms` · `luego` · `junto 80ms` · `curva suave` · `resorte firme` · `entre 60% y 100%` · `reparto 30%` | Cómo y cuándo |
+
+Reglas:
+
+- Con o sin tildes y mayúsculas. El nombre de un actor se pasa a minúsculas, pero no se le quitan tildes ni «ñ»: un
+  actor `título` no vale y se dice (un nombre no se cambia en silencio).
+- `#` es comentario, menos en la línea del nombre (`partitura Oferta #1` se llama «Oferta #1»).
+- Toda frase que mueve lleva su número (`desde arriba 20px`, `se vuelca 8 grados`). El signo va en el verbo (`sube`,
+  no `baja -14px`). Los decimales van con punto.
+- Una escena se entiende también sin los dos puntos (`al verse`).
+- Una frase fuera de su escena, repetida o desconocida es error con su línea (a lo más 20). Un texto enorme o con
+  caracteres raros no lo vuelve lento (120.000 «#» seguidos: bajo 300 ms).
+- **Ida y vuelta:** leer lo que se escribió da la misma partitura (probado con los ejemplos, valores de borde y 200
+  partituras con semilla). Lo que da igual vuelve en su forma canónica: `repetir: false` y `mascara: false` no se
+  escriben, `"12.50%"` vuelve `"12.5%"`, el nombre vuelve sin espacios de más, y un número guarda tres decimales.
+- `escribirPartitura` exige una partitura que vale: con otra cosa lanza un error que dice por qué.
+
+**Partituras de la casa** (`CASA`, 16): para elegir y combinar al crear.
+
+| Grupo | Cuáles | Nota |
+|---|---|---|
+| Efectos de texto | `revelar`, `trailer`, `maquina` | Iguales al original (0,00 de diferencia, medido letra por letra) |
+| | `voltear`, `impacto`, `rebote`, `caer` | Parecidos: el rebote lo da la curva `resorte`; `voltear` usa la profundidad del Director |
+| Entradas del encabezado | `cascada`, `deslizar`, `zoom` | Con las partes `antetitulo`, `titulo`, `bajada`, `botones`, `media`, `contenido` |
+| Momentos | `sellos`, `correo`, `domino`, `hojas` | Una grilla que entra en cadena (partes `grilla` y `rotulo`) |
+| Nuevas | `titulo-con-volumen`, `tarjeta-holografica` | Con inclinación. El volumen del título es un estilo de la página (copias del texto apiladas con `text-shadow`: ver `.dir-volumen` en `demo/demo.css`) |
+
+No se pueden decir con el modelo (y no se forzaron): `encender` (parpadeo de varios pasos), `temblor` y `onda` (ciclos
+sin fin), `glitch` (copias de color) y `descifrar` (cambia las letras).
+
+**`sorprender(semilla, partes)`**: arma una entrada para las partes de la página. La misma semilla da siempre la
+misma; siempre vale; sin modelos de IA.
+
+**Safari:** `verificar-director` pasa entero con Chromium (110 revisiones) y con WebKit (107, `node scripts/en-safari.mjs
+director`; se saltan con su razón las que comparan contra líneas de tiempo de scroll nativas). Las 10 diferencias del
+sondeo eran de la prueba, no del Director.
+
+Pruebas: `pruebas/director2.test.ts`, `pruebas/partitura-texto.test.ts` y las partes `inclina` y `casa` de
+`scripts/verificar-director.mjs`. Vitrina `#director`: cada ejemplo se edita en español o como dato; abajo, «De la
+casa» y «Sorpréndeme».
+
+De paso se arregló algo de la fase 1 que encontró la revisión final: cada vez que se apuntaba algo con `estado` se
+gastaba una del tope de 600 animaciones, y después de unos cientos de pases el estado dejaba de animarse. Ahora la
+devuelve al volver al reposo.
+
+Pendiente: la señal `dato` (cupos, sellos, precios); la capa gráfica y los peldaños (fases 3 y 4); el Estudio en La
+Mente (encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-24_partitura-y-lenguaje.md`). Margen de `director`: 186 bytes
+(9.814 de 10.000); lo próximo grande que se sume ahí obliga a bajar aparte la inclinación de `verse`.
 
 ## Safari (sondeo del 24-11-2026)
 
@@ -596,12 +714,13 @@ sirve para buscar diferencias de verdad.
 | efectos, encabezados, lamente, biblioteca, momentos3 | Pasan enteras | — |
 | fotos | Un error real, arreglado | Al arrastrar sobre una foto de la galería, el navegador iniciaba su «arrastrar imagen» y se tragaba el toque siguiente: el visor no abría. Ahora las fotos con gestos lo evitan |
 | piezas, estilos, escena, momentos, momentos2 | Diferencias que no son errores | Safari no lleva el Tab a los enlaces por defecto; mide distinto lo que sobra dentro de una caja (nada se sale a la vista); la foto de prueba pesa menos; una revisión usa una herramienta que solo tiene Chrome |
-| relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Quietos, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, el contenido se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |
-| director | 10 diferencias, sin resolver | Varias son de la prueba (en Safari el Director usa su respaldo manual y la prueba cuenta esas animaciones como «vivas»). Las demás se revisan en la fase 2 del Director |
+| relatos, pelicula (telón), dedo (pila), estilos (galería horizontal) | Más simples, por diseño | Usan animaciones atadas al scroll (`animation-timeline`). Donde el navegador no las trae, cada bloque de un relato hace una entrada simple al verse (el respaldo de `src/relatos/respaldo.ts`), y lo demás se ve quieto o como fila que se desliza. Safari las trae desde la versión 26; el WebKit de las pruebas es anterior |
+| director | Resuelto en la fase 2 | Las 10 diferencias eran de la prueba (contaba como «vivas» las animaciones del respaldo manual). Ahora pasa entero en los dos motores |
 
 Lo que hay que saber:
 
-- **En iPhone con Safari anterior a la 26, los relatos y la pila no se mueven con el scroll.** Se ve todo, quieto. El
+- **En iPhone con Safari anterior a la 26, los relatos y la pila no siguen al scroll.** Se ve todo, y cada bloque
+  hace una entrada simple al aparecer; lo que se pierde es el movimiento atado al scroll (la cinta, el telón, el hilo). El
   Director ya trae un respaldo manual para eso: pasar los relatos al Director (fase 2) les da movimiento también ahí.
 - **Sin comprobar en un aparato real.** El WebKit de las pruebas no es el Safari de un iPhone: no prueba el dedo de
   verdad, la memoria ni VoiceOver.

@@ -123,7 +123,7 @@ const animaciones = (pagina) =>
     document.getAnimations().filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition)).map((a) => ({
       estado: a.playState,
       ahora: Number(a.currentTime),
-      porTiempo: a.timeline instanceof DocumentTimeline,
+      porTiempo: (a.id === "mk-verse" || a.id === "mk-estado"),
       propiedades: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k)),
       dura: Number(a.effect.getTiming().duration),
     })),
@@ -152,6 +152,10 @@ const visto = (pagina) =>
     return t.replace(/\s+/g, " ").trim();
   }, ESCENARIO);
 const PERMITIDAS = ["transform", "translate", "rotate", "scale", "opacity"];
+/** Una revisión que no aplica en este navegador: se dice, y no cuenta como falla. */
+const saltar = (_ok, texto) => console.log(`– no aplica aquí (este navegador no trae líneas de tiempo de scroll): ${texto.split(" (")[0]}`);
+/** Aprieta un botón sin mover la página (un clic normal la correría hasta el botón). */
+const apretarSinMover = (pagina, selector) => pagina.locator(selector).evaluate((e) => e.click());
 const manual = (pagina, f, ...a) => pagina.evaluate(([cuerpo, args]) => new Function("m", "a", cuerpo)(window.__mkDirectores, args), [f, a]);
 
 // --- Las reglas de la casa, para cada partitura de ejemplo ---
@@ -279,7 +283,7 @@ if (parte("reglas")) {
           let o = 1;
           for (let n = e; n && n !== document.body; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
           const r = e.getBoundingClientRect();
-          return { estados: document.getAnimations().filter((a) => !(a instanceof CSSAnimation) && a.timeline instanceof DocumentTimeline && (a.effect.target === e || a.effect.target.contains(e) || e.contains(a.effect.target))).map((a) => a.playState), opacidad: o, y: r.y + scrollY };
+          return { estados: document.getAnimations().filter((a) => !(a instanceof CSSAnimation) && (a.id === "mk-verse" || a.id === "mk-estado") && (a.effect.target === e || a.effect.target.contains(e) || e.contains(a.effect.target))).map((a) => a.playState), opacidad: o, y: r.y + scrollY };
         });
       const enSuLugar = (c) => c.opacidad === 1 && Math.abs(c.y - cajaNatural.y) < 0.6;
       // (a) El cursor llega antes de que el enlace entre (donde el enlace espera, todavía sin verse): aparece ya, en su
@@ -293,7 +297,7 @@ if (parte("reglas")) {
       await pagina.mouse.move(2, 2);
       // (b) El cursor llega a media entrada: se detiene donde va (no salta) y sigue al salir.
       await pagina.locator("[data-prueba=dir-repetir]").evaluate((b) => b.click());
-      await pagina.waitForFunction((q) => document.getAnimations().some((a) => !(a instanceof CSSAnimation) && a.timeline instanceof DocumentTimeline && a.playState === "running" && (a.effect.target === document.querySelector(q) || a.effect.target.contains(document.querySelector(q))) && Number(a.currentTime) > Number(a.effect.getTiming().delay) + 60), `${ESCENARIO} ${de.tocable}`, { timeout: 4000 }).catch(() => {});
+      await pagina.waitForFunction((q) => document.getAnimations().some((a) => !(a instanceof CSSAnimation) && (a.id === "mk-verse" || a.id === "mk-estado") && a.playState === "running" && (a.effect.target === document.querySelector(q) || a.effect.target.contains(document.querySelector(q))) && Number(a.currentTime) > Number(a.effect.getTiming().delay) + 60), `${ESCENARIO} ${de.tocable}`, { timeout: 4000 }).catch(() => {});
       const c = await enlace.boundingBox();
       await pagina.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
       await pagina.waitForTimeout(150);
@@ -339,7 +343,7 @@ if (parte("reglas")) {
         if (antes) cambia = Math.max(cambia, diferencia(antes, a).px, diferencia(antes, a).opacidad * 100);
         antes = a;
       }
-      revisar(hay && sinEllas && peor.px <= 1.5 && peor.opacidad <= 0.03 && cambia > 2 && nativa.errores.length + respaldo.errores.length === 0, `${nombre} 7: sin líneas de tiempo de scroll el respaldo da lo mismo en 7 puntos (${corta(peor)}; y al bajar sí cambia)`);
+      (hay ? revisar : saltar)(hay && sinEllas && peor.px <= 1.5 && peor.opacidad <= 0.03 && cambia > 2 && nativa.errores.length + respaldo.errores.length === 0, `${nombre} 7: sin líneas de tiempo de scroll el respaldo da lo mismo en 7 puntos (${corta(peor)}; y al bajar sí cambia)`);
       await nativa.ctx.close();
       await respaldo.ctx.close();
     }
@@ -483,11 +487,12 @@ if (parte("senales")) {
   }
   {
     // Con «por» atado al scroll, las palabras van en cascada: a medio camino, la primera se ve más que la última.
+    // Cada palabra va dentro de una caja: las piezas son las de más adentro.
     const { ctx, pagina } = await abrir({ ejemplo: "paralaje", reloj: "manual" });
     await pagina.waitForTimeout(300);
     const opacidades = async (s) => {
       await manual(pagina, "m[0].senal('vista', a[0]);", s);
-      return pagina.evaluate((q) => [...document.querySelectorAll(`${q} [data-mk-parte=frase] [data-mk-d=corte] span`)].map((x) => Number(getComputedStyle(x).opacity)), ESCENARIO);
+      return pagina.evaluate((q) => [...document.querySelectorAll(`${q} [data-mk-parte=frase] [data-mk-d=corte] span:not(:has(*))`)].map((x) => Number(getComputedStyle(x).opacity)), ESCENARIO);
     };
     const [antes, medio, despues] = [await opacidades(0.1), await opacidades(0.42), await opacidades(0.9)];
     revisar(antes.length >= 8 && antes.every((o) => Math.abs(o - 0.15) < 0.01) && medio[0] > medio.at(-1) + 0.2 && despues.every((o) => o === 1), `vista con «por»: la frase se enciende en cascada (${antes.length} palabras; a medio camino ${medio[0].toFixed(2)} la primera y ${medio.at(-1).toFixed(2)} la última)`);
@@ -625,11 +630,11 @@ if (parte("hostil")) {
   const htmlNatural = await natural.pagina.locator(ESCENARIO).innerHTML();
   await natural.ctx.close();
   const MALAS = {
-    "un selector en vez de un nombre": { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "body *", de: { y: 28 } }] }] },
-    "una propiedad que no existe": { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { color: "red", y: 1 } }] }] },
-    "números enormes": { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: 999999 }, dura: 9e9 }] }] },
-    "miles de pasos": { version: 0, escenas: [{ con: "verse", pasos: Array.from({ length: 5000 }, () => ({ actor: "titulo", de: { y: 28 } })) }] },
-    "código en un texto": { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: "calc(1px);background:url(javascript:alert(1))" } }] }] },
+    "un selector en vez de un nombre": { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "body *", de: { y: 28 } }] }] },
+    "una propiedad que no existe": { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { color: "red", y: 1 } }] }] },
+    "números enormes": { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: 999999 }, dura: 9e9 }] }] },
+    "miles de pasos": { version: 1, escenas: [{ con: "verse", pasos: Array.from({ length: 5000 }, () => ({ actor: "titulo", de: { y: 28 } })) }] },
+    "código en un texto": { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: "calc(1px);background:url(javascript:alert(1))" } }] }] },
     "no es una partitura": "hola",
   };
   for (const [que, partitura] of Object.entries(MALAS)) {
@@ -641,7 +646,7 @@ if (parte("hostil")) {
   }
   {
     // Una partitura que vale pero nombra actores que no están: no hace nada y no lanza.
-    const { ctx, pagina, errores } = await abrir({ ejemplo: "portada", partitura: { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "no-existe", por: "letra", de: { y: 28 } }] }, { con: "puntero", pasos: [{ actor: "tampoco", x: 10 }] }] } });
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "portada", partitura: { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "no-existe", por: "letra", de: { y: 28 } }] }, { con: "puntero", pasos: [{ actor: "tampoco", a: { x: 10 } }] }] } });
     await pagina.waitForTimeout(500);
     await pagina.mouse.move(400, 300);
     await pagina.mouse.move(600, 400, { steps: 5 });
@@ -651,8 +656,8 @@ if (parte("hostil")) {
   }
   {
     // Un texto con más letras que el tope de piezas no se corta: el actor se mueve entero.
-    const largo = { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "contenido", por: "letra", de: { opacidad: 0 }, cada: 5 }] }] };
-    const { ctx, pagina, errores } = await abrir({ ejemplo: "tarjetas", partitura: { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "grilla", por: "letra", de: { opacidad: 0 }, cada: 1 }] }] } });
+    const largo = { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "contenido", por: "letra", de: { opacidad: 0 }, cada: 5 }] }] };
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "tarjetas", partitura: { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "grilla", por: "letra", de: { opacidad: 0 }, cada: 1 }] }] } });
     await pagina.waitForTimeout(300);
     const piezas = await pagina.locator(`${ESCENARIO} [data-mk-d=corte] span`).count();
     revisar(piezas > 0 && piezas <= 200 * 2 && errores.length === 0 && Boolean(largo), `cortar por letra respeta el tope de piezas (${piezas} cajas)`);
@@ -675,7 +680,7 @@ if (parte("revision")) {
   }
   {
     // React cambia un texto cuando la entrada ya terminó: nada vuelve a entrar, y lo que quedó puesto sigue puesto.
-    const partitura = { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", por: "palabra", de: { y: "135%" }, dura: 300 }, { actor: "bajada", de: { opacidad: 0 }, dura: 1500 }, { actor: "antetitulo", a: { escala: 1.1 }, dura: 300 }] }] };
+    const partitura = { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", por: "palabra", de: { y: "135%" }, dura: 300 }, { actor: "bajada", de: { opacidad: 0 }, dura: 1500 }, { actor: "antetitulo", a: { escala: 1.1 }, dura: 300 }] }] };
     const { ctx, pagina, errores } = await abrir({ ejemplo: "portada", partitura });
     await pagina.waitForTimeout(2600);
     await pagina.evaluate((q) => {
@@ -713,7 +718,7 @@ if (parte("revision")) {
   }
   {
     // `ConPartitura` recorta en los dos sentidos: una parte agrandada no tapa lo que está fuera de su caja.
-    const partitura = { version: 0, escenas: [{ con: "vista", pasos: [{ actor: "contenido", de: { escala: 4 }, a: { escala: 4 } }] }] };
+    const partitura = { version: 1, escenas: [{ con: "vista", pasos: [{ actor: "contenido", de: { escala: 4 }, a: { escala: 4 } }] }] };
     const { ctx, pagina } = await abrir({ ejemplo: "portada", partitura, arriba: 30 });
     await pagina.waitForTimeout(400);
     const v = await pagina.locator(ESCENARIO).evaluate((e) => {
@@ -726,7 +731,7 @@ if (parte("revision")) {
   }
   {
     // Sin líneas de tiempo nativas y en una página sin scroll: una escena atada al scroll no deja nada escondido.
-    const partitura = { version: 0, escenas: [{ con: "scroll", pasos: [{ actor: "bajada", de: { opacidad: 0 }, a: { opacidad: 1 } }] }] };
+    const partitura = { version: 1, escenas: [{ con: "scroll", pasos: [{ actor: "bajada", de: { opacidad: 0 }, a: { opacidad: 1 } }] }] };
     const { ctx, pagina, errores } = await abrir({ ejemplo: "portada", partitura, corta: true }, { antes: [() => { delete window.ViewTimeline; delete window.ScrollTimeline; }] });
     await pagina.waitForTimeout(500);
     const v = await pagina.evaluate((q) => ({ conScroll: document.documentElement.scrollHeight > innerHeight, opacidad: Number(getComputedStyle(document.querySelector(`${q} [data-mk-parte=bajada]`)).opacity) }), ESCENARIO);
@@ -735,7 +740,7 @@ if (parte("revision")) {
   }
   {
     // Una partitura válida pero enorme no arma más animaciones que el tope.
-    const partitura = { version: 0, escenas: Array.from({ length: 12 }, () => ({ con: "verse", repetir: true, pasos: Array.from({ length: 24 }, () => ({ actor: "grilla", por: "hijo", de: { y: 6 }, dura: 9000 })) })) };
+    const partitura = { version: 1, escenas: Array.from({ length: 12 }, () => ({ con: "verse", repetir: true, pasos: Array.from({ length: 24 }, () => ({ actor: "grilla", por: "hijo", de: { y: 6 }, dura: 9000 })) })) };
     const { ctx, pagina, errores } = await abrir({ ejemplo: "tarjetas", partitura });
     await pagina.waitForTimeout(600);
     const v = { fallas: Number(await pagina.locator("[data-prueba=dir-fallas]").textContent()), animaciones: (await animaciones(pagina)).length };
@@ -748,10 +753,50 @@ if (parte("revision")) {
     await pagina.waitForTimeout(300);
     await pagina.evaluate(() => window.dispatchEvent(new Event("beforeprint")));
     await pagina.waitForTimeout(150);
-    const v = await pagina.evaluate((q) => ({ minima: Math.min(...[...document.querySelectorAll(`${q} [data-mk-parte], ${q} [data-mk-parte] *`)].map((e) => Number(getComputedStyle(e).opacity))), corriendo: document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline && a.playState === "running").length }), ESCENARIO);
+    const v = await pagina.evaluate((q) => ({ minima: Math.min(...[...document.querySelectorAll(`${q} [data-mk-parte], ${q} [data-mk-parte] *`)].map((e) => Number(getComputedStyle(e).opacity))), corriendo: document.getAnimations().filter((a) => (a.id === "mk-verse" || a.id === "mk-estado") && a.playState === "running").length }), ESCENARIO);
     revisar(v.minima === 1 && v.corriendo === 0 && errores.length === 0, `al imprimir a media entrada, todo queda a la vista (${JSON.stringify(v)})`);
     await ctx.close();
   }
+}
+
+// --- Un estado no gasta el tope de animaciones cada vez que se usa ---
+if (parte("hostil")) {
+  const { ctx, pagina, errores } = await abrir({ ejemplo: "boton", sin: true });
+  const r = await pagina.evaluate(async () => {
+    const { montar } = await import("/src/director/montar.ts");
+    // Una entrada que arma 585 animaciones (el tope es 600) y un botón que sube al apuntarlo.
+    const raiz = document.createElement("div");
+    raiz.innerHTML = ["a", "b", "c"].map((n) => `<i data-mk-parte="punto-${n}"></i>`.repeat(195)).join("") + '<button data-mk-parte="boton">Pedir</button>';
+    document.body.append(raiz);
+    const m = montar(raiz, {
+      version: 1,
+      escenas: [
+        { con: "verse", pasos: ["a", "b", "c"].map((n) => ({ actor: `punto-${n}`, de: { opacidad: 0 }, dura: 50 })) },
+        { con: "estado", estado: "apuntado", pasos: [{ actor: "boton", a: { y: -3 }, dura: 20 }] },
+      ],
+    });
+    const boton = raiz.lastElementChild;
+    const cuadro = () => new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo)));
+    let subio = 0;
+    for (let i = 0; i < 40; i++) {
+      boton.dispatchEvent(new PointerEvent("pointerenter"));
+      const a = boton.getAnimations().find((x) => x.id === "mk-estado");
+      if (a) {
+        subio++;
+        a.finish();
+      }
+      await cuadro();
+      boton.dispatchEvent(new PointerEvent("pointerleave"));
+      a?.finish();
+      await cuadro();
+    }
+    const entrada = raiz.querySelectorAll("i").length;
+    m.desmontar();
+    raiz.remove();
+    return { subio, entrada };
+  });
+  revisar(r.subio === 40 && errores.length === 0, `apuntar muchas veces no gasta el tope de animaciones: con ${r.entrada} ya armadas (tope 600), el botón sube las 40 veces (${r.subio})`);
+  await ctx.close();
 }
 
 // --- La vitrina: los seis ejemplos se ven, y el dato se edita ---
@@ -769,7 +814,8 @@ if (parte("vitrina")) {
   // Editar el dato: un error se explica; un cambio válido se aplica.
   const tarjeta = "[data-prueba=dir-boton]";
   await pagina.locator(`${tarjeta} summary`).click();
-  const caja = pagina.locator(`${tarjeta} textarea`);
+  // La caja del dato (la otra, la de español, se revisa en la parte «casa»).
+  const caja = pagina.locator(`${tarjeta} textarea:not([data-prueba=dir-espanol])`);
   const original = await caja.inputValue();
   await caja.fill(original.replace('"y": -3', '"y": -30'));
   await pagina.waitForTimeout(200);
@@ -789,6 +835,337 @@ if (parte("vitrina")) {
   const sobra = await pagina.evaluate(() => document.documentElement.scrollWidth - 360);
   revisar(sobra <= 0 && errores.length === 0, `la vitrina a 360 px no se sale de lado y no tiene errores (${sobra} px${errores.length ? `; ${errores[0]}` : ""})`);
   await ctx.close();
+}
+
+// --- La inclinación en 3D (fase 2) ---
+if (parte("inclina")) {
+  /** Lo que se ve de una parte: su giro, su transformación, su opacidad y la profundidad de su padre. */
+  const ver = (pagina, selector) =>
+    pagina.locator(`${ESCENARIO} ${selector}`).first().evaluate((e) => {
+      const c = getComputedStyle(e);
+      return { rotate: c.rotate, transform: c.transform, opacidad: Number(c.opacity), padre: e.parentElement.style.perspective, estilo: e.parentElement.getAttribute("style") };
+    });
+  /** El ángulo de un `rotate` (el último número, en grados). */
+  const angulo = (rotate) => (rotate === "none" ? 0 : Math.abs(parseFloat(rotate.split(" ").pop())));
+  const SE_LEVANTA = { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "grilla", por: "hijo", de: { inclinaX: -70, opacidad: 0 }, dura: 600, cada: 60 }] }] };
+  const SIGUE = { version: 1, escenas: [{ con: "puntero", pasos: [{ actor: "tarjeta", a: { inclinaX: 8, inclinaY: 10 }, resorte: "firme" }] }] };
+  {
+    // Una entrada que se levanta: a medio camino va inclinada y con profundidad; al terminar queda plana y entera.
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "tarjetas", partitura: SE_LEVANTA, reloj: "manual" });
+    await manual(pagina, "m[0].irA(200);");
+    const aMedias = await ver(pagina, "[data-mk-parte=grilla] > :first-child");
+    await manual(pagina, "m[0].irA(5000);");
+    const alFinal = await ver(pagina, "[data-mk-parte=grilla] > :first-child");
+    // Con el reloj de verdad: al terminar no queda ninguna animación ni transformación.
+    const real = await abrir({ ejemplo: "tarjetas", partitura: SE_LEVANTA });
+    await real.pagina.waitForTimeout(2200);
+    const suelta = await ver(real.pagina, "[data-mk-parte=grilla] > :first-child");
+    const vivas = await real.pagina.evaluate(() => document.getAnimations().filter((a) => a.id === "mk-verse").length);
+    await real.ctx.close();
+    const plana = (t) => t === "none" || t === "matrix(1, 0, 0, 1, 0, 0)";
+    revisar(/^matrix3d/.test(aMedias.transform) && aMedias.opacidad > 0 && aMedias.opacidad < 1 && plana(alFinal.transform) && alFinal.opacidad === 1 && suelta.transform === "none" && vivas === 0 && errores.length + real.errores.length === 0, `una entrada que se levanta va inclinada en 3D a medio camino y termina plana y entera (a medias: ${aMedias.transform.slice(0, 22)}…, opacidad ${aMedias.opacidad.toFixed(2)}; al final: ${alFinal.transform}, opacidad ${alFinal.opacidad}${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
+  {
+    // Siguiendo al puntero: la tarjeta se inclina hacia el cursor, con la profundidad en su padre; sobre su botón se queda quieta; al salir vuelve.
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "iman", partitura: SIGUE });
+    const escenario = await pagina.locator(ESCENARIO).boundingBox();
+    const antes = await ver(pagina, "[data-mk-parte=tarjeta]");
+    await pagina.mouse.move(escenario.x + 60, escenario.y + 60);
+    await pagina.mouse.move(escenario.x + escenario.width - 60, escenario.y + 50, { steps: 10 });
+    await pagina.waitForTimeout(1200);
+    const alLado = await ver(pagina, "[data-mk-parte=tarjeta]");
+    const boton = await pagina.locator(`${ESCENARIO} .dir-boton`).boundingBox();
+    await pagina.mouse.move(boton.x + boton.width / 2, boton.y + boton.height / 2, { steps: 6 });
+    await pagina.waitForTimeout(300);
+    const sobreBoton = (await ver(pagina, "[data-mk-parte=tarjeta]")).rotate;
+    await pagina.mouse.move(boton.x + boton.width / 2 + 6, boton.y + boton.height / 2 + 4, { steps: 3 });
+    await pagina.waitForTimeout(400);
+    const sigueQuieta = (await ver(pagina, "[data-mk-parte=tarjeta]")).rotate;
+    await pagina.mouse.move(escenario.x + 200, escenario.y + escenario.height + 120, { steps: 4 });
+    await pagina.waitForTimeout(1800);
+    const alSalir = await ver(pagina, "[data-mk-parte=tarjeta]");
+    const durmio = await cuadrosEn(pagina, 600);
+    revisar(antes.padre === "900px" && angulo(alLado.rotate) > 3 && alLado.rotate.split(" ").length === 4 && sobreBoton === sigueQuieta && angulo(alSalir.rotate) < 0.05 && durmio === 0 && errores.length === 0, `siguiendo al puntero la tarjeta se inclina hacia el cursor (${alLado.rotate}), con la profundidad en su padre (${antes.padre}); sobre su botón se queda quieta y al salir vuelve (${alSalir.rotate}; ${durmio} cuadros)`);
+    // Al quitar la partitura (la página sigue ahí), el padre queda como estaba.
+    await pagina.locator("[data-prueba=dir-quitar]").click();
+    await pagina.waitForTimeout(400);
+    const restos = await pagina.evaluate((escenario) => ({ sigue: !!document.querySelector(`${escenario} [data-mk-parte=tarjeta]`), profundidad: [...document.querySelectorAll("*")].filter((e) => e.style.perspective).length }), ESCENARIO);
+    revisar(restos.sigue && restos.profundidad === 0, `al quitar la partitura, la profundidad que puso el Director se quita y la página sigue ahí (${JSON.stringify(restos)})`);
+    await ctx.close();
+  }
+  {
+    // En un estado: lo apuntado se inclina poco y vuelve.
+    const p = { version: 1, escenas: [{ con: "estado", estado: "apuntado", sobre: "boton", pasos: [{ actor: "cara", a: { inclinaX: 4 }, dura: 120 }] }] };
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "boton", partitura: p });
+    const boton = await pagina.locator(`${ESCENARIO} [data-mk-parte=boton]`).boundingBox();
+    await pagina.mouse.move(boton.x + boton.width / 2, boton.y + boton.height / 2, { steps: 4 });
+    await pagina.waitForTimeout(500);
+    const apuntado = await ver(pagina, "[data-mk-parte=cara]");
+    await pagina.mouse.move(boton.x - 80, boton.y - 80, { steps: 4 });
+    await pagina.waitForTimeout(600);
+    const vuelve = await ver(pagina, "[data-mk-parte=cara]");
+    revisar(Math.abs(angulo(apuntado.rotate) - 4) < 0.05 && apuntado.padre === "900px" && angulo(vuelve.rotate) < 0.05 && errores.length === 0, `en un estado, lo apuntado se inclina 4 grados con profundidad y vuelve (${apuntado.rotate} → ${vuelve.rotate})`);
+    await ctx.close();
+  }
+  for (const [que, opciones, pedido] of [["en nivel liviano", {}, { nivel: "liviano" }], ["con movimiento reducido", { reducedMotion: "reduce" }, {}]]) {
+    // Sin inclinación: la entrada solo funde (o no hace nada) y nada sigue al puntero.
+    const uno = await abrir({ ejemplo: "tarjetas", partitura: SE_LEVANTA, reloj: "manual", ...pedido }, { opciones });
+    await manual(uno.pagina, "m[0]?.irA(200);");
+    const entrada = await ver(uno.pagina, "[data-mk-parte=grilla] > :first-child");
+    await uno.ctx.close();
+    const dos = await abrir({ ejemplo: "iman", partitura: SIGUE, ...pedido }, { opciones });
+    const escenario = await dos.pagina.locator(ESCENARIO).boundingBox();
+    await dos.pagina.mouse.move(escenario.x + 60, escenario.y + 60);
+    await dos.pagina.mouse.move(escenario.x + escenario.width - 60, escenario.y + 50, { steps: 8 });
+    await dos.pagina.waitForTimeout(700);
+    const tarjeta = await ver(dos.pagina, "[data-mk-parte=tarjeta]");
+    revisar(entrada.transform === "none" && tarjeta.rotate === "none" && !tarjeta.padre && uno.errores.length + dos.errores.length === 0, `${que} no hay inclinación: la entrada no gira (${entrada.transform}) y nada sigue al puntero (${tarjeta.rotate}; profundidad del padre: «${tarjeta.padre}»)`);
+    await dos.ctx.close();
+  }
+  {
+    // Texto cortado por letra, inclinado y atado al scroll: con la línea de tiempo nativa y con el respaldo manual da lo mismo.
+    const p = { version: 1, escenas: [{ con: "vista", tramo: "paso", pasos: [{ actor: "frase", por: "letra", de: { inclinaX: 80, opacidad: 0.2 }, a: { inclinaX: 0, opacidad: 1 }, entre: [0.2, 0.7], reparto: 0.3 }] }] };
+    const sinLineas = () => {
+      delete window.ViewTimeline;
+      delete window.ScrollTimeline;
+    };
+    const letras = (pagina) =>
+      pagina.evaluate(() =>
+        document.getAnimations().filter((a) => a.id === "mk-vista").map((a) => {
+          const c = getComputedStyle(a.effect.target);
+          return { angulo: c.rotate === "none" ? 0 : Math.abs(parseFloat(c.rotate.split(" ").pop())), opacidad: Number(c.opacity), padre: a.effect.target.parentElement.style.perspective };
+        }),
+      );
+    const respaldo = await abrir({ ejemplo: "paralaje", partitura: p }, { antes: [sinLineas] });
+    // La misma página con lo que el navegador traiga. Si no trae líneas de tiempo de scroll (Safari antes de la 26), no hay nativa con que comparar.
+    let nativa = await abrir({ ejemplo: "paralaje", partitura: p });
+    if (!(await nativa.pagina.evaluate(() => typeof ViewTimeline === "function"))) {
+      await nativa.ctx.close();
+      nativa = null;
+    }
+    let peor = 0;
+    let cambia = 0;
+    let anterior = null;
+    let conProfundidad = true;
+    for (const y of [0, 150, 300, 450, 600, 800]) {
+      await respaldo.pagina.evaluate((v) => scrollTo(0, v), y);
+      await respaldo.pagina.waitForTimeout(160);
+      const b = await letras(respaldo.pagina);
+      conProfundidad &&= b.length > 10 && b.every((l) => l.padre === "900px");
+      if (anterior) cambia = Math.max(cambia, ...b.map((l, i) => Math.abs(l.angulo - (anterior[i]?.angulo ?? 0))));
+      anterior = b;
+      if (nativa) {
+        await nativa.pagina.evaluate((v) => scrollTo(0, v), y);
+        await nativa.pagina.waitForTimeout(160);
+        const a = await letras(nativa.pagina);
+        peor = Math.max(peor, ...b.map((l, i) => Math.max(Math.abs(l.angulo - (a[i]?.angulo ?? 999)), Math.abs(l.opacidad - (a[i]?.opacidad ?? 9)) * 100)));
+      }
+    }
+    revisar(conProfundidad && cambia > 20 && (!nativa || peor < 2.5) && respaldo.errores.length + (nativa?.errores.length ?? 0) === 0, `texto por letra inclinado con el scroll: con el respaldo manual las letras se levantan al bajar (cambian hasta ${cambia.toFixed(0)}°, con profundidad)${nativa ? ` y da lo mismo que con la línea de tiempo nativa (diferencia máxima ${peor.toFixed(2)})` : " (este navegador no trae líneas de tiempo de scroll: no hay nativa con que comparar)"}`);
+    // Al quitar la partitura no queda nada suyo, y el texto vuelve a estar entero.
+    const antesDeQuitar = await respaldo.pagina.evaluate(() => ({ profundidad: [...document.querySelectorAll("*")].filter((e) => e.style.perspective).length, animaciones: document.getAnimations().filter((a) => String(a.id).startsWith("mk-")).length }));
+    await respaldo.pagina.locator("[data-prueba=dir-quitar]").click();
+    await respaldo.pagina.waitForTimeout(400);
+    const restos = await respaldo.pagina.evaluate((escenario) => ({ frase: document.querySelector(`${escenario} [data-mk-parte=frase]`)?.textContent ?? null, cortes: document.querySelectorAll("[data-mk-d]").length, profundidad: [...document.querySelectorAll("*")].filter((e) => e.style.perspective).length, animaciones: document.getAnimations().filter((a) => String(a.id).startsWith("mk-")).length }), ESCENARIO);
+    revisar(antesDeQuitar.profundidad > 0 && antesDeQuitar.animaciones > 10 && restos.frase?.startsWith("Cada taza") && restos.cortes === 0 && restos.profundidad === 0 && restos.animaciones === 0, `al quitar la partitura no queda profundidad ni animaciones del Director, y el texto vuelve entero (antes: ${JSON.stringify(antesDeQuitar)}; después: ${JSON.stringify(restos)})`);
+    await respaldo.ctx.close();
+    await nativa?.ctx.close();
+  }
+  for (const por of ["letra", "palabra"]) {
+    // La profundidad se tiene que VER, no solo estar puesta: una pieza volcada 60° con profundidad se ve más ancha
+    // que sin ella (sin profundidad, volcarse solo la aplasta y el ancho no cambia). Se mide cada pieza con la
+    // profundidad de su padre y, un instante, sin ella.
+    const p = { version: 1, escenas: [{ con: "vista", tramo: "paso", pasos: [{ actor: "frase", por, de: { inclinaX: 60 }, a: { inclinaX: 60 } }] }] };
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "paralaje", partitura: p, reloj: "manual" });
+    await manual(pagina, 'm[0].senal("vista", 0.5);');
+    await pagina.waitForTimeout(200);
+    const v = await pagina.evaluate(() => {
+      const piezas = document.getAnimations().filter((a) => a.id === "mk-vista").map((a) => a.effect.target);
+      const anchos = piezas.map((e) => {
+        const con = e.getBoundingClientRect().width;
+        const puesta = e.parentElement.style.perspective;
+        e.parentElement.style.perspective = "none";
+        const sin = e.getBoundingClientRect().width;
+        e.parentElement.style.perspective = puesta;
+        return con / sin;
+      });
+      return { piezas: piezas.length, menor: Math.min(...anchos), aplastada: piezas[0] ? piezas[0].getBoundingClientRect().height / piezas[0].offsetHeight : 1 };
+    });
+    revisar(v.piezas > 5 && v.menor > 1.01 && v.aplastada < 0.6 && errores.length === 0, `texto por ${por} inclinado con el scroll: la profundidad se ve en todas las piezas (${v.piezas} piezas; la que menos, ${((v.menor - 1) * 100).toFixed(1)} % más ancha; alto ${v.aplastada.toFixed(2)})`);
+    await ctx.close();
+  }
+  {
+    // La profundidad en un padre, caso por caso, montando a mano sobre una página armada aquí.
+    const { ctx, pagina, errores } = await abrir({ ejemplo: "boton", sin: true });
+    const r = await pagina.evaluate(async () => {
+      const { montar } = await import("/src/director/montar.ts");
+      const INCLINA = { version: 1, escenas: [{ con: "estado", estado: "apuntado", pasos: [{ actor: "tarjeta", a: { inclinaX: 4 } }] }] };
+      const PLANA = { version: 1, escenas: [{ con: "estado", estado: "apuntado", pasos: [{ actor: "tarjeta", a: { y: -3 } }] }] };
+      const hoja = document.createElement("style");
+      hoja.textContent = ".sonda-con-la-suya{perspective:500px}";
+      document.head.append(hoja);
+      /** Un padre con dos raíces adentro (cada una es su propio actor) y un hijo fijo. */
+      const armar = (clase = "", enLinea = "") => {
+        const padre = document.createElement("div");
+        padre.className = clase;
+        padre.style.cssText = `margin:120px 0 0 90px;${enLinea}`;
+        padre.innerHTML = '<div data-mk-parte="tarjeta">uno</div><div data-mk-parte="tarjeta">dos</div><i style="position:fixed;top:10px;left:10px;width:8px;height:8px"></i>';
+        document.body.append(padre);
+        const fijo = () => {
+          const c = padre.lastElementChild.getBoundingClientRect();
+          return `${Math.round(c.left)},${Math.round(c.top)}`;
+        };
+        return { padre, uno: padre.children[0], dos: padre.children[1], fijo };
+      };
+      const salida = {};
+      {
+        // Dos partituras sobre el mismo padre: la profundidad dura mientras quede una.
+        const { padre, uno, dos, fijo } = armar();
+        const antes = fijo();
+        const a = montar(uno, INCLINA);
+        const b = montar(dos, INCLINA);
+        const conDos = padre.style.perspective;
+        const durante = fijo();
+        a.desmontar();
+        const conUna = padre.style.perspective;
+        b.desmontar();
+        salida.compartido = { conDos, conUna, alFinal: padre.style.perspective, fijo: [antes, durante, fijo()] };
+        padre.remove();
+      }
+      {
+        // Un padre que ya trae la suya, por CSS o en línea: no se toca, ni al montar ni al desmontar.
+        const porCss = armar("sonda-con-la-suya");
+        const enLinea = armar("", "perspective:400px");
+        const a = montar(porCss.uno, INCLINA);
+        const b = montar(enLinea.uno, INCLINA);
+        const durante = [porCss.padre.style.perspective, getComputedStyle(porCss.padre).perspective, enLinea.padre.style.perspective];
+        a.desmontar();
+        b.desmontar();
+        salida.propia = { durante, alFinal: [porCss.padre.style.perspective, getComputedStyle(porCss.padre).perspective, enLinea.padre.style.perspective] };
+        porCss.padre.remove();
+        enLinea.padre.remove();
+      }
+      {
+        // Si la página pone la suya después de montar, al desmontar no se le borra.
+        const { padre, uno } = armar();
+        const a = montar(uno, INCLINA);
+        padre.style.perspective = "300px";
+        a.desmontar();
+        salida.despues = padre.style.perspective;
+        padre.remove();
+      }
+      {
+        // Una partitura que no inclina no toca al padre: lo fijo se queda en su lugar.
+        const { padre, uno, fijo } = armar();
+        const a = montar(uno, PLANA);
+        salida.plana = { profundidad: padre.style.perspective, fijo: fijo() };
+        a.desmontar();
+        padre.remove();
+      }
+      hoja.remove();
+      return salida;
+    });
+    const c = r.compartido;
+    revisar(c.conDos === "900px" && c.conUna === "900px" && c.alFinal === "" && c.fijo[0] === "10,10" && c.fijo[2] === "10,10", `dos partituras sobre el mismo padre: la profundidad dura mientras quede una y después el padre queda como estaba (${c.conDos} → ${c.conUna} → «${c.alFinal}»). Límite conocido: mientras está puesta, un hijo fijo de ese padre se ubica respecto de él (${c.fijo.join(" → ")})`);
+    revisar(JSON.stringify(r.propia.durante) === JSON.stringify(["", "500px", "400px"]) && JSON.stringify(r.propia.alFinal) === JSON.stringify(["", "500px", "400px"]), `un padre que ya trae su profundidad (por CSS o en línea) no se toca (${JSON.stringify(r.propia)})`);
+    revisar(r.despues === "300px", `si la página pone su profundidad después de montar, al desmontar no se le borra («${r.despues}»)`);
+    revisar(r.plana.profundidad === "" && r.plana.fijo === "10,10" && errores.length === 0, `una partitura que no inclina no le pone profundidad al padre, y lo fijo no se mueve (${JSON.stringify(r.plana)})`);
+    await ctx.close();
+  }
+}
+
+// --- Las partituras de la casa, el lenguaje en la vitrina y «Sorpréndeme» (fase 2) ---
+if (parte("casa")) {
+  // Tres efectos de texto se dicen igual que el original: se comparan pieza por pieza en cinco instantes.
+  for (const id of ["revelar", "trailer", "maquina"]) {
+    const { ctx, pagina, errores } = await abrir({ comparar: id });
+    await pagina.waitForSelector("[data-prueba=dir-original] .mk-tc-l", { timeout: 8000 }).catch(() => {});
+    await pagina.waitForTimeout(500);
+    const peor = { px: 0, escala: 0, opacidad: 0 };
+    let piezas = [0, 0];
+    let seMueve = false;
+    for (const t of [0, 120, 400, 800, 2600]) {
+      await manual(pagina, "m[0].irA(a[0]);", t);
+      const [original, casa] = await pagina.evaluate((ms) => {
+        const leer = (els) =>
+          els.map((e) => {
+            const c = getComputedStyle(e);
+            const m = new DOMMatrix(c.transform);
+            return { x: m.m41, y: m.m42, escala: Math.hypot(m.a, m.b), opacidad: Number(c.opacity) };
+          });
+        const originales = [...document.querySelectorAll("[data-prueba=dir-original] .mk-tc-l")];
+        // El original corre con CSS: se detiene y se lleva al mismo instante.
+        for (const e of originales)
+          for (const a of e.getAnimations()) {
+            a.pause();
+            a.currentTime = ms;
+          }
+        return [leer(originales), leer(document.getAnimations().filter((a) => a.id === "mk-verse").map((a) => a.effect.target))];
+      }, t);
+      piezas = [original.length, casa.length];
+      original.forEach((o, k) => {
+        const c = casa[k] ?? { x: 999, y: 999, escala: 99, opacidad: 9 };
+        peor.px = Math.max(peor.px, Math.abs(o.x - c.x), Math.abs(o.y - c.y));
+        peor.escala = Math.max(peor.escala, Math.abs(o.escala - c.escala));
+        peor.opacidad = Math.max(peor.opacidad, Math.abs(o.opacidad - c.opacidad));
+      });
+      if (t === 120) seMueve = original.some((o) => Math.abs(o.y) > 1 || Math.abs(o.escala - 1) > 0.01 || o.opacidad < 0.99);
+    }
+    revisar(piezas[0] > 3 && piezas[0] === piezas[1] && seMueve && peor.px < 0.75 && peor.escala < 0.012 && peor.opacidad < 0.02 && errores.length === 0, `de la casa, «${id}» se ve igual que el efecto original en cinco instantes (${piezas[0]} piezas; diferencia máxima: ${peor.px.toFixed(2)} px, ${peor.escala.toFixed(3)} de escala, ${peor.opacidad.toFixed(3)} de opacidad${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 1280, height: 900 } });
+    const pagina = await ctx.newPage();
+    const errores = [];
+    pagina.on("pageerror", (e) => errores.push(e.message));
+    pagina.on("console", (m) => m.type() === "error" && errores.push(m.text().slice(0, 200)));
+    await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+    await pagina.goto(`${base}/#director`);
+    await pagina.waitForSelector("[data-prueba=dir-casa]", { timeout: 8000 }).catch(() => {});
+    // Escribir en español: un error se explica con su línea; un texto válido se aplica y el dato cambia con él.
+    const portada = "[data-prueba=dir-portada]";
+    await pagina.locator(`${portada} details summary`).evaluate((e) => e.click());
+    const espanol = pagina.locator(`${portada} [data-prueba=dir-espanol]`);
+    const alAbrir = await espanol.inputValue();
+    await espanol.fill("al verse:\n  titulo vuela alto");
+    const conError = await pagina.locator(`${portada} [data-prueba=dir-errores-texto]`).innerText().catch(() => "");
+    await espanol.fill("# mi portada\nal verse:\n  titulo desde abajo 40px, aparece, 500ms\n  bajada aparece, luego 100ms");
+    await pagina.waitForTimeout(200);
+    const sinError = await pagina.locator(`${portada} [data-prueba=dir-errores-texto]`).count();
+    const dato = JSON.parse(await pagina.locator(`${portada} textarea`).nth(1).inputValue());
+    const corre = await pagina.evaluate((q) => document.getAnimations().filter((a) => a.id === "mk-verse" && a.effect.target.closest(q)).length, portada);
+    revisar(/^partitura portada\n\nal verse:\n  antetitulo desde abajo 28px, aparece/.test(alAbrir) && /Línea 2: .*«vuela alto»/.test(conError) && sinError === 0 && dato.version === 1 && dato.escenas[0].pasos[0].de.y === 40 && dato.escenas[0].pasos[1].luego === 100 && corre >= 1, `en la vitrina se escribe en español: un error se explica con su línea («${conError.slice(0, 60)}») y un texto válido se aplica y corre (${corre} animaciones; el dato quedó con y = ${dato.escenas?.[0]?.pasos?.[0]?.de?.y})`);
+    // Las de la casa: se elige una, se ve su texto y corre. Las dos nuevas responden al puntero.
+    const escenario = "[data-prueba=dir-casa-escenario]";
+    const alPuntero = async (id, parte) => {
+      await pagina.selectOption("[data-prueba=dir-casa-elegir]", id);
+      await pagina.locator(escenario).evaluate((e) => e.scrollIntoView({ block: "center" }));
+      await pagina.waitForTimeout(500);
+      const caja = await pagina.locator(escenario).boundingBox();
+      await pagina.mouse.move(caja.x + 30, caja.y + 30);
+      await pagina.mouse.move(caja.x + caja.width - 40, caja.y + 30, { steps: 8 });
+      await pagina.waitForTimeout(900);
+      return pagina.locator(`${escenario} [data-mk-parte=${parte}]`).first().evaluate((e) => ({ rotate: getComputedStyle(e).rotate, translate: getComputedStyle(e).translate, padre: e.parentElement.style.perspective }));
+    };
+    const volumen = await alPuntero("titulo-con-volumen", "titulo");
+    const textoVolumen = await pagina.locator("[data-prueba=dir-casa-texto]").innerText();
+    const tarjeta = await alPuntero("tarjeta-holografica", "tarjeta");
+    const brillo = await pagina.locator(`${escenario} [data-mk-parte=brillo]`).evaluate((e) => getComputedStyle(e).translate);
+    const grados = (r) => (r === "none" ? 0 : Math.abs(parseFloat(r.split(" ").pop())));
+    revisar(grados(volumen.rotate) > 3 && volumen.padre === "900px" && /con el puntero:\n  titulo se vuelca 10 grados, se ladea 14 grados, resorte suave/.test(textoVolumen) && grados(tarjeta.rotate) > 3 && brillo !== "none" && errores.length === 0, `de la casa, el título con volumen y la tarjeta holográfica se inclinan con el puntero (título ${volumen.rotate}; tarjeta ${tarjeta.rotate}; brillo ${brillo}), y su texto en español está a la vista`);
+    // Sorpréndeme: cada vez arma otra entrada, escrita en español.
+    await apretarSinMover(pagina, "[data-prueba=dir-sorprender]");
+    await pagina.waitForTimeout(200);
+    const una = await pagina.locator("[data-prueba=dir-sorpresa-texto]").innerText();
+    await apretarSinMover(pagina, "[data-prueba=dir-sorprender]");
+    await pagina.waitForTimeout(200);
+    const otra = await pagina.locator("[data-prueba=dir-sorpresa-texto]").innerText();
+    const corriendo = await pagina.evaluate(() => document.getAnimations().filter((a) => a.id === "mk-verse" && a.effect.target.closest("[data-prueba=dir-sorpresa]")).length);
+    revisar(/^partitura sorpresa 1\n\nal verse:\n  antetitulo /.test(una) && /^partitura sorpresa 2\n/.test(otra) && una !== otra && corriendo >= 4 && errores.length === 0, `«Sorpréndeme» arma cada vez otra entrada para las cuatro partes, y la muestra en español (${corriendo} animaciones${errores.length ? `; ${errores[0]}` : ""})`);
+    await ctx.close();
+  }
 }
 
 await navegador.close();

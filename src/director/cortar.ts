@@ -83,13 +83,11 @@ export function cortar(actor: HTMLElement, por: "palabra" | "letra", mascara: bo
         for (const letra of t.letras) piezas.push(palabra.appendChild(caja(letra)));
         visible.append(palabra);
       } else {
+        // Cada palabra va dentro de una caja propia: la que recorta (con máscara), y la que le da profundidad si se
+        // inclina (la profundidad va en el padre, y un padre en línea no la da).
         const pieza = caja(t.texto);
         piezas.push(pieza);
-        if (mascara) {
-          const recorte = caja(null, true);
-          recorte.append(pieza);
-          visible.append(recorte);
-        } else visible.append(pieza);
+        visible.appendChild(caja(null, mascara)).append(pieza);
       }
     }
     nodo.before(lector, visible);

@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura"];
 const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css"];
 
 /**
@@ -26,7 +26,9 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // cargar son sus nueve cargadores). Aquiles aprobó hasta 14 como máximo en el diseño de la segunda tanda; se sube solo
 // lo que hace falta.
 // 24-11-2026: director 10 (entrada nueva del motor de animación; tope del diseño de la fase 1, aprobado por Aquiles).
-export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10, director: 10 };
+// 24-11-2026: partitura 9 (entrada nueva: el lenguaje en español y lo de quien crea; no viaja a las páginas públicas).
+// Lo fijó Aquiles («tope en 9»); el diseño de la fase 2 del Director proponía 8 y la entrada quedó en 8,1.
+export const TOPES_KB = { "motion-kit": 80, encabezado: 35, pagina: 17, momentos: 13, escena: 16, receta: 10, director: 10, partitura: 9 };
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;

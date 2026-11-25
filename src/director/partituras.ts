@@ -6,7 +6,7 @@ const SUBE = { y: 28, opacidad: 0 };
 
 /** La entrada de un encabezado y su salida al bajar. Partes: antetitulo, titulo, bajada, botones y contenido. */
 const portada: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "portada",
   escenas: [
     {
@@ -24,7 +24,7 @@ const portada: Partitura = {
 
 /** Una grilla que entra de a una, después de su rótulo. Partes: rotulo y grilla (sus hijos son las tarjetas). */
 const tarjetas: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "tarjetas",
   escenas: [
     {
@@ -41,7 +41,7 @@ const tarjetas: Partitura = {
 
 /** Capas que se mueven distinto al cruzar la pantalla, y una frase que se enciende palabra por palabra. Partes: fondo, medio, frente y frase. */
 const paralaje: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "paralaje",
   escenas: [
     {
@@ -59,14 +59,14 @@ const paralaje: Partitura = {
 
 /** Una tarjeta que sigue al cursor, con su brillo al revés. Partes: tarjeta y brillo. */
 const iman: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "iman",
   escenas: [
     {
       con: "puntero",
       pasos: [
-        { actor: "tarjeta", x: 16, y: 12, giro: 2, resorte: "elastico" },
-        { actor: "brillo", x: -40, y: -30, opacidad: 0.4, resorte: "suave" },
+        { actor: "tarjeta", a: { x: 16, y: 12, giro: 2 }, resorte: "elastico" },
+        { actor: "brillo", a: { x: -40, y: -30, opacidad: 0.4 }, resorte: "suave" },
       ],
     },
   ],
@@ -77,15 +77,15 @@ const iman: Partitura = {
  * izquierda, centro, derecha y avance (la barra, dentro de una caja que la recorta).
  */
 const inercia: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "inercia",
   escenas: [
     {
       con: "velocidad",
       pasos: [
-        { actor: "izquierda", giro: -5, y: 18, resorte: "suave" },
-        { actor: "centro", y: 30, escala: 0.94, resorte: "elastico" },
-        { actor: "derecha", giro: 5, y: 18, resorte: "suave" },
+        { actor: "izquierda", a: { giro: -5, y: 18 }, resorte: "suave" },
+        { actor: "centro", a: { y: 30, escala: 0.94 }, resorte: "elastico" },
+        { actor: "derecha", a: { giro: 5, y: 18 }, resorte: "suave" },
       ],
     },
     { con: "scroll", pasos: [{ actor: "avance", de: { x: "-100%" }, a: { x: "0%" } }] },
@@ -94,7 +94,7 @@ const inercia: Partitura = {
 
 /** Un botón que se levanta al apuntarlo y se hunde al apretarlo. Partes: boton y cara (adentro del botón). */
 const boton: Partitura = {
-  version: 0,
+  version: 1,
   nombre: "boton",
   escenas: [
     { con: "estado", estado: "apuntado", pasos: [{ actor: "boton", a: { y: -3, escala: 1.05 }, dura: 180, curva: "resorte" }] },

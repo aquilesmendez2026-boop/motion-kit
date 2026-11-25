@@ -31,6 +31,7 @@ import { Encabezado, EstiloLaMente, recetaAProps, validarReceta, sinInyectarEsti
 import { PaginaRelato, Relato, validarPagina } from "motion-kit/pagina";
 import { SellosEstampa, CuentaRegresiva, FechasQueVienen, LlamadoConVida, FuegosArtificiales, CarruselGiratorio, LibroQueSeAbre, type FechaQueViene, type EscenaLlamado, type LibroQueSeAbreProps } from "motion-kit/momentos";
 import { ConPartitura, validarPartitura, type Partitura } from "motion-kit/director";
+import { leerPartitura, escribirPartitura, subirPartitura } from "motion-kit/partitura";
 import "motion-kit/estilos-encabezado.css";
 import "motion-kit/estilos-pagina.css";
 import "motion-kit/estilos-momentos.css";
@@ -42,10 +43,14 @@ const fondo = validarReceta({ version: 2, estilo: "neon", titulo: "Hola", efecto
 const fechas: FechaQueViene[] = [{ fecha: "2026-12-24", titulo: "Cerramos a las 14:00", tipo: "cerrado" }];
 const escena: EscenaLlamado = "agenda";
 const hojas: LibroQueSeAbreProps["hojas"] = [{ titulo: "Cafés", lineas: [{ texto: "Cortado", precio: "$2.400", agotado: true }] }];
-const partitura: Partitura = { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", por: "palabra", mascara: true, de: { y: "135%" } }] }] };
+const partitura: Partitura = { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", por: "palabra", mascara: true, de: { y: "135%" } }] }] };
 const vale = validarPartitura(partitura);
+// El lenguaje en español: se lee, se escribe y da lo mismo; y una partitura de la versión 0 se sube.
+const leida = leerPartitura("al verse:\\n  titulo desde abajo 135%, por palabra, con máscara");
+const escrita: string = leida.ok ? escribirPartitura(leida.partitura) : "";
+const subida = validarPartitura(subirPartitura({ version: 0, escenas: [{ con: "puntero", pasos: [{ actor: "tarjeta", x: 8 }] }] }));
 const p = validarPagina({ version: 1, encabezado: { version: 1, estilo: "neon", titulo: "Hola" }, relato: "carrete", relatoPagina: "impulso", estela: true });
-if (receta && p.ok && fondo.ok && vale.ok) createRoot(document.getElementById("raiz")!).render(
+if (receta && p.ok && fondo.ok && vale.ok && leida.ok && escrita && subida.ok) createRoot(document.getElementById("raiz")!).render(
   <EstiloLaMente tema="hamburgueseria" paleta="bosque" base={receta.estilo}>
     <PaginaRelato relato={p.pagina.relato} relatoPagina={p.pagina.relatoPagina} estela={p.pagina.estela}>
       <Encabezado {...recetaAProps(receta)} />

@@ -1,7 +1,7 @@
 // Escribe los contratos desde los catálogos del código:
 //   contrato/encabezado-motionkit.json (src/receta/contrato.ts)
 //   contrato/pagina-motionkit.json     (src/relatos/contrato-pagina.ts)
-//   contrato/partitura-motionkit.json  (src/director/contrato-partitura.ts; versión 0, experimental)
+//   contrato/partitura-motionkit.json  (src/director/contrato-partitura.ts; versión 1)
 // Uso: node scripts/generar-contrato.mjs            → escribe los archivos
 //      node scripts/generar-contrato.mjs --revisar  → falla (código 1) si alguno quedó atrás
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

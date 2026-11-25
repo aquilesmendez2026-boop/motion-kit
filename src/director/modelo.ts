@@ -1,8 +1,10 @@
-// La Partitura (v0, experimental): el dato que describe un movimiento. Quién se mueve (actores), con qué señal
-// (escenas), qué cambia (solo posición, tamaño, giro y opacidad) y cuándo. No es código: no tiene ciclos, funciones
+// La Partitura (versión 1): el dato que describe un movimiento. Quién se mueve (actores), con qué señal
+// (escenas), qué cambia (solo posición, tamaño, giro, inclinación y opacidad) y cuándo. No es código: no tiene ciclos, funciones
 // ni direcciones, y trae topes. La hace correr el Director (montar.ts).
 
-export const VERSION_PARTITURA = 0;
+export const VERSION_PARTITURA = 1;
+/** La profundidad (px) con que se ve lo que se inclina. La pone el Director: no es parte del dato. */
+export const PROFUNDIDAD = 900;
 
 /** Con qué se mueve una escena. */
 export const SENALES = ["verse", "estado", "vista", "scroll", "puntero", "velocidad"] as const;
@@ -12,6 +14,18 @@ export const SENALES_CONTINUAS: readonly Senal[] = ["estado", "vista", "scroll",
 
 export const CURVAS = ["suave", "lineal", "entra", "sale", "vaiven", "resorte"] as const;
 export type Curva = (typeof CURVAS)[number];
+/**
+ * Los cuatro números de cada curva (una Bézier cúbica), para reproducirla fuera del navegador. `resorte` es la que se
+ * usa cuando la página no trae el resorte de su estilo.
+ */
+export const NUMEROS_CURVA: Record<Curva, [number, number, number, number]> = {
+  suave: [0.2, 0.8, 0.2, 1],
+  lineal: [0, 0, 1, 1],
+  entra: [0.42, 0, 1, 1],
+  sale: [0, 0, 0.58, 1],
+  vaiven: [0.42, 0, 0.58, 1],
+  resorte: [0.3, 1.45, 0.5, 1],
+};
 /** Cómo se reparte un movimiento entre las piezas de un actor. */
 export const POR = ["hijo", "palabra", "letra"] as const;
 export type Por = (typeof POR)[number];
@@ -37,18 +51,22 @@ export const TOPES = {
   porciento: 300,
   escala: 4,
   giro: 720,
+  /** Grados de inclinación (de partida en una entrada, y en lo atado al scroll). */
+  inclina: 90,
+  /** Qué parte del tramo de scroll ocupa cada pieza cuando un paso reparte (`por`). */
+  reparto: [0.05, 1],
   /**
    * El estado final de una entrada (`a` en una escena `verse`) queda puesto para siempre: no puede esconder nada ni
    * sacarlo de su lugar. El punto de partida (`de`) y lo atado al scroll no tienen este tope: de ahí se viene, o se vuelve.
    */
-  final: { opacidadMin: 0.5, escalaMin: 0.5, escalaMax: 2, px: 200, porciento: 100 },
+  final: { opacidadMin: 0.5, escalaMin: 0.5, escalaMax: 2, px: 200, porciento: 100, inclina: 15 },
   /** Lo más que arma una partitura entera: animaciones, y elementos que siguen al cursor o a la velocidad. */
   animaciones: 600,
   seguidores: 100,
   /** Los movimientos de `estado` son chicos: lo que se aprieta no se escapa del dedo. */
-  estado: { px: 6, escalaMin: 0.94, escalaMax: 1.08, giro: 3, opacidadMin: 0.5, dura: 1000 },
+  estado: { px: 6, escalaMin: 0.94, escalaMax: 1.08, giro: 3, inclina: 4, opacidadMin: 0.5, dura: 1000 },
   /** Lo más que se corre algo que sigue al cursor o a la velocidad. */
-  seguir: { px: 200, giro: 45, escalaMin: 0.5, escalaMax: 2 },
+  seguir: { px: 200, giro: 45, inclina: 25, escalaMin: 0.5, escalaMax: 2 },
   nombre: 60,
 } as const;
 
@@ -59,6 +77,10 @@ export interface Cambio {
   escala?: number;
   /** Grados. */
   giro?: number;
+  /** Grados: vuelca hacia adelante o atrás (gira sobre el eje horizontal). */
+  inclinaX?: number;
+  /** Grados: gira hacia un lado (sobre el eje vertical). */
+  inclinaY?: number;
   opacidad?: number;
 }
 
@@ -99,17 +121,19 @@ export interface PasoScroll {
   a?: Cambio;
   /** El tramo de la señal (de 0 a 1) en que ocurre. */
   entre?: [number, number];
+  /** Con `por`: qué parte del tramo ocupa cada pieza (de 0,05 a 1; por defecto, la mitad). Con 1 van todas juntas. */
+  reparto?: number;
   curva?: Exclude<Curva, "resorte">;
 }
 
-/** Un paso que sigue a una señal con resorte (`puntero` o `velocidad`): cuánto se mueve con la señal al máximo. */
+/**
+ * Un paso que sigue a una señal con resorte (`puntero` o `velocidad`). `a`: cuánto cambia con la señal al máximo. `x` e
+ * `inclinaY` siguen a la señal de lado; `y` e `inclinaX`, a la de arriba abajo; `giro`, a la de lado; `escala` y
+ * `opacidad` miran qué tan lejos del centro está.
+ */
 export interface PasoSeguir {
   actor: string;
-  x?: number;
-  y?: number;
-  giro?: number;
-  escala?: number;
-  opacidad?: number;
+  a: Cambio;
   resorte?: Resorte;
 }
 
@@ -131,7 +155,7 @@ export interface Partitura {
 /** Los campos que acepta cada cosa (lo demás se rechaza). */
 export const CAMPOS = {
   partitura: ["version", "nombre", "escenas"],
-  cambio: ["x", "y", "escala", "giro", "opacidad"],
+  cambio: ["x", "y", "escala", "giro", "inclinaX", "inclinaY", "opacidad"],
   escena: {
     verse: ["con", "repetir", "pasos"],
     estado: ["con", "estado", "sobre", "pasos"],
@@ -143,10 +167,10 @@ export const CAMPOS = {
   paso: {
     verse: ["actor", "por", "mascara", "de", "a", "dura", "curva", "cada", "en", "luego", "junto"],
     estado: ["actor", "a", "dura", "curva"],
-    vista: ["actor", "por", "de", "a", "entre", "curva"],
-    scroll: ["actor", "por", "de", "a", "entre", "curva"],
-    puntero: ["actor", "x", "y", "giro", "escala", "opacidad", "resorte"],
-    velocidad: ["actor", "x", "y", "giro", "escala", "opacidad", "resorte"],
+    vista: ["actor", "por", "de", "a", "entre", "reparto", "curva"],
+    scroll: ["actor", "por", "de", "a", "entre", "reparto", "curva"],
+    puntero: ["actor", "a", "resorte"],
+    velocidad: ["actor", "a", "resorte"],
   },
 } as const;
 

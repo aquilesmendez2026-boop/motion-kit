@@ -26,6 +26,8 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 - `npm run typecheck`, `npm run build` (mide el peso), `npm test` (receta, contrato y puente con La Mente), `npm run contrato`,
   `npm run peso` (topes por entrada, también `momentos`) y `npm run probar-paquete` (instala el paquete e importa el
   encabezado, la página y los momentos).
+- Dos entradas del motor de animación: `motion-kit/director` (lo que corre en la página) y `motion-kit/partitura`
+  (lo de quien crea: el lenguaje en español, las partituras de la casa). Ver «Director, fase 2» en `docs/CATALOGO.md`.
 - `npm run verificar` (con el servidor arriba): corre solo las pruebas visuales, y las partes, que tocan los archivos
   que cambiaron. `-- --lista` dice cuáles sin correrlas; `-- --todo`, la batería completa (antes de una etiqueta).
 - `node scripts/en-safari.mjs <prueba> [parte]`: la misma prueba con el motor de Safari (WebKit). No es semáforo: ver

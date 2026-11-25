@@ -3,7 +3,8 @@
 import { velocidadScroll, type MuestraScroll } from "../dedo/calculo-impulso";
 import { crearCompas } from "./compas";
 import type { Escena } from "./modelo";
-import { llego, punteroEn, seguir, valorSeguido, velocidadNormal } from "./senales";
+import { darProfundidad } from "./profundidad";
+import { VELOCIDAD_VUELVE_MS, llego, punteroEn, seguir, valorSeguido, velocidadNormal } from "./senales";
 
 export interface Seguimiento {
   /** Algo cambió (lo que se toca, la vista, la pestaña): el compás mira si tiene trabajo. */
@@ -39,12 +40,14 @@ export function montarSeguir(o: OpcionesSeguir): Seguimiento {
     const seguidores = escena.pasos.flatMap((paso) => o.buscar(paso.actor).map((el) => ({ paso, el, ex: { x: 0, v: 0 }, ey: { x: 0, v: 0 } }))).slice(0, quedan);
     quedan -= seguidores.length;
     if (!seguidores.length) continue;
+    // Lo que se inclina necesita profundidad en su padre mientras la partitura esté montada.
+    for (const s of seguidores) if (s.paso.a.inclinaX !== undefined || s.paso.a.inclinaY !== undefined) limpiar.push(darProfundidad(s.el.parentElement));
     let ultimo = 0;
     const esVelocidad = escena.con === "velocidad";
     limpiar.push(
       compas.sumar((dt) => {
         // La velocidad vuelve a cero si hace un rato que no hay scroll.
-        if (esVelocidad && !manual && performance.now() - ultimo > 160) meta.x = meta.y = 0;
+        if (esVelocidad && !manual && performance.now() - ultimo > VELOCIDAD_VUELVE_MS) meta.x = meta.y = 0;
         let queda = false;
         for (const s of seguidores) {
           // Regla de la casa: mientras se apunta a algo que se aprieta dentro del actor, se queda donde está (y sin

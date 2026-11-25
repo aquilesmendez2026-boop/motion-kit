@@ -1,5 +1,6 @@
 // Las señales continuas, llevadas a números de -1 a 1, y el resorte con que se las sigue. Puro, sin navegador.
 import { pasoResorte } from "../dedo/resorte";
+import { giroInclinado } from "./fotogramas";
 import type { PasoSeguir, Resorte } from "./modelo";
 
 const acotar = (n: number) => (Number.isFinite(n) ? Math.max(-1, Math.min(1, n)) : 0);
@@ -10,8 +11,12 @@ export function punteroEn(caja: { left: number; top: number; width: number; heig
   return { x: acotar(((x - caja.left) / caja.width - 0.5) * 2), y: acotar(((y - caja.top) / caja.height - 0.5) * 2) };
 }
 
-/** La velocidad del scroll (px por segundo) como un número de -1 a 1. A 1500 px por segundo ya es el máximo. */
-export const velocidadNormal = (pxPorSegundo: number) => acotar(pxPorSegundo / 1500);
+/** La velocidad del scroll (px por segundo) que ya cuenta como el máximo. */
+export const VELOCIDAD_MAXIMA = 1500;
+/** Sin scroll durante este rato (ms), la velocidad vuelve a cero. */
+export const VELOCIDAD_VUELVE_MS = 160;
+/** La velocidad del scroll (px por segundo) como un número de -1 a 1. */
+export const velocidadNormal = (pxPorSegundo: number) => acotar(pxPorSegundo / VELOCIDAD_MAXIMA);
 
 /** Rigidez y amortiguación de cada resorte. */
 export const RESORTES_SEGUIR: Record<Resorte, [number, number]> = {
@@ -37,11 +42,19 @@ const corto = (n: number) => `${Math.round(n * 1000) / 1000}`;
  * centro está la señal, no hacia dónde.
  */
 export function valorSeguido(p: PasoSeguir, sx: number, sy: number): { translate?: string; rotate?: string; scale?: string; opacity?: string } {
+  const c = p.a;
   const lejos = Math.max(Math.abs(sx), Math.abs(sy));
+  // En lo que sigue, `x` e `y` van en px (el validador no deja pasar porcentajes).
+  const px = (v: number | string | undefined) => (typeof v === "number" ? v : 0);
   return {
-    ...(p.x !== undefined || p.y !== undefined ? { translate: `${corto(sx * (p.x ?? 0))}px ${corto(sy * (p.y ?? 0))}px` } : {}),
-    ...(p.giro !== undefined ? { rotate: `${corto(sx * p.giro)}deg` } : {}),
-    ...(p.escala !== undefined ? { scale: corto(1 + lejos * (p.escala - 1)) } : {}),
-    ...(p.opacidad !== undefined ? { opacity: corto(1 + lejos * (p.opacidad - 1)) } : {}),
+    ...(c.x !== undefined || c.y !== undefined ? { translate: `${corto(sx * px(c.x))}px ${corto(sy * px(c.y))}px` } : {}),
+    // Se inclina hacia donde está la señal: a la derecha gira sobre el eje vertical; arriba, se vuelca.
+    ...(c.inclinaX !== undefined || c.inclinaY !== undefined
+      ? { rotate: giroInclinado(-sy * (c.inclinaX ?? 0), sx * (c.inclinaY ?? 0), { inclinaX: 1 }) }
+      : c.giro !== undefined
+        ? { rotate: `${corto(sx * c.giro)}deg` }
+        : {}),
+    ...(c.escala !== undefined ? { scale: corto(1 + lejos * (c.escala - 1)) } : {}),
+    ...(c.opacidad !== undefined ? { opacity: corto(1 + lejos * (c.opacidad - 1)) } : {}),
   };
 }

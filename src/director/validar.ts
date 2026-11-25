@@ -12,12 +12,16 @@ const esNumero = (v: unknown): v is number => typeof v === "number" && Number.is
 const en = (lista: readonly string[], v: unknown): v is string => typeof v === "string" && lista.includes(v);
 
 /** Hasta dónde puede llegar cada número de un cambio, según dónde va. */
-type Limites = { px: number; porciento: number; escala: [number, number]; giro: number; opacidad: [number, number] };
-const LIBRE: Limites = { px: TOPES.px, porciento: TOPES.porciento, escala: [0, TOPES.escala], giro: TOPES.giro, opacidad: [0, 1] };
-const FINAL: Limites = { px: TOPES.final.px, porciento: TOPES.final.porciento, escala: [TOPES.final.escalaMin, TOPES.final.escalaMax], giro: TOPES.giro, opacidad: [TOPES.final.opacidadMin, 1] };
-const DE_ESTADO: Limites = { px: TOPES.estado.px, porciento: 0, escala: [TOPES.estado.escalaMin, TOPES.estado.escalaMax], giro: TOPES.estado.giro, opacidad: [TOPES.estado.opacidadMin, 1] };
-const DE_SEGUIR: Limites = { px: TOPES.seguir.px, porciento: 0, escala: [TOPES.seguir.escalaMin, TOPES.seguir.escalaMax], giro: TOPES.seguir.giro, opacidad: [0, 1] };
+type Limites = { px: number; porciento: number; escala: [number, number]; giro: number; inclina: number; opacidad: [number, number] };
+const LIBRE: Limites = { px: TOPES.px, porciento: TOPES.porciento, escala: [0, TOPES.escala], giro: TOPES.giro, inclina: TOPES.inclina, opacidad: [0, 1] };
+const FINAL: Limites = { px: TOPES.final.px, porciento: TOPES.final.porciento, escala: [TOPES.final.escalaMin, TOPES.final.escalaMax], giro: TOPES.giro, inclina: TOPES.final.inclina, opacidad: [TOPES.final.opacidadMin, 1] };
+const DE_ESTADO: Limites = { px: TOPES.estado.px, porciento: 0, escala: [TOPES.estado.escalaMin, TOPES.estado.escalaMax], giro: TOPES.estado.giro, inclina: TOPES.estado.inclina, opacidad: [TOPES.estado.opacidadMin, 1] };
+const DE_SEGUIR: Limites = { px: TOPES.seguir.px, porciento: 0, escala: [TOPES.seguir.escalaMin, TOPES.seguir.escalaMax], giro: TOPES.seguir.giro, inclina: TOPES.seguir.inclina, opacidad: [0, 1] };
 
+/**
+ * Lo que no calza no vale. Solo la versión 1: una partitura de la versión 0 se sube antes con `subirPartitura`
+ * (`motion-kit/partitura`), que no viaja con el Director para no pesarle a las páginas.
+ */
 export function validarPartitura(x: unknown): ResultadoPartitura {
   const errores: ErrorPartitura[] = [];
   const mal = (campo: string, mensaje: string) => {
@@ -45,7 +49,7 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
   const cambio = (v: unknown, l: Limites, donde: string): boolean => {
     if (v === undefined) return false;
     if (!esObjeto(v)) {
-      mal(donde, "Tiene que ser un objeto con x, y, escala, giro u opacidad.");
+      mal(donde, "Tiene que ser un objeto con x, y, escala, giro, inclinaX, inclinaY u opacidad.");
       return false;
     }
     sobran(v, CAMPOS.cambio, donde);
@@ -53,6 +57,8 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
     distancia(v.y, l, `${donde}.y`);
     numero(v.escala, l.escala[0], l.escala[1], `${donde}.escala`, "La escala");
     numero(v.giro, -l.giro, l.giro, `${donde}.giro`, "El giro");
+    numero(v.inclinaX, -l.inclina, l.inclina, `${donde}.inclinaX`, "La inclinación (inclinaX)");
+    numero(v.inclinaY, -l.inclina, l.inclina, `${donde}.inclinaY`, "La inclinación (inclinaY)");
     numero(v.opacidad, l.opacidad[0], l.opacidad[1], `${donde}.opacidad`, "La opacidad");
     if (!Object.keys(v).length) mal(donde, "No dice qué cambia.");
     return v.opacidad !== undefined;
@@ -64,7 +70,7 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
   };
 
   sobran(x, CAMPOS.partitura, "partitura");
-  if (x.version !== VERSION_PARTITURA) mal("version", `La versión de la partitura tiene que ser ${VERSION_PARTITURA}.`);
+  if (x.version !== VERSION_PARTITURA) mal("version", `La versión de la partitura tiene que ser ${VERSION_PARTITURA}${x.version === 0 ? " (una de la versión 0 se sube con subirPartitura)" : ""}.`);
   if (x.nombre !== undefined && (typeof x.nombre !== "string" || x.nombre.length > TOPES.nombre)) mal("nombre", `El nombre es un texto de hasta ${TOPES.nombre} letras.`);
   if (!Array.isArray(x.escenas) || !x.escenas.length) {
     mal("escenas", "La partitura necesita al menos una escena.");
@@ -110,9 +116,9 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
       let tocaOpacidad = false;
 
       if (con === "puntero" || con === "velocidad") {
-        // Lo que cambia va directo en el paso: se revisa como un cambio, con los topes de lo que sigue.
-        const loQueCambia = Object.fromEntries(CAMPOS.cambio.filter((c) => p[c] !== undefined).map((c) => [c, p[c]]));
-        tocaOpacidad = cambio(loQueCambia, DE_SEGUIR, paso);
+        // Cuánto cambia con la señal al máximo, con los topes de lo que sigue.
+        if (p.a === undefined) mal(`${paso}.a`, "Un paso que sigue dice cuánto cambia («a»).");
+        tocaOpacidad = cambio(p.a, DE_SEGUIR, `${paso}.a`);
         if (p.resorte !== undefined && !en(RESORTES, p.resorte)) mal(`${paso}.resorte`, `El resorte es uno de: ${RESORTES.join(", ")}.`);
       } else if (con === "estado") {
         if (p.a === undefined) mal(`${paso}.a`, "Un paso de estado dice hacia dónde va («a»).");
@@ -149,6 +155,7 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
           if (anterior.fin > TOPES.escena && enRango(p.dura, TOPES.dura) && cuando.every((c) => enRango(p[c], TOPES.escena))) mal(paso, `Con este paso la escena dura más de ${TOPES.escena / 1000} segundos.`);
         } else {
           if (p.curva !== undefined && (!en(CURVAS, p.curva) || p.curva === "resorte")) mal(`${paso}.curva`, "Atada al scroll, la curva es una de: suave, lineal, entra, sale, vaiven.");
+          numero(p.reparto, TOPES.reparto[0], TOPES.reparto[1], `${paso}.reparto`, "El reparto");
           if (p.entre !== undefined) {
             const t = p.entre;
             if (!Array.isArray(t) || t.length !== 2 || !esNumero(t[0]) || !esNumero(t[1]) || t[0] < 0 || t[1] > 1 || t[0] >= t[1]) mal(`${paso}.entre`, "«entre» son dos números de 0 a 1, el primero menor que el segundo.");
@@ -156,6 +163,11 @@ export function validarPartitura(x: unknown): ResultadoPartitura {
         }
       }
 
+      // En lo continuo el giro y la inclinación comparten una sola propiedad (`rotate`): un paso lleva una de las dos.
+      if (esContinua) {
+        const tiene = (c: string) => [p.de, p.a].some((v) => esObjeto(v) && v[c] !== undefined);
+        if (tiene("giro") && (tiene("inclinaX") || tiene("inclinaY"))) mal(paso, "Aquí un paso gira o se inclina, no las dos cosas: para sumar, usa un actor dentro de otro.");
+      }
       if (esContinua && nombre !== null) {
         if (vistos.has(nombre)) mal(`${paso}.actor`, "Este actor ya tiene un paso en esta escena: aquí va uno solo por actor.");
         vistos.add(nombre);

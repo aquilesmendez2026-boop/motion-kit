@@ -6,9 +6,9 @@ import { CURVAS, NOMBRE_ACTOR, POR, SENALES, TOPES, type Partitura } from "../sr
 import { validarPartitura } from "../src/director/validar";
 import { contratoPartitura, textoContratoPartitura } from "../src/director/contrato-partitura";
 
-const MINIMA: Partitura = { version: 0, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: 28, opacidad: 0 } }] }] };
+const MINIMA: Partitura = { version: 1, escenas: [{ con: "verse", pasos: [{ actor: "titulo", de: { y: 28, opacidad: 0 } }] }] };
 /** La misma partitura con un cambio en su primer paso. */
-const conPaso = (paso: Record<string, unknown>, escena: Record<string, unknown> = {}) => ({ version: 0, escenas: [{ con: "verse", ...escena, pasos: [{ actor: "titulo", ...paso }] }] });
+const conPaso = (paso: Record<string, unknown>, escena: Record<string, unknown> = {}) => ({ version: 1, escenas: [{ con: "verse", ...escena, pasos: [{ actor: "titulo", ...paso }] }] });
 const vale = (x: unknown) => validarPartitura(x).ok;
 /** Los campos de los errores de una partitura que no vale. */
 const errores = (x: unknown): string[] => {
@@ -19,7 +19,7 @@ const errores = (x: unknown): string[] => {
 test("partitura: la mínima vale y una completa también", () => {
   assert.ok(vale(MINIMA));
   const completa: Partitura = {
-    version: 0,
+    version: 1,
     nombre: "portada",
     escenas: [
       { con: "verse", repetir: true, pasos: [
@@ -29,8 +29,8 @@ test("partitura: la mínima vale y una completa también", () => {
       ] },
       { con: "vista", tramo: "salida", pasos: [{ actor: "contenido", a: { y: "-14%", opacidad: 0 }, entre: [0.2, 1], curva: "lineal" }] },
       { con: "scroll", pasos: [{ actor: "barra", de: { escala: 0 }, a: { escala: 1 } }] },
-      { con: "puntero", pasos: [{ actor: "caja", x: 10, y: 10, giro: 2, resorte: "firme" }] },
-      { con: "velocidad", pasos: [{ actor: "foto", giro: 4, escala: 0.96 }] },
+      { con: "puntero", pasos: [{ actor: "caja", a: { x: 10, y: 10, giro: 2 }, resorte: "firme" }] },
+      { con: "velocidad", pasos: [{ actor: "foto", a: { giro: 4, escala: 0.96 } }] },
       { con: "estado", estado: "apuntado", sobre: "tarjeta", pasos: [{ actor: "boton", a: { y: -3, escala: 1.04 }, dura: 160 }] },
     ],
   };
@@ -40,14 +40,14 @@ test("partitura: la mínima vale y una completa también", () => {
 });
 
 test("partitura: lo que no es una partitura no vale, y no lanza", () => {
-  for (const x of [null, undefined, 3, "hola", [], [MINIMA], () => 1, { version: 0 }, { version: 0, escenas: [] }, { version: 0, escenas: "x" }, { version: 1, escenas: MINIMA.escenas }, { version: "0", escenas: MINIMA.escenas }]) {
+  for (const x of [null, undefined, 3, "hola", [], [MINIMA], () => 1, { version: 1 }, { version: 1, escenas: [] }, { version: 1, escenas: "x" }, { version: 2, escenas: MINIMA.escenas }, { version: "1", escenas: MINIMA.escenas }]) {
     assert.equal(vale(x), false, JSON.stringify(x) ?? String(x));
   }
   assert.deepEqual(errores({ ...MINIMA, otra: 1 }), ["partitura.otra"]);
   assert.deepEqual(errores({ ...MINIMA, nombre: "x".repeat(61) }), ["nombre"]);
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "magia", pasos: [] }] }), ["escenas[0].con"]);
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "verse", pasos: [] }] }), ["escenas[0].pasos"]);
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "verse", pasos: [3] }] }), ["escenas[0].pasos[0]"]);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "magia", pasos: [] }] }), ["escenas[0].con"]);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "verse", pasos: [] }] }), ["escenas[0].pasos"]);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "verse", pasos: [3] }] }), ["escenas[0].pasos[0]"]);
   assert.deepEqual(errores(conPaso({ de: { y: 1 } }, { tramo: "salida" })), ["escenas[0].tramo"]);
 });
 
@@ -97,15 +97,15 @@ test("partitura: tiempos, curvas, «por» y máscara", () => {
 
 test("partitura: topes de cantidad", () => {
   const paso = { actor: "titulo", de: { y: 1 } };
-  assert.deepEqual(errores({ version: 0, escenas: Array.from({ length: TOPES.escenas + 1 }, () => ({ con: "verse", pasos: [paso] })) }), ["escenas"]);
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "verse", pasos: Array.from({ length: TOPES.pasos + 1 }, () => paso) }] }), ["escenas[0].pasos"]);
+  assert.deepEqual(errores({ version: 1, escenas: Array.from({ length: TOPES.escenas + 1 }, () => ({ con: "verse", pasos: [paso] })) }), ["escenas"]);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "verse", pasos: Array.from({ length: TOPES.pasos + 1 }, () => paso) }] }), ["escenas[0].pasos"]);
   // Algo enorme y roto no devuelve una lista enorme de mensajes.
-  const r = validarPartitura({ version: 0, escenas: [{ con: "verse", pasos: Array.from({ length: TOPES.pasos }, () => ({ actor: "X", de: { y: "malo", color: 1 }, raro: 1 })) }] });
+  const r = validarPartitura({ version: 1, escenas: [{ con: "verse", pasos: Array.from({ length: TOPES.pasos }, () => ({ actor: "X", de: { y: "malo", color: 1 }, raro: 1 })) }] });
   assert.ok(!r.ok && r.errores.length <= 50);
 });
 
 test("partitura: atada al scroll", () => {
-  const e = (paso: Record<string, unknown>, escena: Record<string, unknown> = { con: "vista" }) => errores({ version: 0, escenas: [{ ...escena, pasos: [{ actor: "foto", a: { y: -40 }, ...paso }] }] });
+  const e = (paso: Record<string, unknown>, escena: Record<string, unknown> = { con: "vista" }) => errores({ version: 1, escenas: [{ ...escena, pasos: [{ actor: "foto", a: { y: -40 }, ...paso }] }] });
   assert.deepEqual(e({}), []);
   assert.deepEqual(e({}, { con: "vista", tramo: "paso" }), []);
   assert.deepEqual(e({}, { con: "vista", tramo: "medio" }), ["escenas[0].tramo"]);
@@ -119,18 +119,19 @@ test("partitura: atada al scroll", () => {
 });
 
 test("partitura: lo que sigue al cursor o a la velocidad, y los estados, van con topes chicos", () => {
-  const seguir = (paso: Record<string, unknown>, con = "puntero") => errores({ version: 0, escenas: [{ con, pasos: [{ actor: "caja", ...paso }] }] });
-  assert.deepEqual(seguir({ x: 10, y: 10, giro: 2, resorte: "elastico" }), []);
+  /** Un paso que sigue: su cambio va en «a»; `extra` son otros campos del paso. */
+  const seguir = (a: Record<string, unknown>, con = "puntero", extra: Record<string, unknown> = {}) => errores({ version: 1, escenas: [{ con, pasos: [{ actor: "caja", a, ...extra }] }] });
+  assert.deepEqual(seguir({ x: 10, y: 10, giro: 2 }, "puntero", { resorte: "elastico" }), []);
   assert.deepEqual(seguir({ giro: 4 }, "velocidad"), []);
-  assert.deepEqual(seguir({}), ["escenas[0].pasos[0]"], "no dice qué cambia");
-  assert.deepEqual(seguir({ x: TOPES.seguir.px + 1 }), ["escenas[0].pasos[0].x"]);
-  assert.deepEqual(seguir({ x: "10%" }), ["escenas[0].pasos[0].x"], "aquí no hay porcentajes");
-  assert.deepEqual(seguir({ giro: 46 }), ["escenas[0].pasos[0].giro"]);
-  assert.deepEqual(seguir({ escala: 3 }), ["escenas[0].pasos[0].escala"]);
-  assert.deepEqual(seguir({ x: 1, resorte: "duro" }), ["escenas[0].pasos[0].resorte"]);
-  assert.deepEqual(seguir({ x: 1, de: { y: 1 } }), ["escenas[0].pasos[0].de"]);
+  assert.deepEqual(seguir({}), ["escenas[0].pasos[0].a"], "no dice qué cambia");
+  assert.deepEqual(seguir({ x: TOPES.seguir.px + 1 }), ["escenas[0].pasos[0].a.x"]);
+  assert.deepEqual(seguir({ x: "10%" }), ["escenas[0].pasos[0].a.x"], "aquí no hay porcentajes");
+  assert.deepEqual(seguir({ giro: 46 }), ["escenas[0].pasos[0].a.giro"]);
+  assert.deepEqual(seguir({ escala: 3 }), ["escenas[0].pasos[0].a.escala"]);
+  assert.deepEqual(seguir({ x: 1 }, "puntero", { resorte: "duro" }), ["escenas[0].pasos[0].resorte"]);
+  assert.deepEqual(seguir({ x: 1 }, "puntero", { de: { y: 1 } }), ["escenas[0].pasos[0].de"]);
 
-  const estado = (paso: Record<string, unknown>, escena: Record<string, unknown> = {}) => errores({ version: 0, escenas: [{ con: "estado", estado: "apuntado", ...escena, pasos: [{ actor: "boton", ...paso }] }] });
+  const estado = (paso: Record<string, unknown>, escena: Record<string, unknown> = {}) => errores({ version: 1, escenas: [{ con: "estado", estado: "apuntado", ...escena, pasos: [{ actor: "boton", ...paso }] }] });
   assert.deepEqual(estado({ a: { y: -3, escala: 1.04 } }), []);
   assert.deepEqual(estado({ a: { y: -3 } }, { estado: "dormido" }), ["escenas[0].estado"]);
   assert.deepEqual(estado({ a: { y: -3 } }, { sobre: "Tarjeta" }), ["escenas[0].sobre"]);
@@ -145,24 +146,24 @@ test("partitura: lo que sigue al cursor o a la velocidad, y los estados, van con
 });
 
 test("partitura: un actor sigue a una sola señal continua, y su opacidad es de una sola escena", () => {
-  const con = (...escenas: unknown[]) => errores({ version: 0, escenas });
+  const con = (...escenas: unknown[]) => errores({ version: 1, escenas });
   const vista = { con: "vista", pasos: [{ actor: "foto", a: { y: -40 } }] };
-  const puntero = { con: "puntero", pasos: [{ actor: "foto", x: 10 }] };
+  const puntero = { con: "puntero", pasos: [{ actor: "foto", a: { x: 10 } }] };
   const estado = { con: "estado", estado: "apuntado", pasos: [{ actor: "foto", a: { escala: 1.04 } }] };
   const entrada = { con: "verse", pasos: [{ actor: "foto", de: { y: 28 } }] };
   assert.deepEqual(con(vista, puntero), ["escenas[1].pasos[0].actor"]);
   assert.deepEqual(con(vista, estado), ["escenas[1].pasos[0].actor"]);
-  assert.deepEqual(con(puntero, { con: "velocidad", pasos: [{ actor: "foto", giro: 2 }] }), ["escenas[1].pasos[0].actor"]);
+  assert.deepEqual(con(puntero, { con: "velocidad", pasos: [{ actor: "foto", a: { giro: 2 } }] }), ["escenas[1].pasos[0].actor"]);
   assert.deepEqual(con(entrada, vista), [], "una por tiempo y una continua se suman");
   assert.deepEqual(con(entrada, entrada, estado), [], "varias por tiempo, también");
-  assert.deepEqual(con(vista, { con: "puntero", pasos: [{ actor: "marco", x: 10 }] }), [], "actores distintos");
+  assert.deepEqual(con(vista, { con: "puntero", pasos: [{ actor: "marco", a: { x: 10 } }] }), [], "actores distintos");
   assert.deepEqual(con({ con: "vista", pasos: [{ actor: "foto", a: { y: -40 } }, { actor: "foto", a: { escala: 1.2 } }] }), ["escenas[0].pasos[1].actor"], "uno solo por actor en una escena continua");
   assert.deepEqual(con({ con: "verse", pasos: [{ actor: "foto", de: { y: 28 } }, { actor: "foto", a: { escala: 1.1 }, luego: 0 }] }), [], "por tiempo, un actor puede tener varios pasos");
   // La opacidad.
   const funde = { con: "verse", pasos: [{ actor: "foto", de: { opacidad: 0 } }] };
   assert.deepEqual(con(funde, { con: "vista", pasos: [{ actor: "foto", a: { opacidad: 0 } }] }), ["escenas[1].pasos[0]"]);
   assert.deepEqual(con(funde, { con: "vista", pasos: [{ actor: "foto", a: { y: -40 } }] }), []);
-  assert.deepEqual(con(funde, { con: "puntero", pasos: [{ actor: "foto", opacidad: 0.5 }] }), ["escenas[1].pasos[0]"]);
+  assert.deepEqual(con(funde, { con: "puntero", pasos: [{ actor: "foto", a: { opacidad: 0.5 } }] }), ["escenas[1].pasos[0]"]);
   assert.deepEqual(con({ con: "verse", pasos: [{ actor: "foto", de: { opacidad: 0 } }, { actor: "foto", a: { opacidad: 0.5 }, luego: 0 }] }), [], "dentro de la misma escena sí");
 });
 
@@ -172,10 +173,9 @@ test("partitura: los mensajes van en español y dicen dónde", () => {
   assert.deepEqual(r.ok ? [] : r.errores, [{ campo: "escenas[0].pasos[0].de.y", mensaje: "Tiene que ser un número (px) o un porcentaje como «-14%»." }]);
 });
 
-test("el contrato de la partitura sale del modelo, está al día y se marca experimental", () => {
+test("el contrato de la partitura sale del modelo y está al día", () => {
   const c = contratoPartitura();
-  assert.equal(c.version, 0);
-  assert.equal(c.experimental, true);
+  assert.equal(c.version, 1);
   assert.deepEqual(c.listas.con, [...SENALES]);
   assert.deepEqual(c.listas.curva, [...CURVAS]);
   assert.equal(c.topes.escenas, TOPES.escenas);
@@ -378,10 +378,10 @@ test("señales: cada resorte llega a su meta y se duerme; el elástico se pasa y
 });
 
 test("señales: lo que escribe un paso que sigue, según la señal", () => {
-  assert.deepEqual(valorSeguido({ actor: "caja", x: 10, y: 20, giro: 4 }, 0.5, -1), { translate: "5px -20px", rotate: "2deg" });
-  assert.deepEqual(valorSeguido({ actor: "caja", escala: 1.2, opacidad: 0.5 }, -0.5, 0.25), { scale: "1.1", opacity: "0.75" });
-  assert.deepEqual(valorSeguido({ actor: "caja", x: 10 }, 0, 0), { translate: "0px 0px" });
-  assert.deepEqual(valorSeguido({ actor: "caja", y: 8 }, 1, 1), { translate: "0px 8px" });
+  assert.deepEqual(valorSeguido({ actor: "caja", a: { x: 10, y: 20, giro: 4 } }, 0.5, -1), { translate: "5px -20px", rotate: "2deg" });
+  assert.deepEqual(valorSeguido({ actor: "caja", a: { escala: 1.2, opacidad: 0.5 } }, -0.5, 0.25), { scale: "1.1", opacity: "0.75" });
+  assert.deepEqual(valorSeguido({ actor: "caja", a: { x: 10 } }, 0, 0), { translate: "0px 0px" });
+  assert.deepEqual(valorSeguido({ actor: "caja", a: { y: 8 } }, 1, 1), { translate: "0px 8px" });
 });
 
 // --- El Director ---
@@ -389,7 +389,7 @@ import { duenosDeOpacidad, montar, rangoDePieza } from "../src/director/montar";
 
 test("director: una partitura que no vale no se monta, avisa y no lanza", () => {
   const raiz = { animate() {}, querySelectorAll: () => [] } as unknown as HTMLElement;
-  for (const mala of [null, 3, { version: 0 }, { version: 0, escenas: [{ con: "verse", pasos: [{ actor: ".x", de: { y: 1 } }] }] }]) {
+  for (const mala of [null, 3, { version: 1 }, { version: 1, escenas: [{ con: "verse", pasos: [{ actor: ".x", de: { y: 1 } }] }] }]) {
     let avisos = 0;
     const m = montar(raiz, mala as never, { alFallar: (e) => (avisos += e.length) });
     assert.ok(avisos > 0, JSON.stringify(mala));
@@ -414,11 +414,11 @@ test("director: sin navegador, o sin animaciones nativas, devuelve un montaje va
 
 test("director: quién es dueño de la opacidad de cada actor", () => {
   const p: Partitura = {
-    version: 0,
+    version: 1,
     escenas: [
       { con: "verse", pasos: [{ actor: "titulo", de: { y: 28 } }, { actor: "foto", de: { opacidad: 0 } }] },
       { con: "vista", pasos: [{ actor: "titulo", a: { opacidad: 0 } }] },
-      { con: "puntero", pasos: [{ actor: "caja", opacidad: 0.5 }] },
+      { con: "puntero", pasos: [{ actor: "caja", a: { opacidad: 0.5 } }] },
       { con: "estado", estado: "apuntado", pasos: [{ actor: "boton", a: { opacidad: 0.8 } }] },
     ],
   };
@@ -469,22 +469,22 @@ test("revisión: el estado final de una entrada no puede esconder nada ni sacarl
   // El punto de partida («de») sigue libre: de ahí se viene.
   assert.deepEqual(errores(conPaso({ de: { opacidad: 0, escala: 0, x: 1500 } })), []);
   // Atado al scroll, el final también es libre: al subir, vuelve.
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "vista", tramo: "salida", pasos: [{ actor: "contenido", a: { y: "-140%", opacidad: 0 } }] }] }), []);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "vista", tramo: "salida", pasos: [{ actor: "contenido", a: { y: "-140%", opacidad: 0 } }] }] }), []);
 });
 
 test("revisión: un actor se corta de una sola forma", () => {
-  const con = (...pasos: Record<string, unknown>[]) => errores({ version: 0, escenas: [{ con: "verse", pasos }] });
+  const con = (...pasos: Record<string, unknown>[]) => errores({ version: 1, escenas: [{ con: "verse", pasos }] });
   const palabra = { actor: "titulo", por: "palabra", de: { y: 20 } };
   assert.deepEqual(con(palabra, { actor: "titulo", por: "letra", de: { opacidad: 0 }, luego: 0 }), ["escenas[0].pasos[1].por"]);
   assert.deepEqual(con(palabra, { actor: "titulo", por: "palabra", mascara: true, de: { y: "100%" }, luego: 0 }), ["escenas[0].pasos[1].por"]);
   assert.deepEqual(con(palabra, { actor: "titulo", por: "palabra", a: { giro: 3 }, luego: 0 }), [], "igual que antes, vale");
   assert.deepEqual(con(palabra, { actor: "titulo", a: { escala: 1.05 }, luego: 0 }), [], "sin «por», mueve al actor entero");
   // También entre escenas.
-  assert.deepEqual(errores({ version: 0, escenas: [{ con: "verse", pasos: [palabra] }, { con: "vista", pasos: [{ actor: "titulo", por: "letra", a: { opacidad: 0.2 } }] }] }), ["escenas[1].pasos[0].por"]);
+  assert.deepEqual(errores({ version: 1, escenas: [{ con: "verse", pasos: [palabra] }, { con: "vista", pasos: [{ actor: "titulo", por: "letra", a: { opacidad: 0.2 } }] }] }), ["escenas[1].pasos[0].por"]);
 });
 
 test("revisión: una escena que dura más de 20 segundos no vale (no se acorta en silencio)", () => {
-  const pasos = (lista: Record<string, unknown>[]) => errores({ version: 0, escenas: [{ con: "verse", pasos: lista.map((p) => ({ actor: "titulo", de: { y: 1 }, ...p })) }] });
+  const pasos = (lista: Record<string, unknown>[]) => errores({ version: 1, escenas: [{ con: "verse", pasos: lista.map((p) => ({ actor: "titulo", de: { y: 1 }, ...p })) }] });
   assert.deepEqual(pasos([{ en: 15000, dura: 6000 }]), ["escenas[0].pasos[0]"]);
   assert.deepEqual(pasos([{ dura: 10000 }, { dura: 10000, luego: 0 }, { dura: 500, luego: 0 }]), ["escenas[0].pasos[2]"]);
   assert.deepEqual(pasos([{ dura: 10000 }, { dura: 10000, luego: 0 }]), []);
@@ -512,7 +512,7 @@ test("revisión: el contrato lleva las mismas reglas de texto que usa el validad
   assert.equal(c.porcentaje, PORCENTAJE.source);
   assert.equal(c.topes.animaciones, 600);
   assert.equal(c.topes.seguidores, 100);
-  assert.deepEqual(c.topes.final, { opacidadMin: 0.5, escalaMin: 0.5, escalaMax: 2, px: 200, porciento: 100 });
+  assert.deepEqual(c.topes.final, { opacidadMin: 0.5, escalaMin: 0.5, escalaMax: 2, px: 200, porciento: 100, inclina: 15 });
 });
 
 test("revisión: montar no se queda con la partitura que le pasaron (si alguien la cambia después, no corre algo sin validar)", () => {

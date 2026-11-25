@@ -1,5 +1,6 @@
 // motion-kit/director: el motor de animación propio. Un movimiento es un dato (una partitura) y el Director lo hace
-// correr con lo que el navegador ya trae. **Versión 0, experimental:** el modelo puede cambiar hasta la fase 2.
+// correr con lo que el navegador ya trae. Corre partituras de la versión 1 (una de la versión 0 se sube antes con
+// `subirPartitura`, de `motion-kit/partitura`, que es la entrada de quien crea).
 // No se exporta desde la entrada principal.
 
 // El motor, sin React.

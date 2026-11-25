@@ -1,16 +1,35 @@
 // De un cambio de la partitura a fotogramas del navegador. Dos canales, para que se sumen sin pisarse: las escenas
 // `verse` escriben en `transform`; lo atado al scroll, lo que sigue al dedo y `estado`, en `translate`, `rotate` y
 // `scale`. Puro, sin navegador.
-import type { Cambio, Curva, Tramo } from "./modelo";
+import { PROFUNDIDAD, type Cambio, type Curva, type Tramo } from "./modelo";
 
 /** Los tres niveles del repo (el tipo `NivelEscena` de src/escena/nivel.ts, sin traer ese archivo). */
 export type Nivel = "completo" | "liviano" | "quieto";
 
 const px = (v: number | string) => (typeof v === "number" ? `${v}px` : v);
 
-/** El cambio como una transformación: mover, girar y agrandar, en ese orden. */
-function transformar(c: Cambio): string {
+const inclina = (c?: Cambio) => c !== undefined && (c.inclinaX !== undefined || c.inclinaY !== undefined);
+/** Un número sin ruido de decimales (0.6000000000000001 → 0.6). */
+const limpio = (n: number) => `${Math.round(n * 1000) / 1000 || 0}`;
+
+/**
+ * La inclinación como un solo giro sobre un eje (`rotate: x y 0 ángulo`): el eje es el vector (x, y) y el ángulo, su
+ * largo. En cero se usa el eje de `otro` (el otro extremo del paso): así el navegador interpola el ángulo y no una matriz.
+ */
+export function giroInclinado(x: number, y: number, otro?: Cambio): string {
+  const largo = Math.hypot(x, y);
+  const [ex, ey] = largo ? [x / largo, y / largo] : [otro?.inclinaX ?? 0, otro?.inclinaY ?? 0];
+  const eje = Math.hypot(ex, ey);
+  return eje ? `${limpio(ex / eje)} ${limpio(ey / eje)} 0 ${limpio(largo)}deg` : "1 0 0 0deg";
+}
+
+/**
+ * El cambio como una transformación: inclinar (con su profundidad), mover, girar y agrandar, en ese orden. `inclinado`:
+ * el paso inclina en alguno de sus extremos; entonces los dos llevan la misma lista (en cero el que no).
+ */
+function transformar(c: Cambio, inclinado = false): string {
   return [
+    inclinado ? `perspective(${PROFUNDIDAD}px) rotateX(${c.inclinaX ?? 0}deg) rotateY(${c.inclinaY ?? 0}deg)` : "",
     c.x !== undefined || c.y !== undefined ? `translate(${px(c.x ?? 0)},${px(c.y ?? 0)})` : "",
     c.giro !== undefined ? `rotate(${c.giro}deg)` : "",
     c.escala !== undefined ? `scale(${c.escala})` : "",
@@ -19,23 +38,25 @@ function transformar(c: Cambio): string {
 
 const conOpacidad = (c: Cambio) => (c.opacidad !== undefined ? { opacity: c.opacidad } : {});
 
-function enTransform(c: Cambio, offset: number): Keyframe {
-  const t = transformar(c);
+function enTransform(c: Cambio, offset: number, inclinado: boolean): Keyframe {
+  const t = transformar(c, inclinado);
   return { offset, ...(t ? { transform: t } : {}), ...conOpacidad(c) };
 }
 
-function suelto(c: Cambio, offset: number): Keyframe {
+/** En lo continuo, el giro y la inclinación comparten `rotate` (el validador no deja mezclarlos en un paso). */
+function suelto(c: Cambio, offset: number, inclinado: boolean, otro?: Cambio): Keyframe {
   return {
     offset,
     ...(c.x !== undefined || c.y !== undefined ? { translate: `${px(c.x ?? 0)} ${px(c.y ?? 0)}` } : {}),
-    ...(c.giro !== undefined ? { rotate: `${c.giro}deg` } : {}),
+    ...(inclinado ? { rotate: giroInclinado(c.inclinaX ?? 0, c.inclinaY ?? 0, otro) } : c.giro !== undefined ? { rotate: `${c.giro}deg` } : {}),
     ...(c.escala !== undefined ? { scale: `${c.escala}` } : {}),
     ...conOpacidad(c),
   };
 }
 
-const armar = (p: { de?: Cambio; a?: Cambio }, hacer: (c: Cambio, o: number) => Keyframe) => {
-  const f = [...(p.de ? [hacer(p.de, 0)] : []), ...(p.a ? [hacer(p.a, 1)] : [])];
+const armar = (p: { de?: Cambio; a?: Cambio }, hacer: (c: Cambio, o: number, inclinado: boolean, otro?: Cambio) => Keyframe) => {
+  const inclinado = inclina(p.de) || inclina(p.a);
+  const f = [...(p.de ? [hacer(p.de, 0, inclinado, p.a)] : []), ...(p.a ? [hacer(p.a, 1, inclinado, p.de)] : [])];
   return f.length ? f : null;
 };
 

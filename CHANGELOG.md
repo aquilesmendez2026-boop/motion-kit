@@ -2,6 +2,35 @@
 
 ## Sin publicar (en `dev`, después de 0.3.0)
 
+### Director, fase 2: el lenguaje en español, Partitura versión 1 e inclinación en 3D
+
+- **Entrada nueva `motion-kit/partitura`** (para quien crea; no viaja a las páginas): `leerPartitura(texto)` y
+  `escribirPartitura(partitura)` (el lenguaje en español), `subirPartitura` (de la versión 0 a la 1), `CASA` (16
+  partituras de la casa) y `sorprender(semilla, partes)`.
+- **Partitura versión 1.** `Cambio` suma `inclinaX` e `inclinaY` (grados; la profundidad, 900 px, la pone el
+  Director). Lo que sigue al puntero o a la velocidad lleva su cambio en `a`. `reparto` en lo atado al scroll. En lo
+  continuo un paso gira o se inclina, no las dos. **Cambio que rompe respecto de la versión 0** (que era
+  experimental): el Director corre solo la 1; una versión 0 se sube antes con `subirPartitura`.
+- **Contrato `partitura-motionkit.json`, versión 1:** ya no dice experimental y trae los números de las curvas y los
+  resortes, la profundidad y las fórmulas de los tramos de scroll.
+- Cada animación del Director lleva nombre (`id`: `mk-verse`, `mk-estado`, `mk-vista`, `mk-scroll`).
+- **No se reemplazó ninguna pieza:** medido, los efectos de texto pesan 3,4 KB y el Director 9.
+- Vitrina `#director`: cada ejemplo se edita en español o como dato; «De la casa» (con el título con volumen y la
+  tarjeta holográfica) y «Sorpréndeme».
+- Pruebas: `pruebas/director2.test.ts` (20), `pruebas/partitura-texto.test.ts` (19) y las partes `inclina` y `casa`
+  de `verificar-director` (110 revisiones en total), que ahora pasa entero también en Safari/WebKit.
+- Pesos al cargar (gzip): `director` 9,8 KB (9.814 bytes; tope 10) y `partitura` 8,1 KB (8.133 bytes; tope 9,
+  fijado por Aquiles).
+- **De la revisión final:** un texto cortado por palabra lleva cada palabra en su caja (sin ella la inclinación se
+  veía plana); la profundidad no se le borra a una página que puso la suya; el lector no se vuelve lento con
+  separadores de línea raros, lee los porcentajes sin ruido de decimales, entiende una escena sin dos puntos y no le
+  cambia las tildes al nombre de un actor; `subirPartitura` no pierde una `a` que ya venía; `escribirPartitura` exige
+  una partitura que vale; el contrato suma `inclinacion`, `porDefecto`, `seguir` y casos calculados, y ya no dice que
+  una versión 0 se sube sola.
+- **Arreglo de la fase 1:** apuntar muchas veces algo con `estado` ya no gasta el tope de animaciones.
+- **Límite conocido:** la profundidad va en el padre de lo que se inclina (en lo continuo y en `estado`); mientras
+  está puesta, un hijo `position: fixed` de ese padre se ubica respecto de él. Ver «Director, fase 2» en el catálogo.
+
 ### Safari: sondeo de todas las pruebas y un arreglo en la galería
 
 - **Arreglo:** en la galería (`MosaicoQueSeArma` con `viva` o `visor`), arrastrar sobre una foto ya no inicia el
