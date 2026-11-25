@@ -1,6 +1,9 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.5.1)
+## 0.5.2 (25-11-2026)
+
+Un hilo de página nuevo, `enredadera`, y un arreglo para las páginas donde hace scroll el `body`. El contrato de
+página suma `enredadera` (solo agrega); el del encabezado y el de la partitura no cambian.
 
 ### Enredadera: un tallo con hojas y una flor
 

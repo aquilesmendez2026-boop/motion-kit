@@ -101,6 +101,14 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.2 (25-11-2026)
+
+Etiqueta `v0.5.2`: suma el hilo de página `enredadera` (un tallo con hojas que se mecen al bajar y una flor al final)
+y arregla las páginas donde hace scroll el `body` (con `html` en `overflow: hidden`): ahí los hilos iban quietos y los
+relatos medían la ventana. Se instala con `github:aquilesmendez2026-boop/motion-kit#v0.5.2`. El contrato de página
+suma `enredadera` a `relatoPagina` (solo agrega); los del encabezado y la partitura no cambian. Antes de la etiqueta:
+326 pruebas calculables, pesos dentro de sus topes y la batería visual completa.
+
 ## Paquete v0.5.1 (25-11-2026)
 
 Etiqueta `v0.5.1`: suma el hilo de página `rastro` (huellas del rubro por el recorrido, sin línea). Se instala con
