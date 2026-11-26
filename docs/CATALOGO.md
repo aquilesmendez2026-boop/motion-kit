@@ -101,6 +101,13 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.4 (25-11-2026)
+
+Etiqueta `v0.5.4`: suma el relato de página `esfera` (arriba, una esfera de puntos que gira; al bajar se disuelve y sus
+puntos se acomodan en los bloques de toda la página). Se instala con `github:aquilesmendez2026-boop/motion-kit#v0.5.4`.
+El contrato de página suma `esfera` a `relatoPagina` (solo agrega); los del encabezado y la partitura no cambian. Antes de
+la etiqueta: 345 pruebas calculables, pesos dentro de sus topes (`pagina` en 16,8 de 17) y la batería visual completa.
+
 ## Paquete v0.5.3 (25-11-2026)
 
 Etiqueta `v0.5.3`: suma el relato de página `ramas` (el Hilo de fondo que se divide: un tronco hasta el fondo, ramas

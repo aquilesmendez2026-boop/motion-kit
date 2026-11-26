@@ -1,6 +1,6 @@
 {
   "name": "motion-kit",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Librería propia de efectos y animaciones para React",
   "license": "MIT",
   "type": "module",
@@ -81,6 +81,7 @@
     "contrato": "node scripts/generar-contrato.mjs",
     "peso": "node scripts/medir-paquete.mjs --revisar",
     "verificar": "node scripts/verificar-cambios.mjs",
+    "humo": "node scripts/humo.mjs",
     "probar-paquete": "node scripts/probar-paquete.mjs"
   },
   "peerDependencies": {

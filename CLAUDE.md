@@ -31,7 +31,13 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 - `motion-kit/luz`: una sola luz para la página (`Luz`) y las superficies que le responden (`Materia`). Ver «Luz y
   materia» en `docs/CATALOGO.md`.
 - `npm run verificar` (con el servidor arriba): corre solo las pruebas visuales, y las partes, que tocan los archivos
-  que cambiaron. `-- --lista` dice cuáles sin correrlas; `-- --todo`, la batería completa (antes de una etiqueta).
+  que cambiaron. `-- --lista` dice cuáles sin correrlas; `-- --desde=<commit o etiqueta>` compara contra eso;
+  `-- --todo`, la batería completa (~38 min).
+- `npm run humo` (con el servidor arriba): la pasada rápida (~1 min): entra a cada vitrina, la recorre y revisa que no
+  haya errores; en `#hilos` y `#pagina`, cada relato de página.
+- **Antes de una etiqueta** (decisión de Aquiles del 25-11-2026): `npm run verificar -- --desde=<etiqueta anterior>` y
+  `npm run humo` (unos 8 min). La batería completa (`-- --todo`), cada 3 etiquetas o antes de un salto de versión
+  (0.5 → 0.6); el script ya la pide solo si cambió algo común. Anotar en el commit del paquete cuál se corrió.
 - `node scripts/en-safari.mjs <prueba> [parte]`: la misma prueba con el motor de Safari (WebKit). No es semáforo: ver
   «Safari» en `docs/CATALOGO.md`.
 - Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos>.mjs [url]` con el servidor

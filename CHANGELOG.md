@@ -1,6 +1,9 @@
 # Cambios
 
-## Sin publicar (en `dev`, después de 0.5.3)
+## 0.5.4 (25-11-2026)
+
+Un relato de página nuevo, `esfera`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la
+partitura no cambian. Los hilos y las ramas se ven igual.
 
 ### Esfera de puntos
 
