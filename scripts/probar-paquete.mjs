@@ -3,6 +3,7 @@
 // resuelvan, que no se cuele nada del resto del kit y que el CSS exista.
 // Uso: node scripts/probar-paquete.mjs   (después de npm run build)
 import { build } from "esbuild";
+import { gzipSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -77,9 +78,31 @@ if (receta && p.ok && fondo.ok && vale.ok && leida.ok && escrita && subida.ok) c
   </EstiloLaMente>
 );
 `);
+// 2b. Un panel que usa solo dos piezas de interfaz (lo que pidió el front de La Mente).
+writeFileSync(join(P, "panel-completo.tsx"), `
+import { createRoot } from "react-dom/client";
+import { Cargando, SubirImagen, ToastProvider, useToast } from "motion-kit/interfaz";
+
+function Vista() {
+  const toast = useToast();
+  return (
+    <Cargando listo forma="tarjeta">
+      <SubirImagen etiqueta="Logo" forma="redonda" alElegir={() => toast("Guardado", { tipo: "bien" })} />
+    </Cargando>
+  );
+}
+createRoot(document.getElementById("raiz")!).render(<ToastProvider><Vista /></ToastProvider>);
+`);
+writeFileSync(join(P, "panel.tsx"), `
+import { createRoot } from "react-dom/client";
+import { Accordion, CountUp, type AccordionItem } from "motion-kit/interfaz";
+
+const preguntas: AccordionItem[] = [{ title: "¿Cómo va el mes?", content: "Bien" }];
+createRoot(document.getElementById("raiz")!).render(<><CountUp to={128} /><Accordion items={preguntas} /></>);
+`);
 writeFileSync(join(P, "tsconfig.json"), JSON.stringify({
   compilerOptions: { target: "ES2020", lib: ["ES2020", "DOM"], module: "ESNext", moduleResolution: "bundler", jsx: "react-jsx", strict: true, noEmit: true, skipLibCheck: false },
-  files: ["pagina.tsx"],
+  files: ["pagina.tsx", "panel.tsx", "panel-completo.tsx"],
 }));
 
 let fallos = 0;
@@ -113,6 +136,45 @@ const js = Object.entries(r.metafile.outputs).filter(([f]) => f.endsWith(".js"))
 const todo = js.map((f) => readFileSync(join(P, f), "utf8")).join("");
 for (const pieza of ["mk-peso-barra", "mk-pag-precio"]) ok(!todo.includes(pieza), `no se cuela «${pieza}»`);
 ok(existsSync(join(P, "node_modules/motion-kit/contrato/encabezado-motionkit.json")), "el contrato viaja en el paquete");
+
+// 5. El panel: solo entra motion-kit/interfaz, liviano y sin ningún efecto de fondo.
+const panel = await build({
+  entryPoints: [join(P, "panel.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-panel"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const delKitPanel = Object.keys(panel.metafile.inputs).filter((f) => f.includes("node_modules/motion-kit/"));
+const ajenos = delKitPanel.filter((f) => /\/(motion-kit|encabezado|pagina|escena|momentos|director|partitura|luz)\.js$/.test(f));
+ok(delKitPanel.length > 0 && ajenos.length === 0, "el panel solo trae motion-kit/interfaz" + (ajenos.length ? ": " + ajenos.join(", ") : ""));
+// Lo que baja al cargar el panel: su archivo y lo que importa de entrada. Un import() que quedó en un trozo compartido
+// (el efecto «descifrar» de TextoCinetico) sale como archivo aparte, pero solo baja si alguien usa ese efecto.
+const salidasPanel = panel.metafile.outputs;
+const raizPanel = Object.keys(salidasPanel).find((f) => salidasPanel[f].entryPoint?.endsWith("panel.tsx"));
+const alCargar = new Set();
+for (const pendientes = [raizPanel]; pendientes.length; ) {
+  const f = pendientes.pop();
+  if (alCargar.has(f)) continue;
+  alCargar.add(f);
+  for (const i of salidasPanel[f].imports) if (i.kind === "import-statement" && !i.external) pendientes.push(i.path);
+}
+const jsPanel = [...alCargar].map((f) => readFileSync(join(P, f)));
+const pesoPanel = jsPanel.reduce((t, x) => t + gzipSync(x, { level: 9 }).length, 0) / 1000;
+ok(pesoPanel < 5, `el panel con Accordion y CountUp pesa ${pesoPanel.toFixed(1)} KB comprimidos al cargar (menos de 5)`);
+// Ningún archivo del panel (ni los perezosos) trae clases de los fondos, escenas, encabezados o relatos.
+const textoPanel = Object.keys(salidasPanel).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(P, f), "utf8")).join("");
+for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato"]) ok(!textoPanel.includes(pieza), `no se cuela «${pieza}» en el panel`);
+
+// 6. El panel con las piezas nuevas (imágenes, avisos y cargas): también solo motion-kit/interfaz y nada pesado.
+const completo = await build({
+  entryPoints: [join(P, "panel-completo.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-panel-completo"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const delKitCompleto = Object.keys(completo.metafile.inputs).filter((f) => f.includes("node_modules/motion-kit/"));
+const ajenosCompleto = delKitCompleto.filter((f) => /\/(motion-kit|encabezado|pagina|escena|momentos|director|partitura|luz)\.js$/.test(f));
+ok(delKitCompleto.length > 0 && ajenosCompleto.length === 0, "el panel con imágenes, avisos y cargas solo trae motion-kit/interfaz" + (ajenosCompleto.length ? ": " + ajenosCompleto.join(", ") : ""));
+const textoCompleto = Object.keys(completo.metafile.outputs).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(P, f), "utf8")).join("");
+for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato"]) ok(!textoCompleto.includes(pieza), `no se cuela «${pieza}» en el panel con imágenes, avisos y cargas`);
+const pesoCompleto = Object.keys(completo.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((t, f) => t + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
+ok(pesoCompleto < 10, `el panel con imágenes, avisos y cargas pesa ${pesoCompleto.toFixed(1)} KB comprimidos (menos de 10)`);
 
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);

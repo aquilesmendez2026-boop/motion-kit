@@ -8,6 +8,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { c } from "../interfaz/tema";
 
 export interface BottomSheetProps {
   /** Si la hoja está abierta. */
@@ -148,7 +149,7 @@ export function BottomSheet({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(0, 0, 0, 0.55)",
+          background: "rgba(0, 0, 0, 0.4)",
           opacity: shown ? 1 : 0,
           transition: reduced ? "none" : `opacity ${DURATION}ms ease`,
         }}
@@ -171,9 +172,9 @@ export function BottomSheet({
           margin: "0 auto",
           maxWidth: 560,
           borderRadius: "20px 20px 0 0",
-          background: "#1b1b2b",
-          color: "#f1f1f6",
-          boxShadow: "0 -12px 40px rgba(0, 0, 0, 0.4)",
+          background: c("superficie"),
+          color: c("texto"),
+          boxShadow: "0 -12px 40px rgba(0, 0, 0, 0.18)",
           outline: "none",
           paddingBottom: "env(safe-area-inset-bottom)",
           transform: shown ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)",
@@ -202,7 +203,7 @@ export function BottomSheet({
               width: 40,
               height: 5,
               borderRadius: 999,
-              background: "rgba(128, 128, 128, 0.6)",
+              background: c("borde"),
             }}
           />
         </div>

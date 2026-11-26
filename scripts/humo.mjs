@@ -32,6 +32,7 @@ const VITRINAS = [
   ["#profundidad", "main"],
   ["#director", "main"],
   ["#luz", "main"],
+  ["#panel", "[data-prueba=panel-tema]"],
   ["#pagina", ".pag-vista .mk-pagina"],
 ];
 

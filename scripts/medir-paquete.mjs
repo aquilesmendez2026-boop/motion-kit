@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz", "interfaz"];
 const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css", "estilos-luz.css"];
 
 /**
@@ -34,7 +34,19 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // (cuatro piezas más que se bajan aparte; al cargar quedan sus cargadores).
 // 25-11-2026: motion-kit 90 (era 80; con los hilos y el encabezado dentro de una partitura mide 80,3). Lo fijó Aquiles
 // («sube el tope a 90»).
-export const TOPES_KB = { "motion-kit": 90, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8 };
+// 25-11-2026: interfaz 14 (entrada nueva: las piezas de interfaz, para el panel; encargo del front). Y lo que importa el
+// panel, `{ Accordion, CountUp }`, menos de 5 KB: el criterio del encargo.
+// 26-11-2026: interfaz 20 (decisión de Aquiles: «sí, apruebo el diseño y el tope de 20 KB»; suma las piezas del panel:
+// SubirImagen, avisos, Cargando y lo que llega).
+export const TOPES_KB = { "motion-kit": 90, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8, interfaz: 20 };
+/** Lo que importa el panel desde `motion-kit/interfaz`, con su tope (KB gzip, al cargar y con lo que no usa descartado). */
+const USOS = [
+  { nombre: "motion-kit/interfaz { Accordion, CountUp }", entrada: "interfaz", piezas: ["Accordion", "CountUp"], tope: 5 },
+  { nombre: "motion-kit/interfaz { SubirImagen }", entrada: "interfaz", piezas: ["SubirImagen"], tope: 4 },
+  { nombre: "motion-kit/interfaz { ToastProvider, useToast }", entrada: "interfaz", piezas: ["ToastProvider", "useToast"], tope: 3.1 }, // 3 en el diseño; 3,1 tras los arreglos de la revisión (decisión de Aquiles del 26-11-2026)
+  { nombre: "motion-kit/interfaz { Cargando }", entrada: "interfaz", piezas: ["Cargando"], tope: 2 },
+  { nombre: "motion-kit/interfaz { ListaViva, Contador, Interruptor }", entrada: "interfaz", piezas: ["ListaViva", "Contador", "Interruptor"], tope: 4 },
+];
 
 const kb = (b) => b / 1000;
 const gz = (x) => gzipSync(x, { level: 9 }).length;
@@ -73,6 +85,17 @@ for (const e of ENTRADAS) {
   const pasa = kb(alCargar) > tope;
   if (pasa) pasados++;
   filas.push([`motion-kit${e === "motion-kit" ? "" : "/" + e}`, `${kb(alCargar).toFixed(1)} KB`, `${kb(perezoso).toFixed(1)} KB`, `${tope} KB${pasa ? "  ← se pasa" : ""}`]);
+}
+// Lo que usa de verdad una app que importa solo algunas piezas (el resto se descarta).
+for (const u of USOS) {
+  const r = await build({
+    stdin: { contents: `import { ${u.piezas.join(", ")} } from "./${DIST}/${u.entrada}.js";\nconsole.log(${u.piezas.join(", ")});`, resolveDir: process.cwd() },
+    bundle: true, format: "esm", minify: true, write: false, platform: "browser", external: ["react", "react-dom", "react/jsx-runtime"], logLevel: "error",
+  });
+  const peso = gz(r.outputFiles[0].contents);
+  const pasa = kb(peso) > u.tope;
+  if (pasa) pasados++;
+  filas.push([u.nombre, `${kb(peso).toFixed(1)} KB`, "—", `${u.tope} KB${pasa ? "  ← se pasa" : ""}`]);
 }
 for (const c of CSS) if (existsSync(join(DIST, c))) filas.push([`motion-kit/${c}`, `${kb(gz(readFileSync(join(DIST, c)))).toFixed(1)} KB`, "—", "—"]);
 

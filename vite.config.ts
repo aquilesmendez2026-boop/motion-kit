@@ -8,11 +8,15 @@ const ipLocal = () => Object.values(networkInterfaces()).flat().find((i) => i &&
 
 // `npm run dev` sirve la página demo (index.html).
 // `npm run build` genera la librería en dist/ (modo librería, una entrada por subpaquete).
-export default defineConfig(({ command }) => ({
+// `npm run demo:armar` arma la demo en dist-demo/ (`--mode demo`) y `npm run demo:servir` la sirve en el 4173: las pruebas
+// visuales corren más rápido contra la demo armada que contra el servidor de desarrollo.
+export default defineConfig(({ command, mode }) => ({
   plugins: [react()],
   define: { __MK_RED__: JSON.stringify(command === "serve" ? ipLocal() : "") },
   build:
-    command === "build"
+    mode === "demo"
+      ? { outDir: "dist-demo", emptyOutDir: true }
+      : command === "build"
       ? {
           // Entradas separadas: quien importa motion-kit/encabezado baja solo lo del encabezado.
           lib: {
@@ -25,6 +29,7 @@ export default defineConfig(({ command }) => ({
               director: fileURLToPath(new URL("./src/entradas/director.ts", import.meta.url)),
               partitura: fileURLToPath(new URL("./src/entradas/partitura.ts", import.meta.url)),
               luz: fileURLToPath(new URL("./src/entradas/luz.ts", import.meta.url)),
+              interfaz: fileURLToPath(new URL("./src/entradas/interfaz.ts", import.meta.url)),
               receta: fileURLToPath(new URL("./src/receta/index.ts", import.meta.url)),
             },
             formats: ["es", "cjs"],

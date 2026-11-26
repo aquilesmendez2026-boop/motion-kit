@@ -77,6 +77,20 @@ export { useReducedMotion } from "./hooks/useReducedMotion";
 export { useScrollProgress } from "./hooks/useScrollProgress";
 export { useViewTransition } from "./hooks/useViewTransition";
 
+// Los colores de las piezas de interfaz (motion-kit/interfaz).
+export { variablesTema } from "./interfaz/tema";
+export { SubirImagen } from "./interfaz/SubirImagen";
+export { Cargando } from "./interfaz/Cargando";
+export { ListaViva } from "./interfaz/ListaViva";
+export type { ListaVivaProps } from "./interfaz/ListaViva";
+export { Contador } from "./interfaz/Contador";
+export type { ContadorProps } from "./interfaz/Contador";
+export { Interruptor } from "./interfaz/Interruptor";
+export type { InterruptorProps } from "./interfaz/Interruptor";
+export type { CargandoProps, FormaCarga } from "./interfaz/Cargando";
+export type { SubirImagenProps } from "./interfaz/SubirImagen";
+export type { TemaInterfaz, ColorInterfaz } from "./interfaz/tema";
+
 // Efectos protagonistas (uno por página; carga perezosa)
 export { EFECTOS } from "./efectos/registro";
 export { EfectoPagina } from "./efectos/EfectoPagina";

@@ -104,7 +104,7 @@ const Flecha = () => (
  * Botón del kit: 6 estilos y 8 efectos. Toma el color de `--mk-acento` o `--lm-acento`.
  * Con `href` se dibuja como enlace. Funciona con dedo, mouse y teclado.
  */
-export const Boton = forwardRef<HTMLButtonElement | HTMLAnchorElement, BotonProps>(function Boton(
+export const Boton = /* @__PURE__ */ forwardRef<HTMLButtonElement | HTMLAnchorElement, BotonProps>(function Boton(
   { variante = "solido", efecto = "ninguno", tamano = "md", forma, cargando, icono, iconoFinal, completo, href, target, rel, className, children, disabled, type, ...resto },
   ref
 ) {

@@ -90,15 +90,22 @@ const REGLAS = [
   [/^(src\/biblioteca\/|demo\/Biblioteca)/, ["biblioteca"]],
   // Los botones y las tarjetas cambian de sombra dentro de una luz, y los paquetes de botones van en el encabezado.
   [/^src\/piezas\/(Boton|Tarjeta)/, ["piezas", "luz:existe", "encabezados"]],
-  [/^(src\/(piezas|components)\/|demo\/Piezas)/, ["piezas"]],
+  // Las piezas del panel (motion-kit/interfaz) y las que toman sus colores: la vitrina #panel y la de piezas.
+  [/^(src\/interfaz\/|src\/entradas\/interfaz|src\/components\/(Toast|BottomSheet|TabBar|Skeleton)|demo\/Panel)/, ["panel", "piezas"]],
+  // motion-kit/interfaz solo reexporta piezas de interfaz (su peso y lo que arrastra lo revisan npm test y probar-paquete).
+  [/^(src\/(piezas|components)\/|src\/entradas\/interfaz|demo\/Piezas)/, ["piezas"]],
   [/^(src\/plantillas\/|demo\/(Estudio|Plantilla|plantillas\/))/, ["estilos", "biblioteca"]],
   // Cada prueba, si cambia ella misma.
   [/^scripts\/verificar-([a-z0-9]+)\.mjs$/, (m) => (m[1] === "cambios" ? [] : [m[1]])],
   // Común a todo.
   // El título que se mueve solo lo usan el encabezado y las plantillas (y la vitrina del Director, que lo compara).
   [/^src\/estilos\/TextoCinetico/, [...ENCABEZADO, "director", "estilos", "biblioteca"]],
+  // El contexto del estilo lo leen Estilo y lo que va dentro de un estilo (encabezados, plantillas de la biblioteca).
+  [/^src\/estilos\/contexto\.ts$/, ["estilos", "encabezados", "biblioteca"]],
   [/^src\/(estilos|utils|hooks)\//, [TODO]],
-  [/^src\/index\.ts$/, [TODO]],
+  // El índice solo reexporta: si una exportación se rompe, lo atrapan `npm run typecheck` y la pasada rápida (que abre
+  // todas las vitrinas). Antes pedía todo y, como cambia en casi cada etiqueta, la batería completa salía siempre (26-11).
+  [/^src\/index\.ts$/, ["piezas"]],
   // El armazón de la vitrina (rutas, portada, su CSS): casi siempre se le suma algo. Si se rompe, no carga ninguna
   // página, y eso lo nota cualquier prueba: bastan tres cortas, que pasan por varias rutas.
   [/^demo\/(main|App)\.tsx$|^demo\/demo\.css$|^index\.html$/, ["estilos", "efectos", "piezas"]],

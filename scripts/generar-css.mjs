@@ -23,8 +23,13 @@ const usos = new Map();
 for (const a of archivos("src")) {
   const s = readFileSync(a, "utf8");
   const lista = [];
-  for (const m of s.matchAll(/useStyles\(\s*"([\w-]+)"\s*,\s*([A-Za-z_$][\w$]*)\s*\)/g)) lista.push({ id: m[1], constante: m[2] });
+  // `useStyles("id", CSS)` o `useStyles("id", estilos())` (el CSS que se arma al montarse: aquí se llama la función).
+  for (const m of s.matchAll(/useStyles\(\s*"([\w-]+)"\s*,\s*([A-Za-z_$][\w$]*)(?:\(\))?\s*\)/g)) lista.push({ id: m[1], constante: m[2] });
   for (const m of s.matchAll(/nombre="([\w-]+)"\s+css=\{([A-Za-z_$][\w$]*)\}/g)) lista.push({ id: `efecto-${m[1]}`, constante: m[2] });
+  // Ningún useStyles se queda fuera del archivo: si aparece una forma que no se sabe leer, el armado se detiene.
+  const llamadas = [...s.matchAll(/useStyles\(\s*"[\w-]+"/g)].length;
+  const leidas = lista.filter((u) => !u.id.startsWith("efecto-")).length;
+  if (llamadas !== leidas) throw new Error(`${a}: hay ${llamadas} useStyles y se leyeron ${leidas}. Revisa la forma en scripts/generar-css.mjs.`);
   if (lista.length) usos.set(a, lista);
 }
 
@@ -79,7 +84,8 @@ const idsLuz = new Set([...(await idsDe("src/entradas/luz.ts"))].filter((id) => 
 
 // Un bloque por id (el mismo CSS se pide desde varios componentes). Primero la base de estilos, como en la página.
 const bloques = new Map();
-for (const [id, css] of filas) {
+for (const [id, crudo] of filas) {
+  const css = typeof crudo === "function" ? crudo() : crudo;
   if (typeof css !== "string") throw new Error(`No se pudo leer el CSS de «${id}».`);
   if (bloques.has(id) && bloques.get(id) !== css) throw new Error(`El id «${id}» tiene dos CSS distintos.`);
   bloques.set(id, css);

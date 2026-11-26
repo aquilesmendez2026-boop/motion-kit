@@ -16,7 +16,7 @@ export interface ContextoRelatos {
   sinScroll: boolean;
   observar: (el: Element | null) => () => void;
 }
-export const ContextoRelato = createContext<ContextoRelatos | null>(null);
+export const ContextoRelato = /* @__PURE__ */ createContext<ContextoRelatos | null>(null);
 
 export interface PaginaRelatoProps extends HTMLAttributes<HTMLDivElement> {
   /** Relato por defecto de los bloques. Por defecto, el que propone el estilo vigente, o «escenas». */

@@ -20,7 +20,7 @@ const RETURN = "transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)";
  * Botón que se mueve hacia el cursor (o hacia el dedo al tocarlo) y vuelve con
  * un pequeño rebote al soltar.
  */
-export const MagneticButton = forwardRef<HTMLButtonElement, MagneticButtonProps>(
+export const MagneticButton = /* @__PURE__ */ forwardRef<HTMLButtonElement, MagneticButtonProps>(
   function MagneticButton(
     {
       strength = 0.35,

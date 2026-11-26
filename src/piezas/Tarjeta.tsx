@@ -20,7 +20,9 @@ export interface TarjetaProps extends HTMLAttributes<HTMLElement> {
   como?: "article" | "div" | "li" | "section";
 }
 
-const CSS = `
+/** Se arma al montarse la primera (lleva `VARS`, de otro archivo): así quien no usa la tarjeta la puede descartar. */
+let css: string | undefined;
+const estilos = () => (css ??= `
 .mk-card{${VARS}position:relative;display:flex;flex-direction:column;border-radius:var(--mk-radio-tarjeta,18px);color:inherit;text-decoration:none;isolation:isolate;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .mk-card[data-variante=plana]{background:var(--s)}
 .mk-card[data-variante=elevada]{background:var(--f);box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 28px -14px rgba(0,0,0,.28)}
@@ -75,18 +77,18 @@ a.mk-card:focus-visible::after{opacity:1}
 .mk-flip[data-volteada] .mk-flip-frente{opacity:0}
 .mk-flip[data-volteada] .mk-flip-dorso{opacity:1}
 }
-`;
+`);
 
 function lista(e: TarjetaProps["efecto"]): TarjetaEfecto[] {
   return e === undefined ? [] : Array.isArray(e) ? e : [e];
 }
 
 /** Tarjeta del kit: 5 estilos y efectos combinables al pasar el mouse. */
-export const Tarjeta = forwardRef<HTMLElement, TarjetaProps>(function Tarjeta(
+export const Tarjeta = /* @__PURE__ */ forwardRef<HTMLElement, TarjetaProps>(function Tarjeta(
   { variante = "elevada", efecto, imagen, alt = "", revelar, href, como = "article", className, children, ...resto },
   ref
 ) {
-  useStyles("tarjeta", CSS);
+  useStyles("tarjeta", estilos());
   const efectos = lista(efecto);
   if (revelar && !efectos.includes("revelar")) efectos.push("revelar");
   const datos: Record<string, string> = { "data-variante": variante };
@@ -151,7 +153,7 @@ export function TarjetaVolteable({
   frente, dorso, disparador = "toque", eje = "y", volteada, alCambiar,
   etiquetaVoltear = "Ver más", etiquetaVolver = "Volver", className, onClick, ...resto
 }: TarjetaVolteableProps) {
-  useStyles("tarjeta", CSS);
+  useStyles("tarjeta", estilos());
   const [interna, setInterna] = useState(false);
   const v = volteada ?? interna;
   const cambiar = () => {

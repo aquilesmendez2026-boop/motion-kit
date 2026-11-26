@@ -731,3 +731,27 @@ h2 {
 .hil-previa-hoja{width:390px;overflow:hidden;transform:scale(.6);transform-origin:0 0}
 .hil-con-fondo{color:#fff;background-size:cover;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cdefs%3E%3ClinearGradient id='g' x2='1' y2='1'%3E%3Cstop stop-color='%231f3b4d'/%3E%3Cstop offset='1' stop-color='%23c2643f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='40' height='40' fill='url(%23g)'/%3E%3C/svg%3E")}
 .hil-con-fondo h2{color:inherit}
+
+/* Vitrina del panel (#panel): los colores salen de las variables del tema que pone la vitrina en la raíz. */
+.panel-pagina{min-height:100vh;padding:clamp(16px,4vw,40px);background:var(--mk-fondo);color:var(--mk-texto);font-family:Inter,system-ui,sans-serif;overflow-x:clip}
+.panel-volver{color:inherit;font-size:.9rem;opacity:.75}
+.panel-cabeza{max-width:960px;margin:0 auto 24px}
+.panel-cabeza h1{font-family:Fraunces,Georgia,serif;margin:.4em 0 .2em;font-size:clamp(1.8rem,6vw,2.6rem)}
+.panel-cabeza p,.panel-nota{margin:0 0 1em;color:var(--mk-suave);line-height:1.45}
+.panel-tema select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--mk-borde);background:var(--mk-superficie);color:inherit}
+.panel-seccion{max-width:960px;margin:0 auto 32px;padding:clamp(16px,3vw,24px);border:1px solid var(--mk-borde);border-radius:16px;background:var(--mk-superficie);display:grid;gap:14px}
+.panel-seccion h2{margin:0;font-size:1.2rem}
+.panel-fila{display:flex;flex-wrap:wrap;gap:10px}
+.panel-boton{font:inherit;font-weight:600;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--mk-borde);background:var(--mk-fondo);color:inherit;cursor:pointer}
+.panel-tarjeta{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--mk-borde);border-radius:12px;background:var(--mk-fondo)}
+.panel-imagenes{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));align-items:start}
+.panel-imagenes small{display:none}
+.panel-ancha{grid-column:1/-1}
+.panel-formas{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.panel-formas small{display:block;margin-bottom:8px;color:var(--mk-suave)}
+.panel-tarjeta td,.panel-tarjeta th{padding:6px 4px;border-bottom:1px solid var(--mk-borde)}
+.panel-seccion h2{display:flex;align-items:center;gap:10px}
+.panel-pedidos{display:grid;gap:8px}
+.panel-pedido{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--mk-borde);border-radius:12px;background:var(--mk-fondo)}
+.panel-pedido[data-listo]{opacity:.7}
+.panel-pedido span{font-size:.85rem;color:var(--mk-suave)}

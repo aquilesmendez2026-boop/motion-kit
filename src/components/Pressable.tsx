@@ -19,7 +19,7 @@ const UP = "transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1)";
  * Botón que se hunde al tocarlo y vuelve con un rebote. Funciona igual con
  * dedo, mouse y lápiz, así que es el efecto base para móvil.
  */
-export const Pressable = forwardRef<HTMLButtonElement, PressableProps>(
+export const Pressable = /* @__PURE__ */ forwardRef<HTMLButtonElement, PressableProps>(
   function Pressable(
     {
       scale = 0.96,

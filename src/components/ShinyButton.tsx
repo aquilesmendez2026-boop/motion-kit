@@ -19,7 +19,7 @@ const CSS = `
  * Botón con un destello de luz que lo cruza cada cierto tiempo. Para el
  * llamado a la acción principal de una página.
  */
-export const ShinyButton = forwardRef<HTMLButtonElement, ShinyButtonProps>(
+export const ShinyButton = /* @__PURE__ */ forwardRef<HTMLButtonElement, ShinyButtonProps>(
   function ShinyButton(
     { interval = 3.2, shine = "rgba(255, 255, 255, 0.45)", style, children, ...rest },
     ref

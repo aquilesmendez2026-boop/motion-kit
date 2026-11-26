@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { c } from "../interfaz/tema";
 
 export interface TabBarItem {
   id: string;
@@ -13,7 +14,7 @@ export interface TabBarProps extends Omit<HTMLAttributes<HTMLElement>, "onChange
   /** `id` de la pestaña activa. */
   value: string;
   onChange: (id: string) => void;
-  /** Color de la marca que se desliza bajo la pestaña activa. */
+  /** Color de la marca que se desliza bajo la pestaña activa (por defecto, el acento del tema). */
   accent?: string;
   /** `fixed` la pega al borde inferior de la pantalla. */
   position?: "fixed" | "sticky" | "static";
@@ -27,7 +28,7 @@ export function TabBar({
   items,
   value,
   onChange,
-  accent = "#7c5cff",
+  accent = c("acento"),
   position = "fixed",
   style,
   ...rest
@@ -44,10 +45,11 @@ export function TabBar({
         bottom: 0,
         zIndex: 900,
         paddingBottom: "env(safe-area-inset-bottom)",
-        background: "rgba(18, 18, 28, 0.86)",
+        background: `color-mix(in srgb, ${c("superficie")} 88%, transparent)`,
+        color: c("texto"),
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+        borderTop: `1px solid ${c("borde")}`,
         ...style,
       }}
       {...rest}
