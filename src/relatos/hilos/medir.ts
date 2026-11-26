@@ -38,6 +38,8 @@ function seVeSuCaja(el: Element): boolean {
   return ["Top", "Right", "Bottom", "Left"].some((l) => parseFloat(s.getPropertyValue(`border-${l.toLowerCase()}-width`)) > 0 && s.getPropertyValue(`border-${l.toLowerCase()}-style`) !== "none" && !transparente(s.getPropertyValue(`border-${l.toLowerCase()}-color`)));
 }
 const TARJETA = '[data-mk-parte="tarjeta"]';
+/** Lo que se puede rodear (la esfera dibuja su contorno): tarjetas, fotos, botones y enlaces. */
+const MARCOS = `${TARJETA},[data-mk-parte="foto"],img,picture,video,[role=img],a,button`;
 /** Con esto en la página, los bloques quedan en su lugar (sin la entrada de su relato) mientras se mide. */
 export const MIDIENDO = "data-mk-midiendo";
 /** Lo que entra corrido o achicado y se mide en su lugar: los relatos, sus partes y lo que la página marca con `data-entrada`. */
@@ -115,8 +117,10 @@ function pegadoEn(el: Element, hondo: number): boolean {
  * nuevo (una tarjeta levantada no baja y sube) cada vez que se mide.
  * Todo queda en px de la página, aunque la página esté achicada (`transform: scale`, como en una vista previa).
  */
-export function medirPagina(pagina: HTMLElement, o: { fino?: boolean } = {}): { medidas: Medidas; bloques: HTMLElement[]; baja: boolean } {
+export function medirPagina(pagina: HTMLElement, o: { fino?: boolean; marcos?: boolean } = {}): { medidas: Medidas; bloques: HTMLElement[]; medidos: HTMLElement[]; baja: boolean } {
   const fino = o.fino === true;
+  /** Si además se piden las cosas a rodear (solo en el modo fino; las usa la esfera). */
+  const conMarcos = fino && o.marcos === true;
   const decorado = fino ? DECORADO_PROPIO : DECORADO;
   const scroll = contenedorScroll(pagina);
   const vista = scroll ? scroll.clientHeight : window.innerHeight;
@@ -130,14 +134,17 @@ export function medirPagina(pagina: HTMLElement, o: { fino?: boolean } = {}): { 
     const arriba = (scroll ? p.top - scroll.getBoundingClientRect().top + scroll.scrollTop : p.top + window.scrollY) / escala;
     const cajaDe = (r: DOMRect): Caja => ({ izquierda: (r.left - p.left) / escala, arriba: (r.top - p.top) / escala, ancho: r.width / escala, alto: r.height / escala });
     const elementos = bloquesDe(pagina);
+    /** El elemento de cada bloque medido, en el mismo orden (los sin tamaño quedan fuera de las dos listas). */
+    const deMedidos: HTMLElement[] = [];
     const medidos = elementos.flatMap((b): BloqueMedido[] => {
       const caja = cajaDe(b.getBoundingClientRect());
       if (!(caja.ancho > 0 && caja.alto > 0)) return [];
+      deMedidos.push(b);
       const { fondo, texto, foto } = fondoDe(b);
       // Un bloque con algo pegado (`sticky`) mueve su contenido al bajar: no hay por dónde pasar con seguridad. Y
       // sobre uno con una foto de fondo no se pasa. En los dos casos el bloque entero cuenta como contenido.
       // En el modo fino, también uno con una tira que se desliza al bajar (sus fotos no están donde se midieron).
-      if (foto || pegadoEn(b, HONDO_PEGADO) || (fino && b.querySelector("[data-mk-tira]"))) return [{ caja, cosas: [caja], tarjetas: [], fondo, texto, tira: false }];
+      if (foto || pegadoEn(b, HONDO_PEGADO) || (fino && b.querySelector("[data-mk-tira]"))) return [{ caja, cosas: [caja], tarjetas: [], fondo, texto, tira: false, ...(conMarcos ? { marcos: [] } : {}), ...(fino ? { entero: true } : {}) }];
       // Las tarjetas de más afuera.
       const tarjetas = [...b.querySelectorAll<HTMLElement>(TARJETA)].filter((t) => !t.parentElement?.closest(TARJETA));
       const cosas: Caja[] = [];
@@ -150,6 +157,17 @@ export function medirPagina(pagina: HTMLElement, o: { fino?: boolean } = {}): { 
         rango.selectNodeContents(n);
         // Una caja por renglón: la de todo el texto taparía el espacio que deja un renglón corto.
         for (const r of rango.getClientRects()) suma(r);
+      }
+      const marcos: Caja[] = [];
+      if (conMarcos) {
+        // Lo de más afuera: una foto dentro de una tarjeta va con su tarjeta. Un enlace dentro de un párrafo (en línea, sin
+        // caja propia) no se rodea: su contorno cruzaría el texto.
+        for (const e of b.querySelectorAll<HTMLElement>(MARCOS)) {
+          if (e.closest(decorado) || e.parentElement?.closest(MARCOS)) continue;
+          if (e.tagName === "A" && getComputedStyle(e).display === "inline" && !seVeSuCaja(e)) continue;
+          const r = e.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) marcos.push(cajaDe(r));
+        }
       }
       if (!fino) {
         for (const e of b.querySelectorAll<HTMLElement>(COSAS)) if (!e.closest(`${TARJETA},${DECORADO}`)) suma(e.getBoundingClientRect());
@@ -168,11 +186,11 @@ export function medirPagina(pagina: HTMLElement, o: { fino?: boolean } = {}): { 
           if ((r.width * r.height) / (escala * escala) < area * 0.5) suma(r);
         }
       }
-      return [{ caja, cosas, tarjetas: tarjetas.map((t) => cajaDe(t.getBoundingClientRect())).filter((c) => c.ancho > 0 && c.alto > 0), fondo, texto, tira: Boolean(b.querySelector("[data-mk-tira]")) }];
+      return [{ caja, cosas, tarjetas: tarjetas.map((t) => cajaDe(t.getBoundingClientRect())).filter((c) => c.ancho > 0 && c.alto > 0), fondo, texto, tira: Boolean(b.querySelector("[data-mk-tira]")), ...(conMarcos ? { marcos } : {}) }];
     });
     const r = pagina.querySelector(".mk-hilos-remate");
     const remate = r ? cajaDe(r.getBoundingClientRect()) : null;
-    return { medidas: { ancho: pagina.offsetWidth, alto: pagina.offsetHeight, vista, recorrido, arriba, bloques: medidos, remate: remate && remate.alto > 0 ? { arriba: remate.arriba, alto: remate.alto } : null }, bloques: elementos, baja };
+    return { medidas: { ancho: pagina.offsetWidth, alto: pagina.offsetHeight, vista, recorrido, arriba, bloques: medidos, remate: remate && remate.alto > 0 ? { arriba: remate.arriba, alto: remate.alto } : null }, bloques: elementos, medidos: deMedidos, baja };
   } finally {
     // De vuelta a su lugar, todavía sin transición; y recién después se devuelven las transiciones.
     pagina.setAttribute(MIDIENDO, "volviendo");

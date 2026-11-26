@@ -1,5 +1,17 @@
 # Cambios
 
+## Sin publicar (en `dev`, después de 0.5.3)
+
+### Esfera de puntos
+
+- **`relatoPagina: "esfera"`**: arriba de la página, una esfera de 400 puntos chicos que flota a la derecha y gira. Al
+  bajar se disuelve y sus puntos se acomodan en los bloques de toda la página (el contorno de tarjetas, fotos y botones o
+  el borde de cada franja), donde se quedan y bajan con ella; al volver arriba, se vuelve a armar. Nunca tapa el
+  contenido (lo borra del dibujo, también fuera de la página) y sobre un fondo del color del acento toma el del texto.
+  Descansa cuando nadie baja. Con «reducir movimiento», no hay esfera; en liviano, los puntos acomodados y quietos. El
+  contrato de página suma `esfera` (solo agrega).
+- La medición fina pasó a un hook compartido (`useMedidaFina`) y el contraste de colores a `hilos/color.ts`.
+
 ## 0.5.3 (25-11-2026)
 
 Un relato de página nuevo, `ramas`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la

@@ -4,12 +4,13 @@
 // figura, niveles, marco (la página dentro de un marco con scroll propio, en #relatos) o lamente (la página como una de
 // La Mente: sin el estilo del kit, en su vista previa, con bloques que cambian de orden), material (el hilo de cada estilo)
 // rastro (huellas por el recorrido), enredadera (tallo con hojas que se mecen y una flor al final) o ramas (el Hilo de
-// fondo que se divide: ramas que chocan con los bloques y otras que se juntan al fondo).
+// fondo que se divide: ramas que chocan con los bloques y otras que se juntan al fondo) o esfera (una esfera de puntos
+// que se abre y rodea lo que se ve).
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:5173";
 const solo = process.argv[3];
-const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro", "enredadera", "ramas"];
+const PARTES = ["rulos", "hebras", "figura", "niveles", "marco", "lamente", "material", "rastro", "enredadera", "ramas", "esfera"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -1166,6 +1167,368 @@ if (parte("ramas")) {
     await pagina.waitForTimeout(700);
     const hay = await pagina.evaluate(() => document.querySelectorAll("[data-prueba=hilo-pagina] .mk-ramas").length);
     revisar(hay === 0 && errores.length === 0, `${que} no hay ramas`);
+    await ctx.close();
+  }
+}
+
+// --- Esfera: arriba, una esfera de puntos a la derecha; al bajar se disuelve y sus puntos se acomodan en los bloques ---
+if (parte("esfera")) {
+  /**
+   * Cuántos píxeles encendidos hay en el lienzo de la esfera dentro de cada zona (en px de la pantalla), y lo que dice
+   * su capa. `zonas`: { nombre: [izq, arriba, der, abajo] } o, para un anillo, { nombre: [izq, arriba, der, abajo, ancho] }.
+   */
+  const luces = (pagina, zonas) =>
+    pagina.evaluate((zonas) => {
+      const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+      if (!cv) return null;
+      const capa = cv.closest(".mk-esfera-capa");
+      const r = cv.getBoundingClientRect();
+      const [kx, ky] = [cv.width / r.width, cv.height / r.height];
+      const datos = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      const encendido = (x, y) => {
+        const [px, py] = [Math.floor((x - r.left) * kx), Math.floor((y - r.top) * ky)];
+        if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) return false;
+        return datos[(py * cv.width + px) * 4 + 3] > 40;
+      };
+      const cuenta = {};
+      for (const [nombre, [x0, y0, x1, y1, anillo]] of Object.entries(zonas)) {
+        let n = 0;
+        for (let y = Math.max(r.top, y0); y < Math.min(r.bottom, y1); y += 1 / ky)
+          for (let x = Math.max(r.left, x0); x < Math.min(r.right, x1); x += 1 / kx) {
+            if (anillo && x > x0 + anillo && x < x1 - anillo && y > y0 + anillo && y < y1 - anillo) continue;
+            if (encendido(x, y)) n++;
+          }
+        cuenta[nombre] = n;
+      }
+      return { cuenta, disuelta: Number(capa?.dataset.disuelta ?? NaN), lugar: capa?.dataset.lugar };
+    }, zonas);
+  /** Las cajas del contenido a la vista, achicadas 1 px (lo que la esfera no puede pisar). */
+  const contenidoVisto = (pagina) =>
+    pagina.evaluate(() => Object.fromEntries(window.__contenido().filter((c) => c.abajo > 0 && c.arriba < innerHeight).map((c, i) => [`${i}:${c.que}`, [c.izq + 1, c.arriba + 1, c.der - 1, c.abajo - 1]])));
+  const pisadas = (cuenta) => Object.entries(cuenta).filter(([n, v]) => v > 0 && /^\d+:/.test(n));
+  const nombres = (cuenta) => pisadas(cuenta).slice(0, 3).map(([n]) => n).join(", ");
+  /** Lleva la página a que su borde de arriba quede `bajado` px sobre el borde de arriba de la pantalla. */
+  const aBajado = async (pagina, bajado) => {
+    await pagina.evaluate((b) => {
+      const r = document.querySelector("[data-prueba=hilo-pagina]").getBoundingClientRect();
+      window.scrollBy(0, r.top + b);
+    }, bajado);
+    await pagina.waitForTimeout(250);
+  };
+  const ancho = 390;
+  {
+    const { ctx, pagina, errores } = await abrir({ hilo: "esfera" });
+    await pagina.waitForSelector(`${P} canvas.mk-esfera`, { timeout: 4000 }).catch(() => {});
+    await pagina.waitForTimeout(700);
+    // Arriba de la página (su borde arriba de la pantalla): la esfera armada, a la derecha.
+    await aBajado(pagina, 0);
+    const arriba = await luces(pagina, { derecha: [ancho * 0.55, 0, ancho, 844], izquierda: [0, 0, ancho * 0.4, 844], ...(await contenidoVisto(pagina)) });
+    revisar(Boolean(arriba) && arriba.lugar === "derecha" && arriba.disuelta === 0 && arriba.cuenta.derecha > 300 && arriba.cuenta.izquierda === 0 && errores.length === 0, `arriba de la página flota una esfera de puntos a la derecha (${arriba?.cuenta.derecha} px encendidos a la derecha, ${arriba?.cuenta.izquierda} a la izquierda)${errores.length ? ` (${errores[0]})` : ""}`);
+    revisar(Boolean(arriba) && pisadas(arriba.cuenta).length === 0, `armada, no pisa el contenido${arriba && pisadas(arriba.cuenta).length ? ` (${nombres(arriba.cuenta)})` : ""}`);
+    // A medio disolver (en vuelo), tampoco. Se mira cuando los bloques ya entraron: mientras un bloque entra con su
+    // relato (una fracción de segundo; en el motor de Safari, con una transición), su contenido todavía va corrido y los
+    // cortes están donde termina (el mismo límite de los hilos y las ramas).
+    await aBajado(pagina, 180);
+    await pagina.waitForTimeout(900);
+    const vuelo = await luces(pagina, await contenidoVisto(pagina));
+    revisar(vuelo.disuelta > 0.1 && vuelo.disuelta < 0.9 && pisadas(vuelo.cuenta).length === 0, `al empezar a bajar se disuelve (${vuelo.disuelta}) y, en vuelo, tampoco pisa el contenido${pisadas(vuelo.cuenta).length ? ` (${nombres(vuelo.cuenta)})` : ""}`);
+    // Más abajo: disuelta del todo; la esfera ya no está, y sus puntos rodean cada tarjeta de la carta.
+    await centrar(pagina, "grilla");
+    await pagina.waitForTimeout(500);
+    const tarjetas = await pagina.evaluate(() => [...document.querySelectorAll("[data-franja=grilla] [data-mk-parte=tarjeta]")].map((t) => t.getBoundingClientRect()).filter((r) => r.top > 0 && r.bottom < innerHeight).map((r) => [r.left - 14, r.top - 14, r.right + 14, r.bottom + 14, 8]));
+    const carta = await luces(pagina, { ...Object.fromEntries(tarjetas.map((t, i) => [`anillo${i}`, t])), ...(await contenidoVisto(pagina)) });
+    const anillos = tarjetas.map((_, i) => carta.cuenta[`anillo${i}`]);
+    revisar(carta.disuelta === 1 && tarjetas.length >= 2 && anillos.every((n) => n > 20), `más abajo ya no hay esfera: sus puntos rodean cada tarjeta de la carta (px encendidos alrededor: ${anillos.join(", ")})`);
+    revisar(pisadas(carta.cuenta).length === 0, `acomodados, tampoco pisan el contenido${pisadas(carta.cuenta).length ? ` (${nombres(carta.cuenta)})` : ""}`);
+    // Bajan con la página: tras bajar 40 px, los mismos puntos están 40 px más arriba en la pantalla.
+    const foto = () =>
+      pagina.evaluate(() => {
+        const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+        const k = cv.width / cv.getBoundingClientRect().width;
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        const encendidos = [];
+        for (let y = Math.floor(200 * k); y < Math.floor(600 * k); y++) for (let x = 0; x < cv.width; x++) if (d[(y * cv.width + x) * 4 + 3] > 40) encendidos.push([x, y]);
+        return { k, ancho: cv.width, encendidos, alfa: Array.from(d.filter((_, i) => i % 4 === 3)) };
+      });
+    const antes = await foto();
+    await pagina.evaluate(() => window.scrollBy(0, 40));
+    await pagina.waitForTimeout(300);
+    const despues = await foto();
+    const corre = Math.round(40 * antes.k);
+    const siguen = antes.encendidos.filter(([x, y]) => despues.alfa[(y - corre) * despues.ancho + x] > 40).length / (antes.encendidos.length || 1);
+    const quietos = antes.encendidos.filter(([x, y]) => despues.alfa[y * despues.ancho + x] > 40).length / (antes.encendidos.length || 1);
+    revisar(antes.encendidos.length > 100 && siguen > 0.8 && siguen > quietos + 0.3, `los puntos bajan con la página (tras bajar 40 px, ${Math.round(siguen * 100)} % está 40 px más arriba; en el mismo lugar, ${Math.round(quietos * 100)} %)`);
+    // Un bloque sin nada que rodear (la franja de texto): sus puntos van por su borde, por dentro.
+    await aBajado(pagina, 430);
+    await pagina.waitForTimeout(1200);
+    const texto = await pagina.evaluate(() => { const r = document.querySelector('[data-franja="texto"]').getBoundingClientRect(); return [r.left + 6, Math.max(0, r.top) + 6, r.right - 6, r.bottom - 6, 12]; });
+    const bordeTexto = await luces(pagina, { borde: texto, ...(await contenidoVisto(pagina)) });
+    revisar(bordeTexto.disuelta === 1 && bordeTexto.cuenta.borde > 30 && pisadas(bordeTexto.cuenta).length === 0, `en una franja sin nada que rodear, los puntos van por su borde, por dentro (${bordeTexto.cuenta.borde} px)`);
+    await centrar(pagina, "cierre");
+    await pagina.waitForTimeout(400);
+    const borde = await pagina.evaluate(() => { const r = document.querySelector('[data-franja="fondo-foto"]').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    const conFoto = await luces(pagina, { foto: borde });
+    revisar(conFoto.cuenta.foto === 0, "sobre la franja con foto de fondo no queda ningún punto");
+    // Sobre la franja del color del acento (como en La Mente), los puntos toman el color de su texto.
+    await pagina.selectOption("[data-prueba=hilo-marco]", "lamente");
+    await pagina.waitForTimeout(900);
+    await centrar(pagina, "acento");
+    await pagina.waitForTimeout(1300);
+    const blancos = await pagina.evaluate(() => {
+      const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+      const boton = document.querySelector("[data-franja=acento] a");
+      if (!cv || !boton) return -1;
+      const r = cv.getBoundingClientRect();
+      const b = boton.getBoundingClientRect();
+      const [kx, ky] = [cv.width / r.width, cv.height / r.height];
+      const datos = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+      let n = 0;
+      for (let y = b.top - 14; y < b.bottom + 14; y += 1 / ky)
+        for (let x = b.left - 14; x < b.right + 14; x += 1 / kx) {
+          if (x > b.left - 4 && x < b.right + 4 && y > b.top - 4 && y < b.bottom + 4) continue;
+          const [px, py] = [Math.floor((x - r.left) * kx), Math.floor((y - r.top) * ky)];
+          if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) continue;
+          const i = (py * cv.width + px) * 4;
+          if (datos[i + 3] > 120 && datos[i] > 200 && datos[i + 1] > 200 && datos[i + 2] > 200) n++;
+        }
+      return n;
+    });
+    const info = await pagina.evaluate(() => JSON.stringify({ ...document.querySelector(".mk-esfera-capa").dataset }));
+    revisar(blancos > 8, `sobre la franja del color del acento, los puntos toman el color de su texto (${blancos} px blancos alrededor del botón)${blancos > 8 ? "" : ` ${info}`}`);
+    await pagina.selectOption("[data-prueba=hilo-marco]", "kit");
+    await pagina.waitForTimeout(700);
+    // Al volver arriba, se vuelve a armar.
+    await aBajado(pagina, 0);
+    await pagina.waitForTimeout(300);
+    const otraVez = await luces(pagina, { derecha: [ancho * 0.55, 0, ancho, 844] });
+    revisar(otraVez.disuelta === 0 && otraVez.cuenta.derecha > 300, `al volver arriba, la esfera se vuelve a armar (${otraVez.cuenta.derecha} px a la derecha)`);
+    // No cambia el alto de la página.
+    const alto = await pagina.evaluate(() => document.querySelector("[data-prueba=hilo-pagina]").offsetHeight);
+    await pagina.selectOption("[data-prueba=hilo-tipo]", "hilo");
+    await pagina.waitForTimeout(500);
+    const altoSin = await pagina.evaluate(() => document.querySelector("[data-prueba=hilo-pagina]").offsetHeight);
+    revisar(alto === altoSin, `la esfera no cambia el alto de la página (${alto} y ${altoSin} px)`);
+    await ctx.close();
+  }
+  {
+    const { ctx, pagina, errores } = await abrir({ hilo: "esfera" });
+    await pagina.waitForSelector(`${P} canvas.mk-esfera`, { timeout: 4000 }).catch(() => {});
+    await pagina.waitForTimeout(700);
+    // El corte: una zona cubierta por dos huecos que se pisan (un botón y su texto) también queda borrada.
+    const corte = await pagina.evaluate(async () => {
+      const { pintarCortado } = await import("/src/relatos/esfera/Esfera.tsx");
+      const cv = document.createElement("canvas");
+      [cv.width, cv.height] = [100, 100];
+      const c = cv.getContext("2d");
+      pintarCortado(c, 100, 100, [{ x: 10, y: 10, w: 50, h: 50 }, { x: 30, y: 30, w: 50, h: 50 }], () => {
+        c.fillStyle = "#f00";
+        c.fillRect(0, 0, 100, 100);
+      });
+      const a = (x, y) => c.getImageData(x, y, 1, 1).data[3];
+      return { solo: a(15, 15), juntos: a(45, 45), fuera: a(95, 5) };
+    });
+    revisar(corte.solo === 0 && corte.juntos === 0 && corte.fuera === 255, `el corte borra también donde dos cajas de contenido se pisan (un botón y su texto) (${JSON.stringify(corte)})`);
+    // Descansa: armada y sin bajar, deja de girar y de pedir cuadros; al bajar, despierta.
+    await aBajado(pagina, 0);
+    await pagina.waitForTimeout(5600);
+    const estado = () => pagina.evaluate(() => document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera").dataset.estado);
+    const dormida = await estado();
+    await pagina.evaluate(() => window.scrollBy(0, 20));
+    await pagina.waitForTimeout(150);
+    const despierta = await estado();
+    revisar(dormida === "quieto" && despierta === "vivo" && errores.length === 0, `sin bajar, la esfera descansa (no pide cuadros) y al bajar despierta (${dormida} → ${despierta})`);
+    // Al final de la página, lo que viene después (el pie de la vitrina, alargado a más de una pantalla) queda limpio.
+    await pagina.addStyleTag({ content: ".hil-pie{min-height:120vh}" });
+    await pagina.waitForTimeout(300);
+    await bajar(pagina, 1);
+    await pagina.waitForTimeout(600);
+    const pie = await pagina.evaluate(() => {
+      const r = document.querySelector("[data-prueba=hilo-pagina]").getBoundingClientRect();
+      return [0, Math.max(0, r.bottom + 1), innerWidth, innerHeight];
+    });
+    const final = await luces(pagina, { despues: pie });
+    revisar(final.cuenta.despues === 0, `al final de la página, lo que viene después queda limpio (${final.cuenta.despues} px encendidos bajo la página)`);
+    // En la vista previa (achicada), la esfera armada y sus cortes donde está el contenido.
+    await pagina.selectOption("[data-prueba=hilo-marco]", "previa");
+    await pagina.waitForTimeout(1200);
+    await pagina.evaluate(() => document.querySelector("[data-prueba=hilo-previa]").scrollIntoView({ block: "start" }));
+    await pagina.waitForTimeout(700);
+    const previa = await luces(pagina, { ...(await contenidoVisto(pagina)), toda: [0, 0, ancho, 844] });
+    revisar(Boolean(previa) && previa.disuelta === 0 && previa.cuenta.toda > 200 && pisadas(previa.cuenta).length === 0, `en la vista previa achicada, la esfera queda armada y no pisa el contenido${previa && pisadas(previa.cuenta).length ? ` (${nombres(previa.cuenta)})` : ""}`);
+    await ctx.close();
+  }
+  // En liviano (se fuerza frenando el procesador al cargar), los puntos ya acomodados y quietos; el corte se rehace al bajar.
+  {
+    const ctxL = await navegador.newContext({ viewport: { width: 390, height: 844 } });
+    const pagina = await ctxL.newPage();
+    const cdp = await ctxL.newCDPSession(pagina).catch(() => null);
+    if (!cdp) console.log("– no aplica aquí (sin CDP): en liviano, los puntos acomodados y quietos");
+    else {
+      await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 30 });
+      await pagina.goto(`${base}/#hilos`);
+      await pagina.waitForSelector(P, { timeout: 30000 });
+      await pagina.selectOption("[data-prueba=hilo-tipo]", "esfera");
+      const liviana = await pagina.waitForFunction(() => document.querySelector("[data-prueba=hilo-pagina]")?.dataset.nivel === "liviano", null, { timeout: 30000 }).then(() => true, () => false);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+      if (!liviana) console.log("– no aplica aquí (la página no llegó a liviano): en liviano, los puntos acomodados y quietos");
+      else {
+        await pagina.evaluate(() => {
+          const r = document.querySelector('[data-franja="grilla"]').getBoundingClientRect();
+          window.scrollBy(0, r.top + r.height / 2 - innerHeight / 2);
+        });
+        await pagina.waitForTimeout(2200);
+        const mirar = () => pagina.evaluate(() => {
+          const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+          if (!cv) return null;
+          const c = cv.getBoundingClientRect();
+          const k = cv.width / c.width;
+          const datos = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+          const cajas = [...document.querySelectorAll("[data-franja=grilla] [data-mk-parte=tarjeta]")].map((t) => t.getBoundingClientRect());
+          let pisa = 0;
+          for (const b of cajas) for (let y = b.top + 1; y < b.bottom - 1; y += 1) for (let x = b.left + 1; x < b.right - 1; x += 1) {
+            const [px, py] = [Math.floor((x - c.left) * k), Math.floor((y - c.top) * k)];
+            if (px >= 0 && py >= 0 && px < cv.width && py < cv.height && datos[(py * cv.width + px) * 4 + 3] > 40) pisa++;
+          }
+          let luz = 0;
+          for (let i = 3; i < datos.length; i += 4) if (datos[i] > 40) luz++;
+          return { pisa, luz, disuelta: cv.closest(".mk-esfera-capa").dataset.disuelta, estado: cv.dataset.estado };
+        });
+        const r0 = await mirar();
+        // Al bajar, el corte se rehace con las tarjetas en su nuevo lugar.
+        await pagina.evaluate(() => window.scrollBy(0, 150));
+        await pagina.waitForTimeout(2200);
+        const r1 = await mirar();
+        const r = r0 && r1 ? { ...r1, pisa: r0.pisa + r1.pisa, luz: Math.min(r0.luz, r1.luz) } : null;
+        revisar(Boolean(r) && r.luz > 100 && r.pisa === 0 && Number(r.disuelta) === 1 && r.estado === "quieto", `en liviano, los puntos ya acomodados y quietos; al bajar, el corte se rehace${r ? ` (${r.pisa} px sobre las tarjetas, ${r.luz} encendidos, disuelta ${r.disuelta}, ${r.estado})` : ""}`);
+      }
+    }
+    await ctxL.close();
+  }
+  // Casos que pidió la segunda revisión, cada uno en su propia página.
+  if (await (async () => { const { ctx, nativo } = await abrir({}); await ctx.close(); return nativo; })()) {
+    const preparar = async (css) => {
+      const r = await abrir({ hilo: "esfera" });
+      if (css) await r.pagina.addStyleTag({ content: css });
+      // Alargar y acortar un texto hace que la página se vuelva a medir con el CSS nuevo.
+      await r.pagina.click("[data-prueba=hilo-crece]");
+      await r.pagina.waitForTimeout(300);
+      await r.pagina.click("[data-prueba=hilo-crece]");
+      await r.pagina.waitForTimeout(900);
+      return r;
+    };
+    // Con el relato «profundidad» el interior de cada bloque va a z-index 1: la esfera igual queda encima.
+    {
+      const { ctx, pagina } = await preparar("[data-prueba=hilo-pagina] .mk-relato-in{position:relative;z-index:1}");
+      await centrar(pagina, "grilla");
+      await pagina.waitForTimeout(1300);
+      const tarjetas = await pagina.evaluate(() => [...document.querySelectorAll("[data-franja=grilla] [data-mk-parte=tarjeta]")].map((t) => t.getBoundingClientRect()).filter((r) => r.top > 0 && r.bottom < innerHeight).map((r) => [r.left - 14, r.top - 14, r.right + 14, r.bottom + 14, 8]));
+      const z = await luces(pagina, Object.fromEntries(tarjetas.map((t, i) => [`anillo${i}`, t])));
+      const anillos = tarjetas.map((_, i) => z.cuenta[`anillo${i}`]);
+      const visibles = await pagina.evaluate(() => {
+        const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+        const t = document.querySelector("[data-franja=grilla] [data-mk-parte=tarjeta]").getBoundingClientRect();
+        const arriba = document.elementFromPoint(t.left - 10, t.top + 20);
+        return arriba === cv || cv.contains(arriba) || getComputedStyle(cv.closest(".mk-esfera-capa")).zIndex;
+      });
+      revisar(anillos.length >= 2 && anillos.every((n) => n > 20) && Number(await pagina.evaluate(() => getComputedStyle(document.querySelector(".mk-esfera-capa")).zIndex)) > 1, `con el relato «profundidad» (el interior de los bloques a z-index 1), la esfera queda encima (${anillos.join(", ")}; ${visibles})`);
+      await ctx.close();
+    }
+    // Una fila que se desliza de lado: al deslizarla, el corte sigue a las tarjetas.
+    {
+      const { ctx, pagina } = await preparar(".hil-grilla{display:flex!important;overflow-x:auto;gap:12px}.hil-grilla>*{min-width:70%;flex:none}");
+      await centrar(pagina, "grilla");
+      await pagina.waitForTimeout(1300);
+      await pagina.evaluate(() => { document.querySelector(".hil-grilla").scrollLeft = 220; });
+      await pagina.waitForTimeout(900);
+      const pisa = await pagina.evaluate(() => {
+        const cv = document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera");
+        const c = cv.getBoundingClientRect();
+        const k = cv.width / c.width;
+        const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+        let n = 0;
+        for (const t of document.querySelectorAll("[data-franja=grilla] [data-mk-parte=tarjeta]")) {
+          const b = t.getBoundingClientRect();
+          for (let y = Math.max(b.top, 0) + 1; y < Math.min(b.bottom, innerHeight) - 1; y++) for (let x = Math.max(b.left, c.left) + 1; x < Math.min(b.right, c.right) - 1; x++) {
+            const [px, py] = [Math.floor((x - c.left) * k), Math.floor((y - c.top) * k)];
+            if (d[(py * cv.width + px) * 4 + 3] > 40) n++;
+          }
+        }
+        return n;
+      });
+      revisar(pisa === 0, `al deslizar de lado una fila de tarjetas, el corte las sigue (${pisa} px sobre ellas)`);
+      await ctx.close();
+    }
+    // Si la página es todo contenido entero (todo pegado), no hay dónde acomodar los puntos: la esfera se desvanece. Con
+    // espacio entre los bloques (donde no hay nada que la borre) se vería si se quedara.
+    {
+      const { ctx, pagina } = await preparar("[data-prueba=hilo-pagina] :is(.hil-franja,.hil-foto,.hil-enc){position:sticky;top:-100000px}");
+      await pagina.locator("[data-prueba=hilo-separadas]").check();
+      await pagina.waitForTimeout(900);
+      // Un espacio entre bloques bastante abajo (la esfera ya disuelta), al centro de la pantalla: ahí flotaría.
+      await pagina.evaluate(() => {
+        const relatos = [...document.querySelectorAll("[data-prueba=hilo-pagina] > .mk-relato")];
+        const [a, b] = [relatos[2].getBoundingClientRect(), relatos[3].getBoundingClientRect()];
+        window.scrollBy(0, (a.bottom + b.top) / 2 - innerHeight / 2);
+      });
+      await pagina.waitForTimeout(1800);
+      await pagina.waitForTimeout(400);
+      const todo = await luces(pagina, { toda: [0, 0, ancho, 844] });
+      revisar(todo.disuelta === 1 && todo.cuenta.toda === 0, `si la página es todo contenido entero, la esfera se desvanece al bajar (${todo.cuenta.toda} px encendidos)`);
+      await ctx.close();
+    }
+    // Dentro de un contenedor con su propio scroll: se arma arriba y se disuelve al bajar dentro de él.
+    {
+      const { ctx, pagina } = await preparar(".hil-marco{height:640px;overflow-y:auto}");
+      const marco = async (y) => {
+        await pagina.evaluate((v) => { const m = document.querySelector(".hil-marco"); m.scrollIntoView({ block: "start" }); m.scrollTop = v; }, y);
+        await pagina.waitForTimeout(500);
+      };
+      await marco(0);
+      const arribaM = await luces(pagina, { derecha: [ancho * 0.55, 0, ancho, 844], ...(await contenidoVisto(pagina)) });
+      await marco(700);
+      await pagina.waitForTimeout(900);
+      const abajoM = await luces(pagina, await contenidoVisto(pagina));
+      revisar(arribaM.disuelta === 0 && arribaM.cuenta.derecha > 300 && abajoM.disuelta === 1 && pisadas(abajoM.cuenta).length === 0 && pisadas(arribaM.cuenta).length === 0, `dentro de un contenedor con su propio scroll, se arma arriba y se disuelve al bajar en él (${arribaM.disuelta} → ${abajoM.disuelta})`);
+      await ctx.close();
+    }
+    // Una página corta (casi no deja bajar): igual se disuelve del todo al terminar de bajar.
+    {
+      const { ctx, pagina } = await preparar("[data-prueba=hilo-pagina] [data-franja]:not([data-franja=texto]){display:none!important}.hil-pie{min-height:0}");
+      await bajar(pagina, 1);
+      await pagina.waitForTimeout(500);
+      const corta = await luces(pagina, {});
+      revisar(corta.disuelta === 1, `una página corta se disuelve del todo al terminar de bajar (${corta.disuelta})`);
+      await ctx.close();
+    }
+    // En la vista previa (no baja), la esfera armada gira al cargar.
+    {
+      const { ctx, pagina } = await abrir({ hilo: "esfera" });
+      await pagina.selectOption("[data-prueba=hilo-marco]", "previa");
+      // Pasado el rato que igual dibuja después de cargar (1,5 s), sigue solo si gira.
+      await pagina.waitForTimeout(2200);
+      const estado = await pagina.evaluate(() => document.querySelector("[data-prueba=hilo-pagina] canvas.mk-esfera")?.dataset.estado);
+      revisar(estado === "vivo", `en la vista previa (no baja), la esfera gira al cargar (${estado})`);
+      await ctx.close();
+    }
+    // El lienzo sigue el alto de la pantalla (la barra del navegador del teléfono, la ventana).
+    {
+      const { ctx, pagina } = await abrir({ hilo: "esfera" });
+      await pagina.waitForTimeout(500);
+      await pagina.setViewportSize({ width: 390, height: 700 });
+      await pagina.waitForTimeout(500);
+      const alto = await pagina.evaluate(() => Math.round(document.querySelector(".mk-esfera-capa").getBoundingClientRect().height));
+      revisar(alto === 700, `el lienzo sigue el alto de la pantalla (${alto} px con una pantalla de 700)`);
+      await ctx.close();
+    }
+  }
+  for (const [que, opciones, respaldo] of [["con movimiento reducido", { reducedMotion: "reduce" }, false], ["sin scroll nativo", {}, true]]) {
+    const { ctx, pagina, errores } = await abrir({ hilo: "esfera", opciones: { viewport: { width: 390, height: 844 }, ...opciones } });
+    if (respaldo) await pagina.locator("[data-prueba=hilo-respaldo]").check();
+    await pagina.waitForTimeout(900);
+    const hay = await pagina.evaluate(() => document.querySelectorAll("[data-prueba=hilo-pagina] canvas.mk-esfera").length);
+    if (respaldo) revisar(hay === 1 && errores.length === 0, `${que} la esfera igual está (lee el scroll con código)`);
+    else revisar(hay === 0 && errores.length === 0, `${que} no hay esfera`);
     await ctx.close();
   }
 }

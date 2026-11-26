@@ -55,11 +55,16 @@ function useMedidas(ref: React.RefObject<HTMLDivElement | null>, activo: boolean
       el.style.setProperty("--mk-alto-vista", `${altoVista(caja)}px`);
     };
     medir();
-    if (typeof ResizeObserver === "undefined") return;
+    // El alto visible también cambia sin que cambie la página (la barra del navegador del teléfono, la ventana).
+    window.addEventListener("resize", medir);
+    if (typeof ResizeObserver === "undefined") return () => window.removeEventListener("resize", medir);
     const ro = new ResizeObserver(medir);
     ro.observe(el);
     if (caja) ro.observe(caja);
-    return () => ro.disconnect();
+    return () => {
+      window.removeEventListener("resize", medir);
+      ro.disconnect();
+    };
   }, [ref, activo]);
   return m;
 }
@@ -94,6 +99,8 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
   const Hilos = useAparte(conRemate || tipoHilo === "rastro" || (tipoHilo !== null && nivel !== "quieto"), () => import("./hilos/Hilos"));
   // Las ramas: aparte; como el Hilo, sin scroll nativo o en quieto no van (en liviano, enteras y quietas).
   const Ramas = useAparte(relatoPagina === "ramas" && nivel !== "quieto" && !sinScroll, () => import("./ramas/Ramas"));
+  // La esfera de puntos: aparte; en quieto no va (en liviano, quieta).
+  const Esfera = useAparte(relatoPagina === "esfera" && nivel !== "quieto", () => import("./esfera/Esfera"));
   // Estela y chispas: igual, aparte y solo en completo.
   const Estela = useAparte(Boolean(estela) && nivel === "completo", () => import("../dedo/Estela"));
   return (
@@ -112,6 +119,8 @@ export function PaginaRelato({ relato, relatoPagina, estela, figura, semilla, ah
             <i data-hora="tarde" /><i data-hora="atardecer" /><i data-hora="noche" /><b className="mk-sol" />
           </div>
         )}
+        {/* Pegada a la pantalla desde arriba de la página (no ocupa lugar), como el cielo. */}
+        {Esfera && <Esfera pagina={ref} quieta={nivel !== "completo"} />}
         {camino && (
           <>
             <svg className="mk-hilo" aria-hidden="true" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">

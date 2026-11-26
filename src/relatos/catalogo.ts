@@ -3,7 +3,7 @@
 import type { EstiloId } from "../estilos/estilos";
 
 export type RelatoBloqueId = "escenas" | "pelicula" | "cuento" | "profundidad" | "iris" | "carrete" | "subtitulos" | "pila";
-export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera" | "ramas";
+export type RelatoPaginaId = "hilo" | "luz" | "impulso" | "rulos" | "hebras" | "figura" | "rastro" | "enredadera" | "ramas" | "esfera";
 export type RelatoId = RelatoBloqueId | RelatoPaginaId;
 
 /** Marcas que un bloque pone en sus partes (`data-mk-parte`) para que un relato las encuentre. */
@@ -100,6 +100,11 @@ export const RELATOS: Record<RelatoId, FichaRelato> = {
     id: "ramas", nombre: "Ramas", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
     descripcion: "El hilo de fondo se divide: un tronco baja hasta el final; unas ramas chocan con el contenido, con una chispa, y otras se juntan con el tronco. Pasan por detrás del contenido.",
     completo: "El tronco y las ramas se dibujan al bajar; las que chocan se apagan con una chispa.", liviano: "Enteras y quietas, sin chispas.", quieto: "Sin ramas.",
+  },
+  esfera: {
+    id: "esfera", nombre: "Esfera de puntos", alcance: "pagina", para: ["pagina"], requiere: [], largo: false,
+    descripcion: "Arriba, una esfera de puntos que gira; al bajar se disuelve y sus puntos se acomodan en los bloques: el contorno de tarjetas, fotos y botones, o el borde de cada franja.",
+    completo: "Se disuelve al bajar y sus puntos bajan con la página.", liviano: "Los puntos ya acomodados, quietos.", quieto: "Sin esfera.",
   },
 };
 

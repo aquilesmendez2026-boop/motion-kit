@@ -1048,6 +1048,46 @@ archivo compartido). Al cargar, `motion-kit/pagina` mide 16,6 KB (tope 17).
 Pruebas: `pruebas/ramas.test.ts` (10) y la parte `ramas` de `scripts/verificar-hilos.mjs` (17 revisiones, también en
 `#pagina` en pantalla ancha; con el motor de Safari, que va sin scroll nativo, 3: no hay ramas).
 
+## Esfera de puntos (25-11-2026)
+
+Relato de página `esfera`. Diseño `docs/superpowers/specs/2026-11-25-esfera-design.md` (con sus cambios), plan
+`docs/superpowers/plans/2026-11-25-esfera.md`. Vitrina `#hilos`.
+
+- **Arriba de la página, una esfera:** 400 puntos chicos (de 0,8 a 2 px) repartidos parejo (espiral de Fibonacci) en una
+  bola que gira lento, a la derecha de la pantalla; los de atrás, más chicos y tenues. Se dibuja en un lienzo 2D
+  (`crearLienzo`) pegado a la pantalla dentro de la página (`position: sticky`, como el cielo): no ocupa lugar.
+- **Al bajar se disuelve** (en la primera media pantalla, cada punto a su ritmo) y sus puntos **se acomodan en los
+  bloques de toda la página**: en el contorno de tarjetas, fotos, botones y enlaces con caja propia (a 10 px por fuera)
+  o, si un bloque no tiene, en su borde (a 12 px por dentro); nada en un bloque que es todo contenido (una foto de
+  fondo). Parejos por toda la página; el contorno de una foto de lado a lado queda a 4 px del borde, por dentro. Ahí se
+  quedan y bajan con ella; al volver arriba, la esfera se vuelve a armar. Todo atado al scroll (sin suavizado: los puntos
+  acomodados no se quedan atrás). En una página corta, se disuelve del todo al terminar de bajar. Si la página es toda
+  contenido entero (no hay dónde acomodarlos), la esfera se desvanece al bajar.
+- **Nunca tapa el contenido:** dibuja y después borra el contenido (con 6 px de margen; borrar en vez de recortar deja
+  borrado también donde dos cajas se pisan, como un botón y su texto) y lo que queda fuera de la página (no sigue sobre
+  lo que viene después). La medición fina es la de las ramas (`useMedidaFina`, con `marcos`). Sobre un bloque cuyo fondo
+  se parece al acento, los puntos toman el color de su texto. Funciona en una página achicada (la vista previa) y dentro
+  de un contenedor con su propio scroll, también si una fila se desliza de lado (se vuelve a medir). Mientras un bloque
+  entra con su relato (corrido), el corte de cada cosa suya abarca su lugar y el corrido, con 28 px más por las piezas
+  que entran por su cuenta. La capa va a `z-index: 2`: sobre los bloques (también con «profundidad», que levanta su
+  interior a 1), bajo los velos y la cinta. El lienzo sigue el alto de la pantalla (la barra del navegador del teléfono).
+- **Descansa:** la esfera gira al cargar y al bajar; a los 4 segundos sin bajar (o ya disuelta, pasado 1,5 s, lo que
+  tardan los bloques en terminar de entrar) deja de pedir cuadros.
+- **El lugar** es un parámetro (`derecha`; `izquierda` y `centro` listos por dentro). Cuando los agentes de La Mente lo
+  necesiten, se suma un campo a la receta de página. Todavía no va en el contrato.
+- **Niveles:** completo, todo; liviano, los puntos ya acomodados y quietos; en la vista previa (no baja), la esfera
+  armada (gira al cargar); quieto, sin esfera. Sin scroll nativo funciona igual (lee el scroll con código). Con el procesador
+  frenado 4 veces, 60 cuadros por segundo.
+- **Contrato:** `relatoPagina` suma `esfera` (solo agrega).
+- **De paso:** la medición fina pasó a un hook compartido (`hilos/useMedidaFina.ts`), el contraste de colores a
+  `hilos/color.ts`, y la medición fina entrega, si se le piden, los `marcos` de cada bloque.
+
+Pesos (gzip, ESM, sin lo que la página ya carga): la esfera baja aparte 10,0 KB (su archivo y lo compartido: la medición,
+el color y el lienzo); las ramas, 8,0; los hilos, 16,2. Al cargar, `motion-kit/pagina` mide 16,8 KB (tope 17: queda poco).
+
+Pruebas: `pruebas/esfera.test.ts` (9) y la parte `esfera` de `scripts/verificar-hilos.mjs` (25 revisiones, también con el
+motor de Safari, donde la del nivel liviano no aplica: se fuerza frenando el procesador, y eso solo se puede en Chromium).
+
 ## Safari (sondeo del 24-11-2026)
 
 Las pruebas visuales están escritas para Chrome. El 24-11 se corrieron las quince, una vez, con el motor de Safari

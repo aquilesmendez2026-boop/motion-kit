@@ -10,7 +10,7 @@ export function contratoPagina() {
     $comentario:
       "Receta de página de motion-kit, v1. Generado por scripts/generar-contrato.mjs desde src/relatos: no editar a mano. " +
       "El encabezado sigue contrato/encabezado-motionkit.json. relato: el de la página (de bloque); sin él, se usa relatoDeEstilo del estilo del encabezado. " +
-      "relatoPagina: relato de fondo para toda la página. figura: lo que dibuja el hilo al final con relatoPagina figura (suma 140 px a la página); con rastro, la forma de las huellas. enredadera termina en una flor (también suma 140 px) y no usa figura. ramas va sobre el fondo de los bloques y bajo su contenido, y su forma sale de semilla. semilla: el slug del negocio. " +
+      "relatoPagina: relato de fondo para toda la página. figura: lo que dibuja el hilo al final con relatoPagina figura (suma 140 px a la página); con rastro, la forma de las huellas. enredadera termina en una flor (también suma 140 px) y no usa figura. ramas va sobre el fondo de los bloques y bajo su contenido, y su forma sale de semilla. esfera flota a la derecha y no tapa el contenido. semilla: el slug del negocio. " +
       "estela: true prende la estela del cursor y las chispas al tocar (solo en nivel completo). " +
       "bloques[].id: minúsculas, números y guiones; en La Mente, el tipo del bloque. " +
       "Marcas: cada bloque marca sus partes con data-mk-parte (partes); un relato que requiere marcas que el bloque no trae se dibuja como «escenas». " +

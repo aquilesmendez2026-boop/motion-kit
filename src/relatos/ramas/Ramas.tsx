@@ -5,9 +5,9 @@
 // medir no corre código. Se vuelve a medir cuando algo cambia (tamaño, orden de los bloques, estilo, fuentes), como los
 // hilos. Donde la página no baja (una vista previa achicada), van enteras y quietas. Se baja aparte (lo carga
 // `PaginaRelato`, que ya mide el ancho y el alto de la página).
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useId, useMemo, useRef, type CSSProperties, type RefObject } from "react";
 import { useStyles } from "../../utils/styles";
-import { contenedorScroll, CSS_MIDIENDO, medirPagina } from "../hilos/medir";
+import { useMedidaFina } from "../hilos/useMedidaFina";
 import { trazarRamas, type Caja } from "./trazar-ramas";
 
 /** El acento: el del estilo del kit o, en una página de La Mente sin él, el suyo. */
@@ -61,55 +61,19 @@ export interface RamasProps {
 }
 
 export default function Ramas({ pagina, ancho, alto, vista, semilla = "", quieta }: RamasProps) {
-  useStyles("hilos-medir", CSS_MIDIENDO);
   useStyles("ramas", CSS_RAMAS);
   const mascara = `mk-ramas-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  // El contenido (cada texto, foto, botón y tarjeta), y si la página baja de verdad (en una vista previa achicada
-  // dentro de un `overflow: hidden`, o en una página más corta que la pantalla, el scroll no la dibujaría nunca).
-  const [medida, setMedida] = useState<{ contenido: Caja[]; baja: boolean; scroll: { arriba: number; recorrido: number } | null }>({ contenido: [], baja: true, scroll: null });
-  const medir = useRef<() => void>(() => {});
-  medir.current = () => {
-    const el = pagina.current;
-    if (!el) return;
-    const { medidas, baja } = medirPagina(el, { fino: true });
-    const nueva = { contenido: medidas.bloques.flatMap((b) => [...b.cosas, ...b.tarjetas]), baja: baja && medidas.recorrido > 0, scroll: { arriba: Math.round(medidas.arriba), recorrido: Math.round(medidas.recorrido) } };
-    setMedida((vieja) => (JSON.stringify(vieja) === JSON.stringify(nueva) ? vieja : nueva));
-  };
-  useLayoutEffect(() => medir.current(), [ancho, alto]);
-  // Se vuelve a medir cuando algo cambia sin cambiar el alto: bloques que cambian de orden o de tamaño, el estilo, las
-  // fuentes que cargan tarde. Varios avisos seguidos, una sola vez (cuando se calman).
-  useEffect(() => {
-    const el = pagina.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    let espera = 0;
-    const pedir = () => {
-      clearTimeout(espera);
-      espera = window.setTimeout(() => medir.current(), 180);
-    };
-    const ro = new ResizeObserver(pedir);
-    for (const b of el.children) if (!b.matches(".mk-ramas")) ro.observe(b);
-    const caja = contenedorScroll(el);
-    if (caja) ro.observe(caja);
-    const propio = (n: Node) => n instanceof Element && n.closest(".mk-ramas") !== null;
-    const mo = typeof MutationObserver === "undefined" ? null : new MutationObserver((cambios) => {
-      if (cambios.some((c) => c.type === "attributes" || (!propio(c.target) && [...c.addedNodes, ...c.removedNodes].some((n) => !propio(n))))) pedir();
-    });
-    mo?.observe(el, { childList: true, subtree: true, characterData: true });
-    const estilo = el.closest("[data-mk-estilo]");
-    if (estilo) mo?.observe(estilo, { attributes: true, attributeFilter: ["data-mk-estilo", "style", "class"] });
-    document.fonts?.ready.then(pedir, () => {});
-    return () => {
-      clearTimeout(espera);
-      ro.disconnect();
-      mo?.disconnect();
-    };
-  }, [pagina]);
+  // El contenido (cada texto, foto, botón y tarjeta), si la página baja de verdad (en una vista previa achicada dentro
+  // de un `overflow: hidden`, o en una página más corta que la pantalla, el scroll no la dibujaría nunca) y su scroll.
+  const medida = useMedidaFina(pagina, [ancho, alto]);
   // El alto visible, sin el vaivén de la barra del navegador del teléfono (si no, toda la forma saltaría al bajar).
   const vistaFija = useRef(vista);
   const tactil = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
   if (!tactil || Math.abs(vista - vistaFija.current) >= BARRA) vistaFija.current = vista;
   const vistaUsada = vistaFija.current;
-  const { contenido, baja, scroll } = medida;
+  const contenido = useMemo(() => (medida ? medida.medidas.bloques.flatMap((b) => [...b.cosas, ...b.tarjetas]) : []), [medida]);
+  const baja = medida?.baja ?? true;
+  const scroll = useMemo(() => (medida ? { arriba: Math.round(medida.medidas.arriba), recorrido: Math.round(medida.medidas.recorrido) } : null), [medida]);
   // Con el scroll de la página, cada punto se dibuja cuando pasa por el 60 % de la pantalla (como los hilos): lo que se
   // ve al cargar, como el encabezado, ya va dibujado.
   const { tronco, tramos, ramas } = useMemo(
