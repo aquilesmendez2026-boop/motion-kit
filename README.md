@@ -169,13 +169,16 @@ npm install github:aquilesmendez2026-boop/motion-kit
 
 Al instalarla así se compila sola (script `prepare`); no hace falta subir `dist/`.
 
-Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.5.4`.
+Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.5.5`.
 
 Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
 `motion-kit/pagina` (los relatos y la receta de página), `motion-kit/momentos` (un momento por bloque),
 `motion-kit/escena`, `motion-kit/receta` (sin React), `motion-kit/director` (hace correr una partitura: un movimiento
 escrito como dato), `motion-kit/partitura` (para quien crea partituras: el lenguaje en español y las de la casa) y
-`motion-kit/luz` (una sola luz para la página y las superficies que le responden; desde la `v0.5.0`); y
+`motion-kit/luz` (una sola luz para la página y las superficies que le responden; desde la `v0.5.0`),
+`motion-kit/interfaz` (solo las piezas de interfaz y sus hooks, para un panel o una app: acordeón, contador, pestañas,
+avisos, subir una imagen, cargando, listas que se animan…; toman los colores del tema por variables `--mk-*`; sin fondos
+ni encabezados); y
 los CSS `motion-kit/estilos.css`, `motion-kit/estilos-encabezado.css`, `motion-kit/estilos-pagina.css`,
 `motion-kit/estilos-momentos.css` y `motion-kit/estilos-luz.css` (para usar con `sinInyectarEstilos()`). Cambios en `CHANGELOG.md`; el detalle de
 cada cosa, en `docs/CATALOGO.md`.

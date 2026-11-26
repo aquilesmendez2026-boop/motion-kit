@@ -101,6 +101,16 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.5.5 (26-11-2026)
+
+Etiqueta `v0.5.5`: suma la entrada `motion-kit/interfaz` (encargo del front) y las piezas del panel de cada negocio:
+colores del tema por variables `--mk-*`, `SubirImagen`, avisos con tipo y «Deshacer», `Cargando`, `ListaViva`, `Contador`
+e `Interruptor` (ver «Panel con vida»). Se instala con `github:aquilesmendez2026-boop/motion-kit#v0.5.5`. Ningún contrato
+cambia. **Cambian cómo se ven** `BottomSheet`, `Toast`, `Skeleton` y `TabBar` (toman el tema). Antes de la etiqueta:
+370 pruebas calculables, pesos dentro de sus topes (`motion-kit` en 87,6 de 90; `interfaz` 18,1 de 20), probar-paquete
+bien, las pruebas visuales que tocan los cambios (12 de 19, 17 min) y la pasada rápida (57 s); revisión final en Opus,
+con sus 6 arreglos.
+
 ## Paquete v0.5.4 (25-11-2026)
 
 Etiqueta `v0.5.4`: suma el relato de página `esfera` (arriba, una esfera de puntos que gira; al bajar se disuelve y sus
@@ -1094,6 +1104,73 @@ el color y el lienzo); las ramas, 8,0; los hilos, 16,2. Al cargar, `motion-kit/p
 
 Pruebas: `pruebas/esfera.test.ts` (9) y la parte `esfera` de `scripts/verificar-hilos.mjs` (25 revisiones, también con el
 motor de Safari, donde la del nivel liviano no aplica: se fuerza frenando el procesador, y eso solo se puede en Chromium).
+
+## Interfaz: la entrada liviana (25-11-2026)
+
+Encargo del front de La Mente (`../cerebro-aquiles/lamente/ENCARGO_2026-11-25_entrada-liviana-interfaz.md`): el panel de
+cada negocio quiere un acordeón o un contador sin cargar los fondos, encabezados y relatos de las páginas. Entrada nueva
+**`motion-kit/interfaz`**, con las piezas de interfaz y sus hooks: `Accordion`, `CountUp`, `Reveal`, `Stagger`,
+`Presencia`, `Skeleton`, `Pressable`, `Ripple`, `Tabs`, `TabBar`, `BottomSheet`, `ToastProvider` y `useToast`,
+`Tarjeta` (con `TarjetaMedia` y `TarjetaCuerpo`), `GlowBorder`, `ShinyButton`, `TextoCinetico`, `SplitText`,
+`Typewriter`, `WordRotate`; `useReducedMotion`, `useInView`, `useScrollProgress`, `useViewTransition` y
+`transicionVista`. Cada pieza pone su CSS al montarse: no hay hoja que importar. Las mismas piezas siguen en
+`motion-kit` (no cambia nada para quien ya las usa desde ahí).
+
+```tsx
+import { Accordion, CountUp } from "motion-kit/interfaz";
+```
+
+Pesos (gzip, ESM, sin React): toda la entrada, 18,0 KB al cargar con las piezas del panel (tope 20, decisión de
+Aquiles del 26-11-2026; antes de ellas, 11,8); un panel que importa solo `{ Accordion, CountUp }`, 1,6 KB (tope 5,
+pedido por el front; en la instalación de prueba, con el código del panel, 1,7). Bajó de 4,1 a 1,6 al marcar como
+puras (`/* @__PURE__ */`) las llamadas de nivel superior a `forwardRef` y `createContext` y armar al montarse el CSS que
+lleva colores del tema: en `dist` las piezas comparten archivo, y sin eso quien instala no podía descartar las que no
+usa. El efecto `descifrar` de `TextoCinetico` queda como archivo aparte (0,9 KB) que solo baja si alguien lo usa.
+
+Pruebas: `pruebas/interfaz.test.ts` (empaqueta desde la fuente: `{ Accordion, CountUp }` bajo 5 KB y sin ningún archivo
+de efectos, escenas, encabezados, relatos, receta, director, partitura, momentos, fotos, luz ni registros; todas las
+piezas presentes y livianas), `npm run peso` (la entrada y el uso de dos piezas, con su tope) y `npm run probar-paquete`
+(instala el paquete, arma un panel con las dos piezas y revisa que solo entre `motion-kit/interfaz`, lo que pesa al
+cargar y que no se cuele ninguna clase de los fondos, escenas, encabezados ni relatos).
+
+## Panel con vida: imágenes, avisos, cargas y lo que llega (26-11-2026)
+
+Pedido de Aquiles («debemos mejorar toda la visual de La Mente»; «parte con el grupo 1 y 2, mejoremos lo de las
+imágenes»). Diseño: `docs/superpowers/specs/2026-11-26-panel-interfaz-design.md`; plan:
+`docs/superpowers/plans/2026-11-26-panel-interfaz.md`. Todo en `motion-kit/interfaz` (y en `motion-kit`), para el panel
+de cada negocio. Vitrina `#panel` (con el tema claro y oscuro del panel de La Mente).
+
+- **Colores del tema** (`src/interfaz/tema.ts`): las piezas de interfaz leen `--mk-fondo`, `--mk-superficie`,
+  `--mk-texto`, `--mk-suave`, `--mk-borde`, `--mk-acento`, `--mk-sobre-acento`, `--mk-bien` y `--mk-mal` (con respaldo
+  `--lm-*` en acento, fondo y superficie, y después un valor claro). `variablesTema({ … })` las arma para un `style`.
+  **Van en la raíz del documento** (`:root`): los avisos y las hojas se dibujan en `body`, fuera de cualquier caja.
+  `Toast`, `BottomSheet`, `TabBar` y `Skeleton` las usan (**cambia cómo se ven**: la hoja y la barra ya no son oscuras
+  fijas). Lo que va sobre el acento es `--mk-sobre-acento` (`--mk-acento-texto` es otra cosa en el kit: el acento como texto).
+- **`SubirImagen`**: un recuadro para elegir una foto con todo el viaje: arrastrar (el borde toma el acento), la foto a
+  la vista mientras sube con un anillo de avance, un ✓ breve al terminar («Foto lista» para el lector) y los errores
+  claros con una sacudida suave («Esa foto pesa 3,4 MB: el máximo es 2 MB.»). Revisa tipo y peso antes de avisar
+  (`alElegir(archivo)` solo con un archivo válido); el error de la subida lo pone quien sube. Formas `redonda` (logo,
+  112 px), `cuadrada` (160 px) y `apaisada` (16:9 hasta 480 px). «Cambiar», y «Quitar» si se pasa `alQuitar`. La misma
+  foto se puede volver a elegir; la vista local se suelta al llegar la foto, si falla, al elegir otra y al desmontarse.
+- **Avisos** (`Toast`): `toast("Guardado", { tipo: "bien" })`, `"mal"` (va en una región urgente) o `"info"`; `accion`
+  («Deshacer»: dura 6 s y no lo saca uno nuevo). Se cierran con la ×, deslizándolos hacia el lado (más de 80 px o un
+  tirón) o solos; la cuenta se pausa con el mouse, el dedo o el foco encima. Lo de antes (`toast("Hola")`) sigue igual.
+- **`Cargando`**: `<Cargando listo={!!datos} forma="tabla">…</Cargando>`. El esqueleto con la forma de lo que viene
+  (`texto`, `fila`, `tarjeta`, `tabla`, `foto`) aparece si la carga pasa de 150 ms, dura al menos 300 ms y cambia al
+  contenido con un fundido; al refrescar no vuelve.
+- **Lo que llega**: `ListaViva` (lo nuevo entra con un halo del acento, lo que cambia de lugar se desliza, lo que sale
+  se desvanece en su lugar; la primera carga, aunque llegue tarde, no se anima; cada hijo va con su `key` dentro de un
+  `div[data-mk-clave]`), `Contador` (una insignia que late al subir; «99+») e `Interruptor` (`role="switch"`, la perilla
+  con resorte, 44 px para el dedo, «Cerrado/Abierto»).
+
+Pesos (gzip, lo que importa una app desde `dist`): `{ SubirImagen }` 3,9 KB (tope 4), `{ ToastProvider, useToast }` 3,0
+(tope 3,1), `{ Cargando }` 2,0 (tope 2), `{ ListaViva, Contador, Interruptor }` 2,7 (tope 4); los tres primeros quedaron
+justo en su tope. En la instalación de prueba, un panel con imágenes, avisos y cargas pesa 7,7 KB. `motion-kit` (todo)
+pasó de 80,8 a 87,6 KB (tope 90: queda poco).
+
+Pruebas: `pruebas/{tema-interfaz,subir-imagen,avisos,cargando,lista-viva}.test.ts` y `scripts/verificar-panel.mjs`
+(partes `tema`, `imagen`, `avisos`, `cargando` y `llega`, en el teléfono y en escritorio, también con el motor de
+Safari); `#panel` en la pasada rápida.
 
 ## Safari (sondeo del 24-11-2026)
 

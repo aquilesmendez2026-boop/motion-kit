@@ -1,5 +1,28 @@
 # Cambios
 
+## 0.5.5 (26-11-2026)
+
+Una entrada nueva, `motion-kit/interfaz` (encargo del front de La Mente), y las piezas del panel de cada negocio.
+Ningún contrato cambia. **Cambia cómo se ven** `BottomSheet`, `Toast`, `Skeleton` y `TabBar`: toman los colores del
+tema (la hoja y la barra dejan de ser oscuras fijas; la barra pone el color del texto del tema).
+
+- **`motion-kit/interfaz`**: solo las piezas de interfaz y sus hooks (acordeón, contador, aparecer, pestañas, hoja de
+  abajo, avisos, tarjeta, botón brillante, textos animados, `useReducedMotion`, `useInView`, `useScrollProgress`,
+  `useViewTransition`, `transicionVista`, y las piezas nuevas de abajo), sin fondos, encabezados, relatos ni registros.
+  Toda la entrada pesa 18,0 KB gzip al cargar (tope 20); un panel con `{ Accordion, CountUp }`, 1,6 KB. Las piezas
+  siguen también en `motion-kit`.
+- **Colores del tema**: las piezas de interfaz leen variables `--mk-*` (fondo, superficie, texto, suave, borde, acento,
+  bien, mal); `variablesTema()` las arma. Van en `:root`.
+- **`SubirImagen`** (nueva): arrastrar y soltar, la foto a la vista mientras sube con su anillo de avance, un ✓ al
+  terminar y errores claros (tipo y peso revisados antes de subir).
+- **Avisos**: `tipo` (`bien`, `mal`, `info`), `accion` («Deshacer»), cerrar con × o deslizándolos, la cuenta se pausa.
+  `toast("Hola")` sigue igual; el aviso ya no se cierra al tocarlo entero.
+- **`Cargando`** (nueva): el esqueleto con la forma de lo que viene, sin parpadeo en cargas cortas.
+- **`ListaViva`, `Contador` e `Interruptor`** (nuevas): lo que llega entra con un destello y se reordena deslizándose;
+  el contador late al subir; un interruptor accesible.
+- Las piezas que se comparten en `dist` se pueden descartar si no se usan (marcas `/* @__PURE__ */` y CSS armado al
+  montarse): un panel con dos piezas pesa menos.
+
 ## 0.5.4 (25-11-2026)
 
 Un relato de página nuevo, `esfera`. El contrato de página suma ese valor (solo agrega); el del encabezado y el de la
