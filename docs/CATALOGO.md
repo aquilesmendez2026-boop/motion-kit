@@ -101,6 +101,19 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.7.0 (28-11-2026)
+
+Etiqueta `v0.7.0`: fase 1 de «Un solo motor», **el ADN** (ver «ADN: forma, letra y ritmo»). Las piezas de `interfaz` y
+`comic` leen forma, letra y ritmo desde `--mk-*` (los mismos nombres que ya usaban los estilos: `--mk-radio-tarjeta`,
+`--mk-radio-boton`, `--mk-fuente-texto`, `--mk-fuente-titulo`) y sin variables se ven como en la 0.6.0. `Confirmar` suma
+`propsSi`, `propsNo`, `aria-describedby` y `siHabilitado` (pedidos del front). Arreglos: la caída de Chromium con
+`scale` y variable en una animación; el hueco de `PrecioQueRueda`; el antetítulo del letrero. Demo: `#growshop` y el
+selector «Forma» del panel vivo. Ningún contrato cambia. Se instala con `github:aquilesmendez2026-boop/motion-kit#v0.7.0`.
+Topes por pieza (Aquiles, 28-11): `SubirImagen` 4,2 KB, avisos 3,2, `Copiar` 1,8. Antes de la etiqueta (salto 0.6 →
+0.7): batería completa (20 de 20, 42 min), lo que cambió después (14 de 14 y growshop, 25 min), la pasada rápida,
+capturas «se ve igual», 397 pruebas calculables y revisión final en Opus (2 importantes, en el encargo al front:
+arreglados; 8 menores anotados).
+
 ## Paquete v0.6.0 (27-11-2026)
 
 Etiqueta `v0.6.0`: suma la entrada `motion-kit/comic` (la `Mano` que apunta y toca, `Globo`, `Estallido`, `Colgante`,
@@ -1235,6 +1248,36 @@ Pesos (gzip, lo que importa una app desde `dist`): `{ BotonQueGuarda }` 1,6 KB, 
 Pruebas: `pruebas/{comic-dibujos,boton-guarda,copiar-campo,foco,guia}.test.ts` y `scripts/verificar-comic.mjs` (partes
 `dibujos`, `boton`, `copiar`, `campo`, `confirmar`, `vacio`, `guia`, `celebrar`; teléfono y escritorio; también con el
 motor de Safari); `#comic` en la pasada rápida; `probar-paquete` arma un panel con `BotonQueGuarda` y `Guia`.
+
+## Regla de los contratos (28-11-2026)
+
+Si un contrato cambia el nombre o el sentido de un campo, sube su `version` (y la de `contrato/indice.json`) y el
+encargo al backend y al front lo dice. Lo pidió el backend: `partituras-casa-motionkit.json` salió con `que` donde
+`casa.ts` decía `linea` (con el nombre delante), y su Director habría pedido «undefined» al modelo.
+
+## ADN: forma, letra y ritmo (28-11-2026)
+
+Fase 1 de «Un solo motor» (diseño `docs/superpowers/specs/2026-11-28-un-solo-motor-design.md`; plan
+`docs/superpowers/plans/2026-11-28-un-solo-motor-fases-0-1.md`). Un solo vocabulario `--mk-*` que leen las piezas de
+`interfaz` y `comic`: color (los de antes), **forma** (`trazo`, `radio-tarjeta`, `radio-boton`, `radio-campo`, `sombra`,
+`sombra-suave`, `hundir`), **letra** (`fuente-texto`, `fuente-titulo`, `fuente-cartel`) y **ritmo** (`--mk-ritmo-tiempo`
+multiplica las duraciones; `--mk-ritmo-fuerza`, cuánto escalan, giran o se corren: `quieto` 1/0, `suave` 1,25/0,6,
+`vivo` 1/1, `manga` 0,85/1,4).
+
+**Regla:** cada uso trae su valor de hoy de respaldo (`f("radioBoton", "12px")`), así una pieza sin variables se ve
+como siempre. Movimiento reducido manda sobre el ritmo. Quedan fuera del ADN, a propósito, la rueda de carga, el halo
+de `ListaViva`, el aro de la `Guia`, la sombra de la perilla del `Interruptor`, el borde punteado de `SubirImagen` y la
+sombra hacia arriba de `BottomSheet` (lista en `pruebas/tema-interfaz.test.ts`). `BotonQueGuarda` no tiene forma propia:
+la pone el front con su clase.
+
+**Ojo con Chromium:** un `@keyframes` que anima la propiedad `scale` con una variable adentro hace caer la pestaña; usar
+`transform: scale(…)` (lo revisa una prueba).
+
+**Para La Mente:** la tabla `docs/un-solo-motor/tabla-de-nombres.md` dice a qué `--mk-*` va cada `--lm-*` y `--lmt-*`
+(`npm run tabla` la revisa contra el front). Encargo `cerebro-aquiles/lamente/ENCARGO_2026-11-28_adn-motionkit.md`.
+
+Pruebas: `pruebas/tema-interfaz.test.ts` (adn), `scripts/verificar-panel.mjs` (partes `adn` y `vivo`, con el selector
+«Forma» del panel vivo) y `npm run capturas` (50 capturas: sin variables, iguales a la 0.6.0).
 
 ## Safari (sondeo del 24-11-2026)
 

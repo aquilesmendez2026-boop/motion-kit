@@ -50,7 +50,7 @@ Leído del front el 28-11-2026: `packages/ui/src`, `fronts/pagina-publica/src` y
 | `--lmt-trazo` | `--mk-trazo` | `2.5px solid <tinta>` en «lamente» |
 | `--lm-trazo` | `--mk-trazo` | alias del panel |
 | `--lmt-hoja-borde` | `--mk-trazo` | |
-| `--lmt-hoja-radio` | `--mk-radio` | hojas, globos, tarjetas |
+| `--lmt-hoja-radio` | `--mk-radio-tarjeta` | hojas, globos, tarjetas |
 | `--lmt-sombra` | `--mk-sombra` | `6px 6px 0 <tinta>` |
 | `--lmt-hoja-sombra` | `--mk-sombra` | |
 | `--lmt-boton-radio` | `--mk-radio-boton` | |
@@ -88,7 +88,7 @@ Leído del front el 28-11-2026: `packages/ui/src`, `fronts/pagina-publica/src` y
 |---|---|---|
 | `--lmt-cartel` | `--mk-fuente-cartel` | ya traducido en el panel |
 | `--lm-fuenteTitulo` | `--mk-fuente-titulo` | |
-| `--lm-fuenteTexto` | `--mk-fuente` | |
+| `--lm-fuenteTexto` | `--mk-fuente-texto` | |
 | `--lm-tituloPeso` | fase 2 (firma) | |
 | `--lm-tituloMayusculas` | fase 2 (firma) | |
 | `--lm-tituloEspaciado` | fase 2 (firma) | |

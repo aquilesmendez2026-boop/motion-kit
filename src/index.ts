@@ -78,7 +78,7 @@ export { useScrollProgress } from "./hooks/useScrollProgress";
 export { useViewTransition } from "./hooks/useViewTransition";
 
 // Los colores de las piezas de interfaz (motion-kit/interfaz).
-export { variablesTema, fuenteCartel, CARTEL } from "./interfaz/tema";
+export { variablesTema, fuenteCartel, CARTEL, f, letra, tiempo, fuerza, ritmoDe, RITMOS } from "./interfaz/tema";
 // El cómic del panel (también en motion-kit/comic).
 export { Mano, Globo, Estallido, Colgante, PUNTA_MANO, letraEstallido, Vacio, Oferta, CartelNovedad, Guia, useCelebrar, CelebrarProvider } from "./entradas/comic";
 export type { ManoProps, GloboProps, EstallidoProps, ColganteProps, Direccion, Piel } from "./entradas/comic";
@@ -101,7 +101,7 @@ export { Interruptor } from "./interfaz/Interruptor";
 export type { InterruptorProps } from "./interfaz/Interruptor";
 export type { CargandoProps, FormaCarga } from "./interfaz/Cargando";
 export type { SubirImagenProps } from "./interfaz/SubirImagen";
-export type { TemaInterfaz, ColorInterfaz } from "./interfaz/tema";
+export type { TemaInterfaz, ColorInterfaz, AdnInterfaz, FormaInterfaz, LetraInterfaz, Ritmo } from "./interfaz/tema";
 
 // Efectos protagonistas (uno por página; carga perezosa)
 export { EFECTOS } from "./efectos/registro";

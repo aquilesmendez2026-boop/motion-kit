@@ -2,7 +2,7 @@
 import { useEffect, useRef, type HTMLAttributes } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { textoContador } from "./lista";
-import { c } from "./tema";
+import { c, ritmoDe } from "./tema";
 
 export interface ContadorProps extends HTMLAttributes<HTMLSpanElement> {
   valor: number;
@@ -18,8 +18,9 @@ export function Contador({ valor, max = 99, etiqueta, style, ...resto }: Contado
   const antes = useRef(valor);
   const reducido = useReducedMotion();
   useEffect(() => {
-    if (valor > antes.current && !reducido)
-      el.current?.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 400, easing: "ease-out" });
+    const r = el.current ? ritmoDe(el.current) : { tiempo: 1, fuerza: 1 };
+    if (valor > antes.current && !reducido && r.fuerza > 0)
+      el.current?.animate([{ transform: "scale(1)" }, { transform: `scale(${1 + 0.18 * r.fuerza})` }, { transform: "scale(1)" }], { duration: 400 * r.tiempo, easing: "ease-out" });
     antes.current = valor;
   }, [valor, reducido]);
   return (

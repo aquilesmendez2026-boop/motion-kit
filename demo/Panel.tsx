@@ -146,11 +146,12 @@ export function PanelVitrina() {
   const [nombre, setNombre] = useState("");
   const [errorNombre, setErrorNombre] = useState<string>();
   const [, setRepinta] = useState(0);
-  const [preguntando, setPreguntando] = useState<"" | "simple" | "espera" | "falla">("");
+  const [preguntando, setPreguntando] = useState<"" | "simple" | "espera" | "falla" | "descartar">("");
   const [onclicks, setOnclicks] = useState(0);
   const [ventana, setVentana] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [confirmados, setConfirmados] = useState(0);
+  const [nombreDescartar, setNombreDescartar] = useState("");
   const [cancelados, setCancelados] = useState(0);
   const confirmar = () => {
     setConfirmados((n) => n + 1);
@@ -311,6 +312,7 @@ export function PanelVitrina() {
           <button type="button" className="panel-boton" data-prueba="abrir-confirmar-espera" onClick={() => setPreguntando("espera")}>🗑 Borrar (tarda)</button>
           <button type="button" className="panel-boton" data-prueba="abrir-confirmar-falla" onClick={() => setPreguntando("falla")}>🗑 Borrar (falla)</button>
           <button type="button" className="panel-boton" data-prueba="abrir-ventana" onClick={() => setVentana(true)}>Abrir una ventana</button>
+          <button type="button" className="panel-boton" data-prueba="abrir-confirmar-descartar" onClick={() => { setNombreDescartar(""); setPreguntando("descartar"); }}>Descartar el negocio</button>
         </div>
         <small hidden data-prueba="confirmados">{confirmados}</small>
         <small hidden data-prueba="cancelados">{cancelados}</small>
@@ -324,7 +326,7 @@ export function PanelVitrina() {
           </div>
         )}
         <Confirmar
-          abierto={preguntando !== ""}
+          abierto={preguntando !== "" && preguntando !== "descartar"}
           pregunta="¿Borro la novedad?"
           detalle="Tus clientes dejarán de verla."
           textoSi="Sí, borrar"
@@ -332,7 +334,21 @@ export function PanelVitrina() {
           ocupado={ocupado}
           alConfirmar={confirmar}
           alCancelar={() => { setCancelados((n) => n + 1); setPreguntando(""); }}
+          propsSi={{ "data-soporte-accion": "borrar-novedad" }}
+          propsNo={{ "data-soporte-accion": "no-borrar" }}
         />
+        <Confirmar
+          abierto={preguntando === "descartar"}
+          pregunta="¿Descartar Raíz Growshop?"
+          detalle="Se borra todo. Para confirmar, escribe el nombre: Raíz."
+          textoSi="Sí, descartar"
+          peligro
+          siHabilitado={nombreDescartar.trim() === "Raíz"}
+          alConfirmar={() => { setConfirmados((n) => n + 1); setPreguntando(""); }}
+          alCancelar={() => setPreguntando("")}
+        >
+          <input data-prueba="nombre-descartar" aria-label="El nombre del negocio" value={nombreDescartar} onChange={(e) => setNombreDescartar(e.target.value)} style={{ minHeight: 44, padding: "0 10px", font: "inherit" }} />
+        </Confirmar>
       </section>
 
       <section className="panel-seccion" data-prueba="panel-llega">

@@ -282,6 +282,12 @@ if (parte("confirmar")) {
     const dialogo = await pagina.$("[role=alertdialog]");
     revisar(Boolean(dialogo), `${d}: se abre un alertdialog`);
     revisar((await dialogo?.getAttribute("aria-label")) === "¿Borro la novedad?", `${d}: su nombre es la pregunta`);
+    // El lector de pantalla lee también el detalle (aria-describedby).
+    const descripcion = await pagina.$eval("[role=alertdialog]", (dl) => (dl.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean).map((id) => document.getElementById(id)?.textContent ?? "").join(" ")).catch(() => "");
+    revisar(descripcion.includes("Tus clientes dejarán de verla."), `${d}: el diálogo se describe con el detalle («${descripcion}»)`);
+    // Los botones llevan los atributos de quien lo usa (propsSi, propsNo).
+    const marcas = await pagina.$$eval("[role=alertdialog] .mk-confirmar-botones button", (l) => l.map((b) => b.dataset.soporteAccion ?? ""));
+    revisar(marcas.join(",") === "no-borrar,borrar-novedad", `${d}: «No» y «Sí» llevan sus atributos (${marcas.join(",")})`);
     const f0 = await enfocado(pagina);
     revisar(f0.dentro && f0.texto === "No", `${d}: el foco cae en «No» (el botón seguro): «${f0.texto}»`);
     // El foco no sale del diálogo.
@@ -343,6 +349,24 @@ if (parte("confirmar")) {
     await pagina.waitForTimeout(450);
     const encima = await pagina.$eval("[role=alertdialog]", (dl) => { const r = dl.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return Boolean(e && dl.contains(e)); }).catch(() => false);
     revisar(encima, `${d}: abierto desde una ventana del panel, queda encima`);
+    await pagina.keyboard.press("Escape");
+    await pagina.waitForTimeout(400);
+    await pagina.click("text=Cerrar").catch(() => {});
+    // «Sí» bloqueado hasta que se escribe el nombre (siHabilitado): ni el clic ni Enter confirman antes.
+    const antesDescartar = await cuenta(pagina, "confirmados");
+    await pagina.click("[data-prueba=abrir-confirmar-descartar]");
+    await pagina.waitForTimeout(450);
+    const siBloqueado = await pagina.$eval("[role=alertdialog] .mk-confirmar-si", (b) => b.disabled).catch(() => null);
+    revisar(siBloqueado === true, `${d}: con siHabilitado en falso, «Sí» está deshabilitado`);
+    await pagina.click("[role=alertdialog] .mk-confirmar-si", { force: true }).catch(() => {});
+    await pagina.waitForTimeout(100);
+    revisar((await cuenta(pagina, "confirmados")) === antesDescartar, `${d}: tocar «Sí» deshabilitado no confirma`);
+    await pagina.fill("[data-prueba=nombre-descartar]", "Raíz");
+    await pagina.waitForTimeout(100);
+    revisar((await pagina.$eval("[role=alertdialog] .mk-confirmar-si", (b) => b.disabled).catch(() => null)) === false, `${d}: al escribir el nombre, «Sí» se habilita`);
+    await pagina.click("[role=alertdialog] .mk-confirmar-si");
+    await pagina.waitForTimeout(150);
+    revisar((await cuenta(pagina, "confirmados")) === antesDescartar + 1, `${d}: y entonces confirma`);
     revisar(errores.length === 0, `${d}: sin errores${errores.length ? ` (${errores[0]})` : ""}`);
     await ctx.close();
   }

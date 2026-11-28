@@ -2,7 +2,7 @@
 // señala: toca una vez cuando la sección entra en pantalla y queda apuntando.
 import type { HTMLAttributes, ReactNode } from "react";
 import { useInView } from "../hooks/useInView";
-import { c } from "../interfaz/tema";
+import { c, letra } from "../interfaz/tema";
 import { useStyles } from "../utils/styles";
 import { Apunta, useTelefono } from "./Apunta";
 import { estilosComic } from "./estilos";
@@ -19,7 +19,7 @@ let css: string | undefined;
 export const estilosInvitar = () =>
   (css ??= `
 .mk-vacio{display:grid;justify-items:center;text-align:center;gap:10px}
-.mk-vacio-titulo{margin:0;font-weight:800;font-size:1.15rem}
+.mk-vacio-titulo{margin:0;font-weight:800;font-size:1.15rem;font-family:${letra("fuenteTitulo", "inherit")}}
 .mk-vacio-texto{margin:0;max-width:46ch;color:${c("suave")}}
 .mk-invitar-accion{display:flex;align-items:center;justify-content:center}
 .mk-invitar-accion[data-tel]{flex-direction:column}

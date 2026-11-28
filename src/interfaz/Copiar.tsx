@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type MouseEvent } from "react";
 import { useStyles } from "../utils/styles";
 import { copiarTexto } from "./portapapeles";
-import { c } from "./tema";
+import { c, f, fuerza, tiempo } from "./tema";
 
 export interface CopiarProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   texto: string;
@@ -20,11 +20,11 @@ const estilos = () =>
   (css ??= `
 .mk-copiar{position:relative;display:inline-block}
 .mk-copiar-globo{--t:${c("texto")};--s:${c("superficie")};position:absolute;left:50%;bottom:100%;margin-bottom:12px;translate:-50% 0;
-  padding:6px 12px;border:2px solid var(--t);border-radius:12px;background:var(--s);color:var(--t);box-shadow:3px 3px 0 var(--t);
-  font-weight:800;font-size:.85rem;white-space:nowrap;pointer-events:none;animation:mk-copiar-entra .32s cubic-bezier(.34,1.56,.64,1)}
+  padding:6px 12px;border:${f("trazo", "2px solid var(--t)")};border-radius:${f("radioTarjeta", "12px")};background:var(--s);color:var(--t);box-shadow:${f("sombraSuave", "3px 3px 0 var(--t)")};
+  font-weight:800;font-size:.85rem;white-space:nowrap;pointer-events:none;animation:mk-copiar-entra ${tiempo(320)} cubic-bezier(.34,1.56,.64,1)}
 .mk-copiar-globo::after{content:"";position:absolute;left:50%;bottom:-7px;width:10px;height:10px;margin-left:-5px;background:var(--s);
-  border:2px solid var(--t);border-top:0;border-left:0;transform:rotate(45deg)}
-@keyframes mk-copiar-entra{from{opacity:0;scale:.6}}
+  border:${f("trazo", "2px solid var(--t)")};border-top:0;border-left:0;transform:rotate(45deg)}
+@keyframes mk-copiar-entra{from{opacity:0;transform:scale(calc(1 - ${fuerza(0.4)}))}}
 @media (prefers-reduced-motion:reduce){.mk-copiar-globo{animation:none}}`);
 
 export function Copiar({ texto, aviso = "¡Copiado!", avisoFallo = "Cópialo a mano", alCopiar, onClick, children, ...resto }: CopiarProps) {

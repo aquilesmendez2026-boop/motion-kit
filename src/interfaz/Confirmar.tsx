@@ -1,12 +1,12 @@
 // Confirmar: antes de algo que no se deshace, la pregunta en un globo de cómic centrado (computador) o en una hoja desde
 // abajo (teléfono). El foco cae en el botón seguro y no sale del diálogo; Escape o tocar afuera cancelan; el foco vuelve a
 // lo que estaba enfocado al abrir. Con `ocupado` (mientras actúa), una rueda en «Sí» y nada cierra.
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { BottomSheet } from "../components/BottomSheet";
 import { useStyles } from "../utils/styles";
 import { enfocables, siguienteFoco } from "./foco";
-import { c } from "./tema";
+import { c, f, fuerza, letra, tiempo } from "./tema";
 
 export interface ConfirmarProps {
   abierto: boolean;
@@ -27,7 +27,17 @@ export interface ConfirmarProps {
   /** Para vestirlo con el look de quien lo usa (va en el globo o en la hoja). */
   className?: string;
   style?: CSSProperties;
+  /**
+   * Atributos para cada botón (por ejemplo `{ "data-soporte-accion": "borrar" }`, `aria-*` o una clase que se suma).
+   * `type`, `onClick` y `disabled` los pone la pieza.
+   */
+  propsSi?: BotonExtra;
+  propsNo?: BotonExtra;
+  /** Con `false`, «Sí» queda deshabilitado (y no confirma) hasta que quien lo usa lo habilite; por ejemplo, hasta que se escriba el nombre. */
+  siHabilitado?: boolean;
 }
+
+type BotonExtra = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "onClick" | "disabled"> & Record<`data-${string}`, string | undefined>;
 
 /** Encima de las ventanas del panel (Chakra usa 1400 para las suyas). */
 const CAPA = 1450;
@@ -40,25 +50,29 @@ const estilos = () =>
   (css ??= `
 .mk-confirmar-fondo{position:fixed;inset:0;z-index:1450;display:grid;place-items:center;padding:16px;background:rgba(20,18,26,.45)}
 .mk-confirmar-globo{--t:${c("texto")};--s:${c("superficie")};position:relative;width:min(420px,100%);box-sizing:border-box;padding:20px;
-  background:var(--s);color:var(--t);border:3px solid var(--t);border-radius:20px;box-shadow:6px 6px 0 var(--t);outline:none;
-  animation:mk-confirmar-entra .36s cubic-bezier(.34,1.56,.64,1)}
-.mk-confirmar-contenido{display:grid;gap:10px}
+  background:var(--s);color:var(--t);border:${f("trazo", "3px solid var(--t)")};border-radius:${f("radioTarjeta", "20px")};box-shadow:${f("sombra", "6px 6px 0 var(--t)")};outline:none;
+  animation:mk-confirmar-entra ${tiempo(360)} cubic-bezier(.34,1.56,.64,1)}
+.mk-confirmar-contenido{display:grid;gap:10px;font-family:${letra("fuenteTexto", "inherit")}}
 .mk-confirmar-hoja .mk-confirmar-contenido{padding:4px 20px 22px}
-.mk-confirmar-pregunta{margin:0;font-size:1.15rem;font-weight:800}
+.mk-confirmar-pregunta{margin:0;font-size:1.15rem;font-weight:800;font-family:${letra("fuenteTitulo", "inherit")}}
 .mk-confirmar-detalle{margin:0;color:${c("suave")}}
 .mk-confirmar-botones{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:6px}
-.mk-confirmar-botones button{font:inherit;font-weight:800;min-height:44px;padding:0 18px;border-radius:12px;cursor:pointer;
-  border:2px solid ${c("texto")};display:inline-flex;align-items:center;gap:8px}
+.mk-confirmar-botones button{font:inherit;font-weight:800;min-height:44px;padding:0 18px;border-radius:${f("radioBoton", "12px")};cursor:pointer;
+  border:${f("trazo", `2px solid ${c("texto")}`)};display:inline-flex;align-items:center;gap:8px}
+.mk-confirmar-botones button:active{transform:${f("hundir", "none")}}
 .mk-confirmar-no{background:${c("superficie")};color:${c("texto")}}
 .mk-confirmar-si{background:${c("acento")};color:${c("sobreAcento")}}
 .mk-confirmar-si[data-peligro]{background:${c("mal")};color:#fff}
 .mk-confirmar-botones button:disabled{opacity:.55;cursor:not-allowed}
 .mk-confirmar-anillo{width:1em;height:1em;box-sizing:border-box;border-radius:50%;border:.16em solid currentColor;border-right-color:transparent;animation:mk-confirmar-gira .7s linear infinite}
-@keyframes mk-confirmar-entra{from{opacity:0;scale:.7}}
+@keyframes mk-confirmar-entra{from{opacity:0;transform:scale(calc(1 - ${fuerza(0.3)}))}}
 @keyframes mk-confirmar-gira{to{transform:rotate(1turn)}}
 @media (prefers-reduced-motion:reduce){.mk-confirmar-globo{animation:none}.mk-confirmar-anillo{animation:none;border-right-color:currentColor;opacity:.6}}`);
 
-export function Confirmar({ abierto, pregunta, detalle, children, textoSi = "Sí", textoNo = "No", peligro = false, ocupado = false, alConfirmar, alCancelar, className, style }: ConfirmarProps) {
+export function Confirmar({ abierto, pregunta, detalle, children, textoSi = "Sí", textoNo = "No", peligro = false, ocupado = false, alConfirmar, alCancelar, className, style, propsSi, propsNo, siHabilitado = true }: ConfirmarProps) {
+  const id = useId();
+  // Lo que describe el diálogo: el detalle y el contenido libre (el lector de pantalla los lee después de la pregunta).
+  const describe = [detalle ? `${id}-detalle` : "", children ? `${id}-cuerpo` : ""].filter(Boolean).join(" ");
   useStyles("confirmar", estilos());
   const caja = useRef<HTMLDivElement>(null);
   const no = useRef<HTMLButtonElement>(null);
@@ -83,7 +97,7 @@ export function Confirmar({ abierto, pregunta, detalle, children, textoSi = "Sí
     alCancelar();
   };
   const confirmar = () => {
-    if (ocupadoRef.current || yaConfirmo.current) return;
+    if (ocupadoRef.current || yaConfirmo.current || !siHabilitado) return;
     yaConfirmo.current = true;
     alConfirmar();
   };
@@ -120,13 +134,13 @@ export function Confirmar({ abierto, pregunta, detalle, children, textoSi = "Sí
   const contenido = (
     <div ref={caja} className="mk-confirmar-contenido" onKeyDown={atrapar}>
       <p className="mk-confirmar-pregunta">{pregunta}</p>
-      {detalle && <p className="mk-confirmar-detalle">{detalle}</p>}
-      {children}
+      {detalle && <p id={`${id}-detalle`} className="mk-confirmar-detalle">{detalle}</p>}
+      {children && <div id={`${id}-cuerpo`}>{children}</div>}
       <div className="mk-confirmar-botones">
-        <button ref={no} type="button" className="mk-confirmar-no" disabled={ocupado} onClick={cancelar}>
+        <button {...propsNo} ref={no} type="button" className={`mk-confirmar-no${propsNo?.className ? ` ${propsNo.className}` : ""}`} disabled={ocupado} onClick={cancelar}>
           {textoNo}
         </button>
-        <button type="button" className="mk-confirmar-si" data-peligro={peligro || undefined} aria-busy={ocupado || undefined} onClick={confirmar}>
+        <button {...propsSi} type="button" className={`mk-confirmar-si${propsSi?.className ? ` ${propsSi.className}` : ""}`} data-peligro={peligro || undefined} aria-busy={ocupado || undefined} disabled={!siHabilitado} onClick={confirmar}>
           {ocupado && <span className="mk-confirmar-anillo" aria-hidden="true" />}
           {textoSi}
         </button>
@@ -136,14 +150,14 @@ export function Confirmar({ abierto, pregunta, detalle, children, textoSi = "Sí
 
   if (telefono)
     return (
-      <BottomSheet open={abierto} onClose={cancelar} label={pregunta} rol="alertdialog" focoInicial={no} capa={CAPA} className={`mk-confirmar-hoja${className ? ` ${className}` : ""}`} style={style}>
+      <BottomSheet open={abierto} onClose={cancelar} label={pregunta} rol="alertdialog" focoInicial={no} capa={CAPA} describe={describe} className={`mk-confirmar-hoja${className ? ` ${className}` : ""}`} style={style}>
         {contenido}
       </BottomSheet>
     );
   if (!abierto || typeof document === "undefined") return null;
   return createPortal(
     <div className="mk-confirmar-fondo" onClick={cancelar}>
-      <div role="alertdialog" aria-modal="true" aria-label={pregunta} className={`mk-confirmar-globo${className ? ` ${className}` : ""}`} style={style} onClick={(e) => e.stopPropagation()}>
+      <div role="alertdialog" aria-modal="true" aria-label={pregunta} aria-describedby={describe || undefined} className={`mk-confirmar-globo${className ? ` ${className}` : ""}`} style={style} onClick={(e) => e.stopPropagation()}>
         {contenido}
       </div>
     </div>,

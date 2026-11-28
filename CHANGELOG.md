@@ -1,5 +1,34 @@
 # Cambios
 
+## 0.7.0 (28-11-2026)
+
+Fase 1 de «Un solo motor» (decisión de Aquiles del 28-11): **el ADN**. Las piezas de `motion-kit/interfaz` y
+`motion-kit/comic` leen, además de los colores, la forma, la letra y el ritmo desde variables `--mk-*`. Sin esas
+variables se ven exactamente como en la 0.6.0 (50 capturas iguales). **Dentro de un `Estilo`** (que ya define
+`--mk-radio-tarjeta`, `--mk-radio-boton` y `--mk-fuente-texto`), las piezas en línea (globos, `Copiar`, `TabBar`) toman
+esas esquinas y esa letra. Las que se dibujan en `<body>` (avisos, `Confirmar`, `Guia`, `useCelebrar`) toman la forma de
+`:root` o de `body`, no la de su caja. Ningún contrato cambia.
+
+- **Forma**: `--mk-trazo`, `--mk-radio-tarjeta`, `--mk-radio-boton`, `--mk-radio-campo`, `--mk-sombra`, `--mk-sombra-suave`,
+  `--mk-hundir`. **Letra**: `--mk-fuente-texto`, `--mk-fuente-titulo`, `--mk-fuente-cartel`. **Ritmo**: `--mk-ritmo-tiempo` y
+  `--mk-ritmo-fuerza` (`quieto`, `suave`, `vivo` = el de siempre, `manga`).
+- `variablesTema()` arma todo (también `ritmo`); nuevas `f()`, `letra()`, `tiempo()`, `fuerza()`, `ritmoDe()` y
+  `RITMOS`, para piezas propias. `motion-kit/comic` exporta `variablesTema` y `RITMOS`.
+- Los botones de `Confirmar`, `Guia` y los avisos se hunden al tocarlos si el tema lo pide (`--mk-hundir`).
+- Arreglo: Chromium hacía caer la pestaña con una animación de la propiedad `scale` con variable; `Copiar`,
+  `Confirmar` y `Celebrar` animan con `transform` (una prueba lo cuida).
+- Topes por pieza (decisión de Aquiles del 28-11): `SubirImagen` 4,2 KB, avisos 3,2, `Copiar` 1,8.
+- **`Confirmar`** (pedidos del front): `propsSi` y `propsNo` (atributos para cada botón, como `data-soporte-accion`),
+  `aria-describedby` con el detalle y el contenido (el lector de pantalla los lee) y `siHabilitado` («Sí» bloqueado
+  hasta, por ejemplo, escribir el nombre). `BottomSheet` suma `describe`. Nada cambia para quien ya lo usa.
+- Arreglos que dejó a la vista la página del growshop: `PrecioQueRueda` ya no deja hueco tras un «1» con letras de
+  números de ancho variable (cada columna mide su cifra final); en la composición «letrero», el antetítulo va montado
+  sobre el borde del marco y centrado (la entrada en cascada lo corría y tapaba el título).
+- Demo: `#growshop`, la página de muestra de Raíz Growshop armada solo con motion-kit (datos del front), con su prueba
+  `verificar-growshop`.
+- Herramientas: `npm run tabla` (la tabla de nombres de La Mente contra el front) y `npm run capturas` («se ve igual»).
+  Demo: el selector «Forma» en el panel vivo (`#panel`).
+
 ## 0.6.0 (27-11-2026)
 
 Una entrada nueva, `motion-kit/comic` (el cómic del panel), y piezas nuevas en `motion-kit/interfaz`. Ningún contrato

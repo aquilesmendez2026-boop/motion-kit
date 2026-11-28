@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { c } from "../interfaz/tema";
+import { c, f } from "../interfaz/tema";
 
 export interface TabBarItem {
   id: string;
@@ -49,7 +49,7 @@ export function TabBar({
         color: c("texto"),
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        borderTop: `1px solid ${c("borde")}`,
+        borderTop: f("trazo", `1px solid ${c("borde")}`),
         ...style,
       }}
       {...rest}
@@ -76,7 +76,7 @@ export function TabBar({
             style={{
               display: "block",
               height: "100%",
-              borderRadius: 14,
+              borderRadius: f("radioTarjeta", "14px"),
               background: accent,
               opacity: 0.22,
             }}

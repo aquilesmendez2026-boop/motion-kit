@@ -23,3 +23,7 @@ export type { GuiaProps, PasoGuia } from "../comic/Guia";
 export { ubicar } from "../comic/ubicar";
 export type { Rect, Ubicacion } from "../comic/ubicar";
 export { useCelebrar, CelebrarProvider, DURA_CELEBRAR } from "../comic/Celebrar";
+
+// El ADN, también desde aquí: quien usa solo el cómic arma su tema sin bajar motion-kit/interfaz.
+export { variablesTema, RITMOS } from "../interfaz/tema";
+export type { AdnInterfaz, Ritmo } from "../interfaz/tema";

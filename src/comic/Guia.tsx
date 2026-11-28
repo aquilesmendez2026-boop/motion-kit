@@ -4,7 +4,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { CARTEL } from "../interfaz/tema";
+import { CARTEL, f, letra, tiempo } from "../interfaz/tema";
 import { useStyles } from "../utils/styles";
 import { estilosComic } from "./estilos";
 import { Globo } from "./Globo";
@@ -36,15 +36,17 @@ const estilos = () =>
   (css ??= `
 .mk-guia{position:fixed;inset:0;z-index:1300;pointer-events:none}
 .mk-guia-oscuro{position:fixed;background:rgba(20,18,26,.45);pointer-events:auto}
-.mk-guia-foco{position:fixed;left:0;top:0;border-radius:14px;box-shadow:0 0 0 4px ${CARTEL};transition:transform .45s cubic-bezier(.2,.8,.2,1)}
-.mk-guia-mano,.mk-guia-globo{position:fixed;left:0;top:0;transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.mk-guia-foco{position:fixed;left:0;top:0;border-radius:${f("radioTarjeta", "14px")};transition:transform ${tiempo(450)} cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 0 0 4px ${CARTEL}}
+.mk-guia-mano,.mk-guia-globo{position:fixed;left:0;top:0;transition:transform ${tiempo(550)} cubic-bezier(.2,.8,.2,1)}
 .mk-guia-globo{pointer-events:auto}
 .mk-guia-globo .mk-globo{display:block;max-width:none}
-.mk-guia-pie{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;text-transform:none;font-style:normal}
+.mk-guia-pie{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;text-transform:none;font-style:normal;font-family:${letra("fuenteTexto", "inherit")}}
 .mk-guia-pie small{font-weight:700;opacity:.7}
-.mk-guia-pie button{font:inherit;font-weight:800;min-height:44px;padding:0 14px;border:3px solid currentColor;border-radius:10px;background:transparent;
-  color:inherit;box-shadow:3px 3px 0 currentColor;cursor:pointer}
-.mk-guia-pie button[data-fuerte]{background:${CARTEL};color:#111;border-color:#111;box-shadow:3px 3px 0 #111}
+.mk-guia-pie button{font:inherit;font-weight:800;min-height:44px;padding:0 14px;border:${f("trazo", "3px solid currentColor")};border-radius:${f("radioBoton", "10px")};background:transparent;
+  color:inherit;box-shadow:${f("sombraSuave", "3px 3px 0 currentColor")};cursor:pointer}
+.mk-guia-pie button:active{transform:${f("hundir", "none")}}
+.mk-guia-pie button[data-fuerte]{background:${CARTEL};color:#111;border-color:#111;box-shadow:${f("sombraSuave", "3px 3px 0 #111")}}
 @media (prefers-reduced-motion:reduce){.mk-guia-foco,.mk-guia-mano,.mk-guia-globo{transition:none}}`);
 
 export function Guia({ abierta, pasos, alTerminar, alSaltar, textos }: GuiaProps) {

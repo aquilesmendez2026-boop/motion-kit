@@ -47,7 +47,7 @@ export const CSS_ENCABEZADO = `
 .mk-enc[data-composicion=letrero]>.mk-enc-in{place-items:center;text-align:center}
 .mk-enc[data-composicion=letrero] .mk-enc-caja{align-items:center}
 .mk-enc[data-composicion=letrero] .mk-enc-marco{position:relative;padding:clamp(1.4rem,4cqi,2.6rem) clamp(1.2rem,5cqi,3.4rem);border:3px solid var(--mk-acento,#7c5cff);border-radius:22px;box-shadow:0 0 0 6px color-mix(in srgb,var(--mk-fondo,#000) 80%,transparent),0 0 0 8px color-mix(in srgb,var(--mk-acento-2,var(--mk-acento)) 60%,transparent),0 0 40px -6px var(--mk-acento,#7c5cff),inset 0 0 40px -12px var(--mk-acento,#7c5cff);background:color-mix(in srgb,var(--mk-fondo,#000) 55%,transparent)}
-.mk-enc[data-composicion=letrero] .mk-enc-ante{position:absolute;top:0;left:50%;transform:translate(-50%,-55%);background:var(--mk-fondo,#000);padding:.2rem .9rem;white-space:nowrap}
+.mk-enc[data-composicion=letrero] .mk-enc-ante{position:absolute;top:calc(-1 * clamp(1.4rem,4cqi,2.6rem) - 1.5px);left:50%;translate:-50% -50%;background:var(--mk-fondo,#000);padding:.2rem .9rem;white-space:nowrap}
 .mk-enc[data-composicion=letrero] :is(.mk-enc-datos,.mk-enc-botones>div){justify-content:center}
 
 .mk-enc[data-composicion=poster]>.mk-enc-in{align-items:center}

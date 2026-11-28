@@ -40,10 +40,13 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 - **Antes de una etiqueta** (decisión de Aquiles del 25-11-2026): `npm run verificar -- --desde=<etiqueta anterior>` y
   `npm run humo` (unos 8 min). La batería completa (`-- --todo`), cada 3 etiquetas o antes de un salto de versión
   (0.5 → 0.6); el script ya la pide solo si cambió algo común. Anotar en el commit del paquete cuál se corrió.
+- `npm run capturas -- tomar <carpeta>` y `npm run capturas -- comparar <antes> <después>` (con el servidor arriba):
+  la muestra fija de «se ve igual» de «Un solo motor» (50 capturas, ~1 min); falla si una cambia más de 0,5 %.
+  `npm run tabla`: revisa que la tabla de nombres (`docs/un-solo-motor/`) cubra cada variable del front.
 - `node scripts/en-safari.mjs <prueba> [parte]`: la misma prueba con el motor de Safari (WebKit). No es semáforo: ver
   «Safari» en `docs/CATALOGO.md`.
 - `motion-kit/comic`: el cómic del panel (la mano, globos, carteles, `Guia`, `useCelebrar`). Ver «Guardar y cómic del
   panel» en `docs/CATALOGO.md`; su prueba visual es `verificar-comic` (con `#comic` y `#panel-piezas`). El panel
   vivo (`#panel`, todas las secciones) se prueba con `node scripts/verificar-panel.mjs vivo`.
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos|panel|comic>.mjs [url]` con el servidor
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos|panel|comic|growshop>.mjs [url]` con el servidor
   arriba (usan Playwright).

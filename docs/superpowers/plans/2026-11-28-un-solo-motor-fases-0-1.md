@@ -53,8 +53,8 @@ front, solo lectura) dice a qué `--mk-*` va cada variable de La Mente. Un scrip
   La Mente: `--lm-*` (de `lamente-front/packages/ui/src/TemaPagina.tsx`), `--lmt-*` (de
   `fronts/panel/src/pages/temaPanel.css` y `temasPanel.css`) y los tokens de Chakra que traduce
   `fronts/panel/src/theme.ts`; columnas: `variable de hoy | --mk-* de destino | nota`. Destinos fijos: los 9 colores de
-  hoy + `cartel`; forma `trazo`, `radio`, `radio-boton`, `radio-campo`, `sombra`, `sombra-suave`, `hundir`; letra
-  `fuente`, `fuente-titulo`, `fuente-cartel`; ritmo `ritmo-tiempo`, `ritmo-fuerza`. Lo que no tenga destino va con
+  hoy + `cartel`; forma `trazo`, `radio-tarjeta`, `radio-boton`, `radio-campo`, `sombra`, `sombra-suave`, `hundir`; letra
+  `fuente-texto`, `fuente-titulo`, `fuente-cartel`; ritmo `ritmo-tiempo`, `ritmo-fuerza`. Lo que no tenga destino va con
   destino `—` y la nota «se queda en el front» o «fase 2 (firma del tema)». *Temas*: los ids de paletas, temas y mezclas
   de `contrato-diseno.json`, los `data-tema-panel` y los `ESTILOS` de motion-kit, con la fase en que se juntan (2).
 - [ ] **Paso 2: Escribir `scripts/revisar-tabla-nombres.mjs`.** Lee (solo lectura) esos archivos del front en

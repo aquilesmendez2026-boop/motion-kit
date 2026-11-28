@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { BotonQueGuarda, BottomSheet, Campo, Confirmar, Contador, Copiar, CountUp, Interruptor, ListaViva, SubirImagen, Tabs, TextoCinetico, useToast } from "../src/entradas/interfaz";
 import { CartelNovedad, Estallido, Globo, Guia, Oferta, useCelebrar, Vacio, type PasoGuia } from "../src/entradas/comic";
-import { variablesTema } from "../src/interfaz/tema";
+import { variablesTema, type AdnInterfaz } from "../src/interfaz/tema";
 
 // ——— Las secciones, como en el panel de verdad ———
 
@@ -127,6 +127,32 @@ function useTemaEnLaRaiz() {
   }, []);
 }
 
+/** Las formas del ADN para probar en vivo (fase 1 de «Un solo motor»): «La Mente» es sin variables (lo de siempre). */
+const FORMAS: Record<string, Partial<AdnInterfaz>> = {
+  lamente: {},
+  suave: {
+    trazo: "1px solid #E7E1D8", radioTarjeta: "14px", radioBoton: "14px", radioCampo: "14px",
+    sombra: "0 10px 30px rgba(16,34,63,.12)", sombraSuave: "0 4px 12px rgba(16,34,63,.10)", ritmo: "suave",
+  },
+  manga: {
+    trazo: "2.5px solid #10223f", radioTarjeta: "16px", radioBoton: "999px", radioCampo: "12px",
+    sombra: "6px 6px 0 #10223f", sombraSuave: "3px 3px 0 #10223f", hundir: "translate(2px,2px)",
+    fuenteCartel: '"Dela Gothic One","Arial Black",system-ui,sans-serif', ritmo: "manga",
+  },
+};
+
+/** Pone la forma elegida en :root (como hará el front) y la saca al cambiar. */
+function useFormaEnLaRaiz(forma: string) {
+  useEffect(() => {
+    const raiz = document.documentElement;
+    const vars = variablesTema(FORMAS[forma] ?? {});
+    for (const [k, v] of Object.entries(vars)) raiz.style.setProperty(k, v);
+    return () => {
+      for (const k of Object.keys(vars)) raiz.style.removeProperty(k);
+    };
+  }, [forma]);
+}
+
 const TELEFONO = "(max-width: 819px)";
 function useTelefono() {
   const [tel, setTel] = useState(() => typeof window !== "undefined" && window.matchMedia(TELEFONO).matches);
@@ -178,6 +204,8 @@ function Pastilla({ texto, tono }: { texto: string; tono: string }) {
 
 export function PanelVivo() {
   useTemaEnLaRaiz();
+  const [forma, setForma] = useState("lamente");
+  useFormaEnLaRaiz(forma);
   const tel = useTelefono();
   const toast = useToast();
   const [id, setId] = useState(() => (location.hash.startsWith("#panel?s=") ? location.hash.slice(9) : "colaboraciones"));
@@ -279,6 +307,14 @@ export function PanelVivo() {
             🔔
           </span>
         </CartelNovedad>
+        <label className="pv-forma">
+          <span>Forma</span>
+          <select value={forma} onChange={(ev) => setForma(ev.target.value)} data-prueba="forma">
+            <option value="lamente">La Mente</option>
+            <option value="suave">Suave</option>
+            <option value="manga">Manga</option>
+          </select>
+        </label>
         <button type="button" className="pv-boton pv-chico pv-amarillo" onClick={() => setGuia(true)}>
           {tel ? "Guía" : "¿Cómo se usa?"}
         </button>
@@ -1098,6 +1134,8 @@ const CSS = `
 .pv-negocio{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.95rem}
 .pv-avatar{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--pv-tinta);color:var(--pv-sol);font-size:.7rem;font-weight:800}
 .pv-espacio{flex:1}
+.pv-forma{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700}
+.pv-forma select{min-height:44px;padding:0 8px;border:2px solid var(--pv-tinta);border-radius:10px;background:#fff;font:inherit;color:inherit}
 .pv-campana{display:grid;place-items:center;width:44px;height:44px;font-size:1.3rem}
 .pv-cuerpo{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
 .pv-lado{position:sticky;top:62px;max-height:calc(100vh - 62px);overflow:auto;padding:12px 10px 90px;border-right:2.5px solid var(--pv-tinta);background:#fff}
@@ -1271,6 +1309,7 @@ const CSS = `
   .pv-icono{width:52px;height:52px;font-size:1.5rem}
   .pv-hoja{padding:16px}
   .pv-marca{font-size:1rem}
+  .pv-forma span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .pv-sello-nuevas{display:none}
 }
 `;

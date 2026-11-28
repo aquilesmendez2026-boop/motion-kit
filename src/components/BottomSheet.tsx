@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { c } from "../interfaz/tema";
+import { c, f } from "../interfaz/tema";
 
 export interface BottomSheetProps {
   /** Si la hoja está abierta. */
@@ -31,6 +31,8 @@ export interface BottomSheetProps {
   focoInicial?: RefObject<HTMLElement | null>;
   /** El z-index de la capa (por defecto, 1100). */
   capa?: number;
+  /** Los id de lo que describe la hoja (`aria-describedby`), por ejemplo el detalle de una pregunta. */
+  describe?: string;
 }
 
 const DURATION = 380;
@@ -52,6 +54,7 @@ export function BottomSheet({
   rol = "dialog",
   focoInicial,
   capa = 1100,
+  describe,
 }: BottomSheetProps) {
   const reduced = useReducedMotion();
   const [mounted, setMounted] = useState(open);
@@ -169,6 +172,7 @@ export function BottomSheet({
         role={rol}
         aria-modal="true"
         aria-label={label}
+        aria-describedby={describe || undefined}
         tabIndex={-1}
         className={className}
         style={{
@@ -181,10 +185,10 @@ export function BottomSheet({
           flexDirection: "column",
           margin: "0 auto",
           maxWidth: 560,
-          borderRadius: "20px 20px 0 0",
+          borderRadius: `${f("radioTarjeta", "20px")} ${f("radioTarjeta", "20px")} 0 0`,
           background: c("superficie"),
           color: c("texto"),
-          boxShadow: "0 -12px 40px rgba(0, 0, 0, 0.18)",
+          boxShadow: "0 -12px 40px rgba(0, 0, 0, 0.18)", // adn:no: la hoja sube desde abajo
           outline: "none",
           paddingBottom: "env(safe-area-inset-bottom)",
           transform: shown ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)",

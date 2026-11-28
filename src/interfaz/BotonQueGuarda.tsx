@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ButtonHTMLAttributes, type MouseEvent
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useStyles } from "../utils/styles";
 import { DURA, textoGuardar, type EstadoGuardar } from "./guardar";
+import { ritmoDe } from "./tema";
 
 export interface BotonQueGuardaProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Lo que guarda: la pieza sigue la promesa (resuelve: guardado; rechaza: no se pudo). */
@@ -49,8 +50,11 @@ export function BotonQueGuarda({ alGuardar, estado, textos, children, onClick, c
   // El saltito al guardar y la sacudida si falla (sobre el mismo botón, sin tocar su transform).
   useEffect(() => {
     if (reducido || !boton.current) return;
-    if (e === "bien") boton.current.animate([{ scale: "1" }, { scale: "1.08" }, { scale: "1" }], { duration: 380, easing: "cubic-bezier(.34,1.56,.64,1)" });
-    if (e === "mal") boton.current.animate([{ translate: "0 0" }, { translate: "-6px 0" }, { translate: "5px 0" }, { translate: "-2px 0" }, { translate: "0 0" }], { duration: 320, easing: "ease-out" });
+    // El ritmo del tema: «quieto» no salta; «manga», más rápido y marcado.
+    const r = ritmoDe(boton.current);
+    if (r.fuerza === 0) return;
+    if (e === "bien") boton.current.animate([{ scale: "1" }, { scale: String(1 + 0.08 * r.fuerza) }, { scale: "1" }], { duration: 380 * r.tiempo, easing: "cubic-bezier(.34,1.56,.64,1)" });
+    if (e === "mal") boton.current.animate([0, -6, 5, -2, 0].map((x) => ({ translate: `${x * r.fuerza}px 0` })), { duration: 320 * r.tiempo, easing: "ease-out" });
   }, [e, reducido]);
 
   const alTocar = (ev: MouseEvent<HTMLButtonElement>) => {

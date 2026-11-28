@@ -93,6 +93,7 @@ export function Cargando({ listo, forma = "fila", cuantos = 3, etiqueta = "Carga
   useEffect(() => {
     if (fase === "contenido" && venia.current) {
       venia.current = false;
+      // Un fundido corto y fijo: no se mueve nada, así que no sigue el ritmo del tema.
       contenido.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: "ease-out" });
     }
   }, [fase]);

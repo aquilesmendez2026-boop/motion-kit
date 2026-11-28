@@ -92,6 +92,8 @@ const REGLAS = [
   [/^src\/piezas\/(Boton|Tarjeta)/, ["piezas", "luz:existe", "encabezados"]],
   // El cómic del panel (motion-kit/comic) y su vitrina.
   [/^(src\/comic\/|src\/entradas\/comic|demo\/Comic)/, ["comic", "panel:vivo"]],
+  // La página de muestra del growshop: usa encabezados, relatos, momentos y estilos.
+  [/^(demo\/Growshop|demo\/growshop\/|src\/(encabezados|relatos|momentos|estilos|receta)\/)/, ["growshop"]],
   // Las piezas del panel (motion-kit/interfaz) y las que toman sus colores: la vitrina #panel y la de piezas.
   [/^(src\/interfaz\/|src\/entradas\/interfaz|src\/components\/(Toast|BottomSheet|TabBar|Skeleton)|demo\/Panel)/, ["panel", "piezas"]],
   // motion-kit/interfaz solo reexporta piezas de interfaz (su peso y lo que arrastra lo revisan npm test y probar-paquete).

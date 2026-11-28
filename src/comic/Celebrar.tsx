@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { Confeti } from "../momentos/Confeti";
-import { c, CARTEL } from "../interfaz/tema";
+import { c, CARTEL, fuerza, tiempo } from "../interfaz/tema";
 import { useStyles } from "../utils/styles";
 import { Estallido } from "./Estallido";
 import { estilosComic } from "./estilos";
@@ -30,9 +30,9 @@ const estilos = () =>
   (css ??= `
 .mk-celebrar{position:fixed;inset:0;z-index:1400;display:grid;place-items:center;pointer-events:none;
   --mk-m-acento:${c("acento")};--mk-m-acento-2:${CARTEL};--mk-m-texto:${c("bien")}}
-.mk-celebrar .mk-estallido{animation:mk-celebrar-entra .5s cubic-bezier(.34,1.56,.64,1)}
+.mk-celebrar .mk-estallido{animation:mk-celebrar-entra ${tiempo(500)} cubic-bezier(.34,1.56,.64,1)}
 .mk-celebrar-oculto{position:absolute;clip-path:inset(50%)}
-@keyframes mk-celebrar-entra{from{opacity:0;scale:.3}}
+@keyframes mk-celebrar-entra{from{opacity:0;transform:scale(calc(1 - ${fuerza(0.7)}))}}
 @media (prefers-reduced-motion:reduce){.mk-celebrar .mk-estallido{animation:mk-celebrar-aparece .25s ease-out}}
 @keyframes mk-celebrar-aparece{from{opacity:0}}`);
 

@@ -68,6 +68,7 @@ export { useScrollProgress } from "../hooks/useScrollProgress";
 export { useViewTransition } from "../hooks/useViewTransition";
 export { transicionVista } from "../estilos/vista";
 
-// Los colores: cada pieza lee variables --mk-* (ver src/interfaz/tema.ts); variablesTema las arma para un style.
-export { variablesTema } from "../interfaz/tema";
-export type { TemaInterfaz, ColorInterfaz } from "../interfaz/tema";
+// El ADN (color, forma, letra y ritmo): cada pieza lee variables --mk-* (ver src/interfaz/tema.ts); variablesTema las
+// arma para un style o para :root; f, letra, tiempo y fuerza las leen con su respaldo (para piezas propias).
+export { variablesTema, f, letra, tiempo, fuerza, ritmoDe, RITMOS } from "../interfaz/tema";
+export type { TemaInterfaz, ColorInterfaz, AdnInterfaz, FormaInterfaz, LetraInterfaz, Ritmo } from "../interfaz/tema";

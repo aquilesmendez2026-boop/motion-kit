@@ -1,6 +1,7 @@
 // La prueba visual de las piezas del panel (#panel-piezas): las piezas de motion-kit/interfaz con los colores del panel de La Mente.
 // Uso: npm run dev (en otra terminal) y después `node scripts/verificar-panel.mjs [http://localhost:5173] [parte]`,
-// donde la parte (opcional) es tema, imagen, avisos, cargando, llega o vivo (el panel entero de #panel). Las capturas quedan en <tmp>/mk-panel/.
+// donde la parte (opcional) es tema, imagen, avisos, cargando, llega, vivo (el panel entero de #panel) o adn (forma,
+// letra y ritmo del tema). Las capturas quedan en <tmp>/mk-panel/.
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +9,7 @@ import { chromium } from "playwright";
 
 const base = process.argv.find((a) => /^https?:/.test(a)) ?? "http://localhost:5173";
 const solo = process.argv.slice(2).find((a) => !/^https?:/.test(a));
-const PARTES = ["tema", "imagen", "avisos", "cargando", "llega", "vivo"];
+const PARTES = ["tema", "imagen", "avisos", "cargando", "llega", "vivo", "adn"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -662,6 +663,27 @@ if (parte("vivo")) {
     revisar(errores.length === 0, `vivo (teléfono): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
     await ctx.close();
   }
+  // El selector «Forma» pone el ADN en :root: el globo de Confirmar toma el radio de «Manga» y vuelve al de siempre.
+  {
+    const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "colaboraciones");
+    const radioGlobo = async () => {
+      await pagina.click(".pv-colab >> nth=0 >> text=Borrar");
+      await pagina.waitForSelector(".mk-confirmar-globo");
+      await pagina.waitForTimeout(450);
+      const r = await pagina.$eval(".mk-confirmar-globo", (g) => getComputedStyle(g).borderTopLeftRadius);
+      await pagina.keyboard.press("Escape");
+      await pagina.waitForTimeout(400);
+      return r;
+    };
+    const antes = await radioGlobo();
+    await pagina.selectOption("[data-prueba=forma]", "manga");
+    const manga = await radioGlobo();
+    await pagina.selectOption("[data-prueba=forma]", "lamente");
+    const despues = await radioGlobo();
+    revisar(antes === "20px" && manga === "16px" && despues === "20px", `vivo: el selector «Forma» cambia la forma de las piezas y vuelve (${antes} → ${manga} → ${despues})`);
+    revisar(errores.length === 0, `vivo: el selector sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
   // Movimiento reducido: nada se estampa ni gira.
   {
     const { ctx, pagina } = await abrirVivo(ESCRITORIO, "resumen", { reducido: true });
@@ -669,6 +691,118 @@ if (parte("vivo")) {
     revisar(animadas === 0, `vivo (reducido): ninguna animación propia del panel corre (${animadas})`);
     await ctx.close();
   }
+}
+
+/** Pone el ADN en :root (como hace el front) y espera un cuadro. */
+async function ponerAdn(pagina, vars) {
+  await pagina.evaluate((v) => {
+    for (const [k, x] of Object.entries(v)) document.documentElement.style.setProperty(k, x);
+  }, vars);
+  await pagina.waitForTimeout(60);
+}
+const estiloDe = (pagina, sel, props) =>
+  pagina.$eval(sel, (el, ps) => { const s = getComputedStyle(el); const r = el.getBoundingClientRect(); return { ...Object.fromEntries(ps.map((p) => [p, s.getPropertyValue(p)])), alto: r.height }; }, props).catch(() => null);
+
+if (parte("adn")) {
+  const RARO = { "--mk-radio-tarjeta": "0px", "--mk-radio-boton": "0px", "--mk-sombra": "6px 6px 0 rgb(0, 0, 0)", "--mk-trazo": "3px solid rgb(0, 0, 0)", "--mk-fuente-texto": "Georgia", "--mk-fuente-titulo": "Georgia" };
+  for (const [d, tamano] of [["teléfono", TELEFONO], ["escritorio", ESCRITORIO]]) {
+    const { ctx, pagina, errores } = await abrir(tamano);
+    await ponerAdn(pagina, RARO);
+    // Confirmar (se dibuja aparte): el globo toma trazo, sombra, radio y letra; sus botones, el radio y siguen de 44 px.
+    await pagina.$eval("[data-prueba=abrir-confirmar]", (b) => b.scrollIntoView({ block: "center" }));
+    await pagina.click("[data-prueba=abrir-confirmar]");
+    await pagina.waitForTimeout(450);
+    const contenido = await estiloDe(pagina, ".mk-confirmar-contenido", ["font-family"]);
+    revisar(Boolean(contenido) && contenido["font-family"].includes("Georgia"), `adn (${d}): Confirmar toma la letra del tema`);
+    if (tamano === ESCRITORIO) {
+      const globo = await estiloDe(pagina, ".mk-confirmar-globo", ["box-shadow", "border-top-width", "border-top-left-radius"]);
+      revisar(Boolean(globo) && globo["box-shadow"].includes("6px 6px 0px") && globo["border-top-width"] === "3px" && globo["border-top-left-radius"] === "0px",
+        `adn (${d}): el globo de Confirmar toma sombra, trazo y radio (${JSON.stringify(globo)})`);
+    } else {
+      const hoja = await estiloDe(pagina, "[role=alertdialog]", ["border-top-left-radius"]);
+      revisar(Boolean(hoja) && hoja["border-top-left-radius"] === "0px", `adn (${d}): la hoja de Confirmar toma el radio (${JSON.stringify(hoja)})`);
+    }
+    const pregunta = await estiloDe(pagina, ".mk-confirmar-pregunta", ["font-family"]);
+    revisar(Boolean(pregunta) && pregunta["font-family"].includes("Georgia"), `adn (${d}): el título de Confirmar toma la letra de títulos`);
+    const boton = await estiloDe(pagina, ".mk-confirmar-botones button", ["border-top-left-radius"]);
+    revisar(Boolean(boton) && boton["border-top-left-radius"] === "0px" && boton.alto >= 44, `adn (${d}): sus botones toman el radio y siguen de 44 px (${boton?.alto})`);
+    await pagina.keyboard.press("Escape");
+    await pagina.waitForTimeout(400);
+    // Un aviso (se dibuja en body): toma el trazo y el radio de :root.
+    await pagina.$eval("[data-prueba=aviso-hola]", (b) => b.scrollIntoView({ block: "center" }));
+    await pagina.click("[data-prueba=aviso-hola]");
+    await pagina.waitForTimeout(450);
+    const aviso = await estiloDe(pagina, ".mk-aviso", ["border-top-width", "border-top-left-radius"]);
+    revisar(Boolean(aviso) && aviso["border-top-width"] === "3px" && aviso["border-top-left-radius"] === "0px", `adn (${d}): el aviso toma el trazo y el radio (${JSON.stringify(aviso)})`);
+    // Valores extremos: sin radio ni sombra, nada se rompe ni se achica.
+    await ponerAdn(pagina, { "--mk-radio-boton": "0", "--mk-sombra": "none", "--mk-trazo": "0 none" });
+    await pagina.click("[data-prueba=abrir-confirmar]");
+    await pagina.waitForTimeout(450);
+    const b2 = await estiloDe(pagina, ".mk-confirmar-botones button", ["border-top-left-radius"]);
+    revisar(Boolean(b2) && b2.alto >= 44, `adn (${d}): con radio 0, sin sombra ni trazo, los botones siguen de 44 px`);
+    await pagina.keyboard.press("Escape");
+    await pagina.waitForTimeout(300);
+    revisar(errores.length === 0, `adn (${d}): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Como lo hará el front (encargo del ADN): la forma va en <body>, no en :root. Las piezas que se dibujan en <body>
+  // (avisos, Confirmar) la toman igual. Hallazgo de la revisión final de la v0.7.0.
+  {
+    const { ctx, pagina, errores } = await abrir(ESCRITORIO);
+    await pagina.evaluate(() => {
+      for (const [k, v] of Object.entries({ "--mk-trazo": "3px solid rgb(0, 0, 0)", "--mk-radio-tarjeta": "0px" })) document.body.style.setProperty(k, v);
+    });
+    await pagina.$eval("[data-prueba=aviso-hola]", (b) => b.scrollIntoView({ block: "center" }));
+    await pagina.click("[data-prueba=aviso-hola]");
+    await pagina.waitForTimeout(450);
+    const aviso = await estiloDe(pagina, ".mk-aviso", ["border-top-width", "border-top-left-radius"]);
+    revisar(Boolean(aviso) && aviso["border-top-width"] === "3px" && aviso["border-top-left-radius"] === "0px", `adn: con la forma en <body>, el aviso la toma (${JSON.stringify(aviso)})`);
+    await pagina.click("[data-prueba=abrir-confirmar]");
+    await pagina.waitForTimeout(450);
+    const globo = await estiloDe(pagina, ".mk-confirmar-globo", ["border-top-width", "border-top-left-radius"]);
+    revisar(Boolean(globo) && globo["border-top-width"] === "3px" && globo["border-top-left-radius"] === "0px", `adn: con la forma en <body>, Confirmar la toma (${JSON.stringify(globo)})`);
+    revisar(errores.length === 0, `adn: forma en <body> sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+
+  // El ritmo: «quieto» no salta; «manga» es más rápido; con movimiento reducido manda lo de siempre (sin saltito).
+  const saltito = async (ritmo, reducido = false) => {
+    const { ctx, pagina } = await abrir(TELEFONO, { reducido });
+    if (ritmo) await ponerAdn(pagina, ritmo);
+    await pagina.$eval("[data-prueba=guardar-bien]", (b) => b.scrollIntoView({ block: "center" }));
+    await pagina.evaluate(() => {
+      const b = document.querySelector("[data-prueba=guardar-bien]");
+      window.__animaciones = [];
+      const animar = b.animate.bind(b);
+      b.animate = (k, o) => { window.__animaciones.push({ k: JSON.parse(JSON.stringify(k)), o: JSON.parse(JSON.stringify(o)) }); return animar(k, o); };
+    });
+    await pagina.click("[data-prueba=guardar-bien]");
+    await pagina.waitForTimeout(2200);
+    const animaciones = await pagina.evaluate(() => window.__animaciones);
+    await ctx.close();
+    return animaciones;
+  };
+  const deHoy = await saltito(null);
+  const quieto = await saltito({ "--mk-ritmo-tiempo": "1", "--mk-ritmo-fuerza": "0" });
+  const manga = await saltito({ "--mk-ritmo-tiempo": "0.85", "--mk-ritmo-fuerza": "1.4" });
+  const reducidoManga = await saltito({ "--mk-ritmo-tiempo": "0.85", "--mk-ritmo-fuerza": "1.4" }, true);
+  const escalas = (l) => l.flatMap((a) => a.k.map((x) => x.scale).filter(Boolean));
+  revisar(deHoy.length === 1 && escalas(deHoy).includes("1.08"), `adn: sin ritmo, el saltito es el de siempre (${JSON.stringify(escalas(deHoy))})`);
+  revisar(quieto.length === 0 || escalas(quieto).every((s) => Number(s) === 1), `adn: con ritmo «quieto», el botón no salta (${JSON.stringify(escalas(quieto))})`);
+  const dHoy = deHoy[0]?.o?.duration ?? 0;
+  const dManga = manga[0]?.o?.duration ?? 0;
+  revisar(dHoy > 0 && Math.abs(dManga / dHoy - 0.85) <= 0.05 && escalas(manga).some((s) => Number(s) > 1.08), `adn: con ritmo «manga», más rápido y más marcado (${dManga} ms, ${JSON.stringify(escalas(manga))})`);
+  revisar(reducidoManga.length === 0, `adn: con movimiento reducido manda lo de siempre, aunque el ritmo sea «manga» (${reducidoManga.length})`);
+
+  // El título de Vacio (en el cómic) toma la letra de títulos.
+  const ctx = await navegador.newContext({ viewport: ESCRITORIO });
+  const pagina = await ctx.newPage();
+  await pagina.goto(`${base}/#comic`);
+  await pagina.waitForSelector(".mk-vacio-titulo");
+  await ponerAdn(pagina, { "--mk-fuente-titulo": "Georgia" });
+  const vacio = await estiloDe(pagina, ".mk-vacio-titulo", ["font-family"]);
+  revisar(Boolean(vacio) && vacio["font-family"].includes("Georgia"), `adn: el título de Vacio toma la letra de títulos`);
+  await ctx.close();
 }
 
 await navegador.close();

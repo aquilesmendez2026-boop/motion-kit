@@ -1,6 +1,6 @@
 {
   "$comentario": "Índice de los contratos de motion-kit. Generado por scripts/generar-contrato.mjs: no editar a mano. Cada etiqueta lleva todos los contratos al día; motionKit es la versión del paquete de la que salieron.",
-  "motionKit": "0.6.0",
+  "motionKit": "0.7.0",
   "contratos": [
     {
       "archivo": "encabezado-motionkit.json",

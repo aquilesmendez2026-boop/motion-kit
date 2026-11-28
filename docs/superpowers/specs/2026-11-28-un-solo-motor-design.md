@@ -91,8 +91,8 @@ Un solo vocabulario `--mk-*`, ampliado desde el de hoy:
 | Grupo | Variables (propuesta; el nombre final lo fija la fase 1) |
 |---|---|
 | Color | `fondo`, `superficie`, `texto`, `suave`, `borde`, `acento`, `sobre-acento`, `bien`, `mal`, `cartel` (las de hoy) |
-| Forma | `trazo` (ancho y color de la línea), `radio`, `radio-boton`, `radio-campo`, `sombra`, `sombra-suave`, `hundir` (lo que hace un botón al tocarlo) |
-| Letra | `fuente`, `fuente-titulo`, `fuente-cartel` |
+| Forma | `trazo` (ancho y color de la línea), `radio-tarjeta`, `radio-boton`, `radio-campo`, `sombra`, `sombra-suave`, `hundir` (lo que hace un botón al tocarlo) |
+| Letra | `fuente-texto`, `fuente-titulo`, `fuente-cartel` |
 | Ritmo | `ritmo` (`quieto`, `suave`, `vivo`, `manga`): cuánto y cómo se mueven las piezas |
 
 `variablesTema()` (hoy en `src/interfaz/tema.ts`) arma todas. Se mantiene el respaldo que ya existe: si falta una
@@ -118,6 +118,21 @@ usa el negocio** (una entrada nueva `motion-kit/temas`, con un archivo por tema)
 Compatibilidad: cada id de hoy sigue valiendo. Si dos se juntan, el contrato trae un mapa `antes → ahora` y el backend y
 el front lo leen igual.
 
+**Lo que trae el front para la fase 2** (sesión `lamente-front`, 28-11; nada en commit todavía):
+- Los temas del panel **siguen creciendo** (14 hoy): el contrato de temas es un **catálogo abierto**, como datos.
+- Un tema también es **cómo se mueve**: `pages/guia/temasGuia.ts` guarda por tema el efecto del título (`TextoEfecto`),
+  la tarjeta (variante y efecto), la transición de `Presencia`, los colores de la luz de `GlowBorder` y los rubros para
+  los que sirve. Va al contrato junto con colores y forma (se cruza con los `ESTILOS` de motion-kit).
+- La **firma** de cada tema (cinta de peligro, poste de barbero, pulso de electrocardiograma, pizarra y mantel, aura,
+  colas que se mueven, línea champaña, cinta torcida, esquinas de hoja, todo inclinado) va como **adornos con nombre**,
+  no como CSS libre.
+- Las **letras** de cada tema se cargan al elegirlo (hoy solo en la guía).
+- **Alcance:** la vista previa de la página pública vive dentro de la caja `data-tema-panel` del panel; con temas
+  separados para panel y página, la vista previa tiene que cortar el alcance del tema del panel (volver a declarar sus
+  `--mk-*` o aislarse), o el tema del panel se cuela en la página del negocio.
+- Cómo están hechos hoy: valores por defecto en `:where([data-tema-panel])`; cada tema vuelve a declarar `--mk-*` y los
+  tokens de Chakra (y la escala `purple-*` con `color-mix` desde `--lmt-acento`) dentro de su caja.
+
 ### 3. Las piezas
 
 Las piezas de motion-kit traen la conducta (estados, animación, accesibilidad) y se visten con el ADN; aceptan
@@ -135,7 +150,18 @@ El front mantiene sus nombres y cambia el interior. Mapa inicial:
 | `ListaTarjetas`, `TarjetaItem` | `Tarjeta` (de `src/piezas`) y `ListaViva` |
 | Copias a mano de tarjeta (9), sección (8), formulario (6), campo (4), selector (3) | `Tarjeta`, **nueva** `Seccion`, `Campo`, **nuevo** `Selector` |
 
-La v0.6.0 (lista, sin publicar) ya trae `BotonQueGuarda`, `Confirmar`, `Copiar`, `Campo`, `Vacio`, `Oferta`,
+**Conductas que el front escribió en CSS y pasan a las piezas (fase 3):**
+- `SubirImagen`: vacía punteada que se levanta al pasar; al arrastrar se tiñe y el ícono salta; mientras sube, una
+  franja de luz la cruza; la foto entra revelándose (de borrosa a nítida); Cambiar y Quitar en píldora.
+- `ListaViva`: el destello casi no se veía; variables para él (`--mk-destello-color`, `--mk-destello-ancho`) y un latido
+  de la pieza.
+- `Campo`: se levanta al pasar y al escribir, tiembla una vez con error, deshabilitado punteado, señal «!» en el error,
+  `accent-color` en casillas.
+- La barra lateral (íconos en cuadradito del color del grupo, salto y pop): candidata a pieza de panel.
+- El botón fantasma en píldora.
+- Ideas sin visto bueno de Aquiles: achicar la foto en el navegador antes de subir; encuadre al elegir.
+
+La v0.6.0 (publicada el 28-11) ya trae `BotonQueGuarda`, `Confirmar`, `Copiar`, `Campo`, `Vacio`, `Oferta`,
 `CartelNovedad`, `Guia` y `useCelebrar`: es la primera entrega de esta capa.
 
 ### 4. El catálogo de página
@@ -148,6 +174,21 @@ El marco de cada bloque (variante y ajustes: fondo, corte, entrada, ancho, espac
 lo dibuja motion-kit, en `motion-kit/pagina`, que ya tiene los relatos de página. `@la-mente/ui` pone el contenido (la
 lista de precios, las reseñas, la agenda) dentro de ese marco. Se migra **bloque por bloque**; mientras tanto conviven el
 marco viejo y el nuevo, elegidos por bloque.
+
+**Lo que pide el backend para la fase 4** (sesión `lamente-backend`, 28-11):
+- Quién lee hoy `diseno.json`: `cores/paginas/src/diseno.mjs` (`validarDiseno` al guardar; `disenoConReceta` al publicar
+  y en la vista previa, que **descarta en silencio** lo que no está en las listas: versión desconocida → la primera de su
+  lista, ajuste desconocido → se borra; `temaDe` sostiene el formato sin `tema`), `colores.mjs`, `estudio.mjs`
+  (`validarPagina`), `motionkit.mjs`, los agentes (`director.mjs`, `arreglo.mjs`, `partes.mjs`, con su prueba
+  `agentes-motionkit.test.mjs`) y los scripts `looks/cargas.mjs` y `muestras/completo.mjs`.
+- Lo guardado que depende de las listas: diseño publicado, borrador, propuestas e historial de cada página; los
+  proyectos del Estudio (`fondo`, `corte`, `fijos`); los 8 looks de dev y prod. El JSON prearmado se rehace con
+  `scripts/rearmar.mjs <amb>` después de cambiar el contrato.
+- Reglas: **solo sumar** (renombrar exige alias en el contrato o una migración probada en seco); no cambiar la primera
+  versión de cada bloque ni `porDefecto`; mantener `fijos` y los nombres de `ajustes`; el caso
+  `contrato/casos/protagonista-motionkit.json` da el mismo resultado; los `*-motionkit.json` van con el mismo `$origen`
+  (ref y commit) que los otros, porque una prueba del backend lo exige; los mensajes de error los pone el backend.
+- La muestra de diseños de dev (sin datos personales, solo la forma) la saca el backend con la orden de Aquiles.
 
 ### 5. El Estudio
 

@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useStyles } from "../utils/styles";
 import { revisarArchivo } from "./archivo";
-import { c } from "./tema";
+import { c, f, fuerza, tiempo } from "./tema";
 
 export interface SubirImagenProps {
   /** Lo que es («Logo», «Foto de portada»): el título y el nombre para el lector de pantalla. */
@@ -51,7 +51,7 @@ const estilos = () => (css ??= `
 .mk-subir[data-forma=redonda]>.mk-subir-etiqueta{grid-column:1/-1}
 .mk-subir-etiqueta{font-weight:600;font-size:.95rem}
 .mk-subir-caja{position:relative;display:grid;place-items:center;overflow:hidden;box-sizing:border-box;cursor:pointer;
-  border:1.5px dashed var(--b);background:color-mix(in srgb,var(--t) 3%,transparent);border-radius:14px;
+  border:1.5px dashed var(--b);background:color-mix(in srgb,var(--t) 3%,transparent);border-radius:${f("radioCampo", "14px")};
   transition:border-color .2s,background-color .2s}
 .mk-subir[data-forma=redonda] .mk-subir-caja{width:112px;height:112px;border-radius:50%}
 .mk-subir[data-forma=cuadrada] .mk-subir-caja{width:160px;height:160px}
@@ -70,10 +70,12 @@ const estilos = () => (css ??= `
 .mk-subir-anillo{position:absolute;width:48px;height:48px}
 .mk-subir-anillo[data-gira]{animation:mk-subir-gira 1s linear infinite}
 .mk-subir-listo{position:absolute;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--v);color:#fff}
+@media (prefers-reduced-motion:no-preference){.mk-subir-listo{animation:mk-subir-listo ${tiempo(360)} ease-out}}
+@keyframes mk-subir-listo{0%{opacity:0;transform:scale(calc(1 - ${fuerza(0.6)}))}60%{opacity:1;transform:scale(calc(1 + ${fuerza(0.08)}))}}
 .mk-subir-lado{display:grid;gap:6px;min-width:0}
 .mk-subir-acciones{display:flex;gap:8px;flex-wrap:wrap}
-.mk-subir-acciones button{font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 12px;border-radius:9px;cursor:pointer;
-  border:1px solid var(--b);background:var(--s);color:var(--t)}
+.mk-subir-acciones button{font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 12px;border-radius:${f("radioBoton", "9px")};cursor:pointer;
+  border:${f("trazo", "1px solid var(--b)")};background:var(--s);color:var(--t)}
 .mk-subir-acciones .mk-subir-quitar{color:var(--m)}
 .mk-subir-ayuda,.mk-subir-pista{margin:0;font-size:.8rem;line-height:1.35;color:var(--u)}
 .mk-subir-error{margin:0;font-size:.85rem;font-weight:600;color:var(--m)}
@@ -171,11 +173,7 @@ export function SubirImagen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estaSubiendo, error]);
 
-  // El ✓ entra con un pequeño salto.
-  const marcaListo = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (listo && !reducido) marcaListo.current?.animate([{ transform: "scale(.4)", opacity: 0 }, { transform: "scale(1.08)", opacity: 1, offset: 0.6 }, { transform: "scale(1)", opacity: 1 }], { duration: 360, easing: "ease-out" });
-  }, [listo, reducido]);
+  // El ✓ entra con un pequeño salto: lo hace el CSS al aparecer (.mk-subir-listo), con el ritmo del tema.
 
   // La sacudida: una vez por cada mensaje de error nuevo.
   const ultimoMensaje = useRef<string | undefined>(undefined);
@@ -299,7 +297,7 @@ export function SubirImagen({
           </svg>
         )}
         {listo && (
-          <span ref={marcaListo} className="mk-subir-listo" aria-hidden="true">
+          <span className="mk-subir-listo" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12.5l4.5 4.5L19 7.5" />
             </svg>

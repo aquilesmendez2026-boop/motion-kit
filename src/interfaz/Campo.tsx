@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { useStyles } from "../utils/styles";
-import { c } from "./tema";
+import { c, ritmoDe } from "./tema";
 
 export interface CampoProps {
   etiqueta: ReactNode;
@@ -33,7 +33,9 @@ export function Campo({ etiqueta, ayuda, error, className, children }: CampoProp
     const previo = antes.current;
     antes.current = error;
     if (!error || error === previo || reducido) return;
-    caja.current?.animate([{ translate: "0 0" }, { translate: "-6px 0" }, { translate: "5px 0" }, { translate: "-2px 0" }, { translate: "0 0" }], { duration: 320, easing: "ease-out" });
+    if (!caja.current) return;
+    const r = ritmoDe(caja.current);
+    if (r.fuerza > 0) caja.current.animate([0, -6, 5, -2, 0].map((x) => ({ translate: `${x * r.fuerza}px 0` })), { duration: 320 * r.tiempo, easing: "ease-out" });
   }, [error, reducido]);
   const describe = [ayuda ? `${id}-ayuda` : "", error ? `${id}-error` : ""].filter(Boolean).join(" ");
   return (

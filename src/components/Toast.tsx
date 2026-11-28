@@ -11,7 +11,7 @@ import {
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { cierraDeslizando, duracionDe, quienSale } from "../interfaz/avisos";
-import { c } from "../interfaz/tema";
+import { c, f, fuerza, letra, tiempo } from "../interfaz/tema";
 import { useStyles } from "../utils/styles";
 
 export interface ToastOptions {
@@ -52,19 +52,20 @@ const estilos = () =>
 .mk-avisos-zona,.mk-avisos{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
 .mk-avisos-zona{position:fixed;left:0;z-index:1200;box-sizing:border-box;padding:0 16px;pointer-events:none}
 .mk-aviso{pointer-events:auto;box-sizing:border-box;width:fit-content;max-width:min(440px,100%);min-height:48px;display:flex;align-items:center;gap:10px;
-  padding:6px 6px 6px 14px;border-radius:14px;border:1px solid ${c("borde")};background:${c("superficie")};color:${c("texto")};
-  font:inherit;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.12);touch-action:pan-y;user-select:none;
+  padding:6px 6px 6px 14px;border-radius:${f("radioTarjeta", "14px")};border:${f("trazo", `1px solid ${c("borde")}`)};background:${c("superficie")};color:${c("texto")};
+  font:inherit;font-family:${letra("fuenteTexto", "inherit")};font-weight:600;box-shadow:${f("sombra", "0 8px 24px rgba(0,0,0,.12)")};touch-action:pan-y;user-select:none;
   transition:opacity ${SALIDA}ms,transform ${SALIDA}ms}
-.mk-aviso[data-entra]{animation:mk-aviso-entra 380ms cubic-bezier(.34,1.4,.64,1)}
+.mk-aviso[data-entra]{animation:mk-aviso-entra ${tiempo(380)} cubic-bezier(.34,1.4,.64,1)}
 .mk-aviso[data-saliendo]{opacity:0;transform:scale(.96)}
 .mk-aviso-icono{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:13px;font-weight:800;
   color:${c("bien")};background:color-mix(in srgb,currentColor 14%,transparent)}
 .mk-aviso[data-tipo=mal] .mk-aviso-icono{color:${c("mal")}}
 .mk-aviso-texto{flex:1;min-width:0;padding:6px 0}
-.mk-aviso button{font:inherit;border:0;background:none;color:inherit;cursor:pointer;min-height:44px;border-radius:9px}
+.mk-aviso button{font:inherit;border:0;background:none;color:inherit;cursor:pointer;min-height:44px;border-radius:${f("radioBoton", "9px")}}
+.mk-aviso button:active{transform:${f("hundir", "none")}}
 .mk-aviso .mk-aviso-accion{padding:0 10px;color:${c("acento")};font-weight:700}
 .mk-aviso-cerrar{width:44px;font-size:20px;line-height:1;opacity:.6}
-@keyframes mk-aviso-entra{from{opacity:0;transform:translateY(var(--mk-aviso-desde,16px)) scale(.96)}}`);
+@keyframes mk-aviso-entra{from{opacity:0;transform:translateY(calc(var(--mk-aviso-desde,16px) * var(--mk-ritmo-fuerza,1))) scale(calc(1 - ${fuerza(0.04)}))}}`);
 
 /** Un aviso: su cuenta (que se pausa con el mouse, el dedo o el foco encima) y el deslizamiento para cerrarlo. */
 function Aviso({ e, cerrar, reducido }: { e: Entrada; cerrar: (id: number) => void; reducido: boolean }) {

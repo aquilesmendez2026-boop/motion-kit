@@ -13,8 +13,11 @@ export interface PrecioQueRuedaProps extends ComunesMomento {
 export const CSS_PRECIO =
   ".mk-m-precio{display:inline-block;font-variant-numeric:tabular-nums;line-height:1}" +
   ".mk-m-precio-cifras{display:inline-flex}" +
-  ".mk-m-rueda{display:inline-block;height:1em;overflow:hidden}" +
-  ".mk-m-tira{display:flex;flex-direction:column;transform:translateY(calc(var(--d)*-10%))}" +
+  // Cada columna mide lo que mide su cifra final (con letras de números de ancho variable, el «1» no deja hueco); el
+  // rodillo va centrado encima y se recorta.
+  ".mk-m-rueda{position:relative;display:inline-block;height:1em;overflow:hidden}" +
+  ".mk-m-ancho{visibility:hidden}" +
+  ".mk-m-tira{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;transform:translateY(calc(var(--d)*-10%))}" +
   ".mk-m-tira span{height:1em}" +
   ".mk-m-precio[data-fase=cero] .mk-m-tira{transform:none}" +
   ".mk-m-precio[data-fase=rueda]:not([data-nivel=quieto]) .mk-m-tira{transition:transform var(--mk-resorte-ms) var(--mk-resorte-curva) calc(var(--j)*60ms)}";
@@ -46,6 +49,7 @@ export function PrecioQueRueda({ valor, nivel: forzado, ahorro, className }: Pre
         {chars.map((c, j) =>
           /\d/.test(c) ? (
             <span key={`c${chars.length - j}`} className="mk-m-rueda">
+              <span className="mk-m-ancho">{c}</span>
               <span className="mk-m-tira" style={{ "--d": Number(c), "--j": j } as CSSProperties}>
                 {CIFRAS.map((x) => <span key={x}>{x}</span>)}
               </span>

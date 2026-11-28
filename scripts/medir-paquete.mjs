@@ -44,12 +44,12 @@ export const TOPES_KB = { "motion-kit": 105, encabezado: 35, pagina: 17, momento
 /** Lo que importa el panel desde `motion-kit/interfaz`, con su tope (KB gzip, al cargar y con lo que no usa descartado). */
 const USOS = [
   { nombre: "motion-kit/interfaz { Accordion, CountUp }", entrada: "interfaz", piezas: ["Accordion", "CountUp"], tope: 5 },
-  { nombre: "motion-kit/interfaz { SubirImagen }", entrada: "interfaz", piezas: ["SubirImagen"], tope: 4 },
-  { nombre: "motion-kit/interfaz { ToastProvider, useToast }", entrada: "interfaz", piezas: ["ToastProvider", "useToast"], tope: 3.1 }, // 3 en el diseño; 3,1 tras los arreglos de la revisión (decisión de Aquiles del 26-11-2026)
+  { nombre: "motion-kit/interfaz { SubirImagen }", entrada: "interfaz", piezas: ["SubirImagen"], tope: 4.2 }, // 4 en el diseño; 4,2 por el ADN (forma y ritmo), decisión de Aquiles del 28-11
+  { nombre: "motion-kit/interfaz { ToastProvider, useToast }", entrada: "interfaz", piezas: ["ToastProvider", "useToast"], tope: 3.2 }, // 3 en el diseño; 3,1 tras la revisión (Aquiles, 26-11); 3,2 por el ADN (Aquiles, 28-11)
   { nombre: "motion-kit/interfaz { Cargando }", entrada: "interfaz", piezas: ["Cargando"], tope: 2.1 }, // 2 en el diseño; 2,1 por decisión de Aquiles (27-11), al sumarse la entrada comic
   { nombre: "motion-kit/interfaz { ListaViva, Contador, Interruptor }", entrada: "interfaz", piezas: ["ListaViva", "Contador", "Interruptor"], tope: 4 },
   { nombre: "motion-kit/interfaz { BotonQueGuarda }", entrada: "interfaz", piezas: ["BotonQueGuarda"], tope: 2 },
-  { nombre: "motion-kit/interfaz { Copiar }", entrada: "interfaz", piezas: ["Copiar"], tope: 1.7 }, // 1,5 en el diseño; 1,7 por decisión de Aquiles (27-11: «sí a todo, sube los topes»)
+  { nombre: "motion-kit/interfaz { Copiar }", entrada: "interfaz", piezas: ["Copiar"], tope: 1.8 }, // 1,5 en el diseño; 1,7 (Aquiles, 27-11); 1,8 por el ADN (Aquiles, 28-11: «si, sube los topes»)
   { nombre: "motion-kit/interfaz { Campo }", entrada: "interfaz", piezas: ["Campo"], tope: 1.5 },
   { nombre: "motion-kit/interfaz { Confirmar }", entrada: "interfaz", piezas: ["Confirmar"], tope: 4 },
   { nombre: "motion-kit/comic { Mano }", entrada: "comic", piezas: ["Mano"], tope: 3 },
