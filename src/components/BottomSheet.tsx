@@ -5,6 +5,7 @@ import {
   type CSSProperties,
   type PointerEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "../hooks/useReducedMotion";
@@ -24,6 +25,12 @@ export interface BottomSheetProps {
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
+  /** El rol de la hoja: `alertdialog` para una pregunta antes de algo que no se deshace (por defecto, `dialog`). */
+  rol?: "dialog" | "alertdialog";
+  /** Qué se enfoca al abrir (por defecto, la hoja misma). */
+  focoInicial?: RefObject<HTMLElement | null>;
+  /** El z-index de la capa (por defecto, 1100). */
+  capa?: number;
 }
 
 const DURATION = 380;
@@ -42,6 +49,9 @@ export function BottomSheet({
   className,
   style,
   children,
+  rol = "dialog",
+  focoInicial,
+  capa = 1100,
 }: BottomSheetProps) {
   const reduced = useReducedMotion();
   const [mounted, setMounted] = useState(open);
@@ -88,7 +98,7 @@ export function BottomSheet({
   }, [open]);
 
   useEffect(() => {
-    if (shown) sheetRef.current?.focus({ preventScroll: true });
+    if (shown) (focoInicial?.current ?? sheetRef.current)?.focus({ preventScroll: true });
   }, [shown]);
 
   const onDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -142,7 +152,7 @@ export function BottomSheet({
   if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 1100 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: capa }}>
       <div
         ref={backdropRef}
         onClick={onClose}
@@ -156,7 +166,7 @@ export function BottomSheet({
       />
       <div
         ref={sheetRef}
-        role="dialog"
+        role={rol}
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}

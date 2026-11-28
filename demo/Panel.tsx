@@ -1,7 +1,7 @@
 // La vitrina del panel: las piezas de motion-kit/interfaz con los colores del panel de cada negocio de La Mente (claro
 // y oscuro). La prueba es scripts/verificar-panel.mjs.
 import { useEffect, useRef, useState } from "react";
-import { BottomSheet, Cargando, Contador, Interruptor, ListaViva, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
+import { BotonQueGuarda, BottomSheet, Campo, Cargando, Confirmar, Copiar, Contador, Interruptor, ListaViva, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
 import { variablesTema, type TemaInterfaz } from "../src/interfaz/tema";
 
 /** Los colores del panel de La Mente (lamente-front/fronts/panel/src/theme.ts) y su violeta. */
@@ -117,6 +117,16 @@ function usePedidosDeMentira() {
   };
 }
 
+/** Un guardado de mentira: tarda 600 ms y sale bien o mal; cuenta cuántas veces lo llamaron. */
+function useGuardadoDeMentira(sale: "bien" | "mal") {
+  const [llamadas, setLlamadas] = useState(0);
+  const alGuardar = () => {
+    setLlamadas((n) => n + 1);
+    return new Promise<void>((ok, falla) => setTimeout(() => (sale === "bien" ? ok() : falla(new Error("sin red"))), 600));
+  };
+  return { llamadas, alGuardar };
+}
+
 export function PanelVitrina() {
   const [tema, setTema] = useState<"claro" | "oscuro">(() => (location.hash.includes("oscuro") ? "oscuro" : "claro"));
   const [hoja, setHoja] = useState(false);
@@ -130,6 +140,29 @@ export function PanelVitrina() {
   const [deshechos, setDeshechos] = useState(0);
   const carga = useCargaDeMentira();
   const ahora = usePedidosDeMentira();
+  const guardaBien = useGuardadoDeMentira("bien");
+  const guardaMal = useGuardadoDeMentira("mal");
+  const [conTercero, setConTercero] = useState(true);
+  const [nombre, setNombre] = useState("");
+  const [errorNombre, setErrorNombre] = useState<string>();
+  const [, setRepinta] = useState(0);
+  const [preguntando, setPreguntando] = useState<"" | "simple" | "espera" | "falla">("");
+  const [onclicks, setOnclicks] = useState(0);
+  const [ventana, setVentana] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [confirmados, setConfirmados] = useState(0);
+  const [cancelados, setCancelados] = useState(0);
+  const confirmar = () => {
+    setConfirmados((n) => n + 1);
+    if (preguntando === "falla") {
+      // El borrado falla: se apaga «ocupado» y el diálogo queda abierto para reintentar.
+      setOcupado(true);
+      setTimeout(() => setOcupado(false), 400);
+    } else if (preguntando === "espera") {
+      setOcupado(true);
+      setTimeout(() => { setOcupado(false); setPreguntando(""); }, 800);
+    } else setPreguntando("");
+  };
   const [abierto, setAbierto] = useState(true);
   const pendientes = ahora.pedidos.filter((p) => !p.listo).length;
   const borrar = (texto = "Borrado") => toast(texto, { accion: { texto: "Deshacer", alHacer: () => setDeshechos((n) => n + 1) } });
@@ -234,6 +267,72 @@ export function PanelVitrina() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="panel-seccion" data-prueba="panel-guardar">
+        <h2>Guardar</h2>
+        <p className="panel-nota">El botón cuenta cómo va: guardando, guardado o no se pudo. Tiene el estilo del botón amarillo del panel (que se hunde).</p>
+        <div className="panel-fila">
+          <BotonQueGuarda className="panel-boton-hunde" data-prueba="guardar-bien" alGuardar={guardaBien.alGuardar}>Guardar</BotonQueGuarda>
+          <BotonQueGuarda className="panel-boton-hunde" data-prueba="guardar-mal" alGuardar={guardaMal.alGuardar}>Guardar</BotonQueGuarda>
+          {conTercero && <BotonQueGuarda className="panel-boton-hunde" data-prueba="guardar-desmonta" alGuardar={guardaBien.alGuardar}>Guardar y salir</BotonQueGuarda>}
+          <button type="button" className="panel-boton" data-prueba="cambiar-seccion" onClick={() => setConTercero(false)}>Cambiar de sección</button>
+          <BotonQueGuarda className="panel-boton-hunde" data-prueba="guardar-onclick" onClick={() => setOnclicks((n) => n + 1)} alGuardar={guardaBien.alGuardar}>Guardar (con onClick)</BotonQueGuarda>
+        </div>
+        <small hidden data-prueba="llamadas-bien">{guardaBien.llamadas}</small>
+        <small hidden data-prueba="llamadas-mal">{guardaMal.llamadas}</small>
+        <small hidden data-prueba="onclicks">{onclicks}</small>
+      </section>
+
+      <section className="panel-seccion" data-prueba="panel-copiar-campo">
+        <h2>Copiar y campos</h2>
+        <p className="panel-nota">Copiar el link con un globo que lo confirma; un campo cuyo error se sacude y queda al lado.</p>
+        <div className="panel-fila">
+          <Copiar className="panel-boton" data-prueba="copiar" texto="https://lamente.cl/cami-viaja">⧉ Copiar link</Copiar>
+        </div>
+        <div data-prueba="campo" style={{ maxWidth: 360 }}>
+          <Campo etiqueta="Nombre del negocio" ayuda="Como lo ven tus clientes." error={errorNombre}>
+            {(a11y) => <input {...a11y} data-prueba="campo-input" className="panel-input" value={nombre} onChange={(e) => setNombre(e.target.value)} />}
+          </Campo>
+        </div>
+        <div className="panel-fila">
+          <button type="button" className="panel-boton" data-prueba="error-uno" onClick={() => setErrorNombre("Escribe el nombre de tu negocio.")}>Guardar vacío</button>
+          <button type="button" className="panel-boton" data-prueba="error-mismo" onClick={() => setRepinta((n) => n + 1)}>Repintar (mismo error)</button>
+          <button type="button" className="panel-boton" data-prueba="error-otro" onClick={() => setErrorNombre("Ese nombre es muy largo.")}>Otro error</button>
+          <button type="button" className="panel-boton" data-prueba="error-nada" onClick={() => setErrorNombre(undefined)}>Sin error</button>
+        </div>
+      </section>
+
+      <section className="panel-seccion" data-prueba="panel-confirmar">
+        <h2>Confirmar</h2>
+        <p className="panel-nota">Antes de algo que no se deshace: un globo en el computador, una hoja desde abajo en el teléfono.</p>
+        <div className="panel-fila">
+          <button type="button" className="panel-boton" data-prueba="abrir-confirmar" onClick={() => setPreguntando("simple")}>🗑 Borrar novedad</button>
+          <button type="button" className="panel-boton" data-prueba="abrir-confirmar-espera" onClick={() => setPreguntando("espera")}>🗑 Borrar (tarda)</button>
+          <button type="button" className="panel-boton" data-prueba="abrir-confirmar-falla" onClick={() => setPreguntando("falla")}>🗑 Borrar (falla)</button>
+          <button type="button" className="panel-boton" data-prueba="abrir-ventana" onClick={() => setVentana(true)}>Abrir una ventana</button>
+        </div>
+        <small hidden data-prueba="confirmados">{confirmados}</small>
+        <small hidden data-prueba="cancelados">{cancelados}</small>
+        {ventana && (
+          <div data-prueba="ventana-modal" style={{ position: "fixed", inset: 0, zIndex: 1400, background: "rgba(0,0,0,.3)", display: "grid", placeItems: "center" }}>
+            <div style={{ background: "#fff", padding: 24, borderRadius: 12 }}>
+              <p>Una ventana como las del panel (z-index 1400).</p>
+              <button type="button" className="panel-boton" data-prueba="abrir-confirmar-ventana" onClick={() => setPreguntando("simple")}>🗑 Borrar ítem</button>
+              <button type="button" className="panel-boton" onClick={() => setVentana(false)}>Cerrar</button>
+            </div>
+          </div>
+        )}
+        <Confirmar
+          abierto={preguntando !== ""}
+          pregunta="¿Borro la novedad?"
+          detalle="Tus clientes dejarán de verla."
+          textoSi="Sí, borrar"
+          peligro
+          ocupado={ocupado}
+          alConfirmar={confirmar}
+          alCancelar={() => { setCancelados((n) => n + 1); setPreguntando(""); }}
+        />
       </section>
 
       <section className="panel-seccion" data-prueba="panel-llega">

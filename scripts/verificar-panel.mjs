@@ -1,6 +1,6 @@
-// La prueba visual del panel (#panel): las piezas de motion-kit/interfaz con los colores del panel de La Mente.
+// La prueba visual de las piezas del panel (#panel-piezas): las piezas de motion-kit/interfaz con los colores del panel de La Mente.
 // Uso: npm run dev (en otra terminal) y después `node scripts/verificar-panel.mjs [http://localhost:5173] [parte]`,
-// donde la parte (opcional) es tema, imagen, avisos, cargando o llega. Las capturas quedan en <tmp>/mk-panel/.
+// donde la parte (opcional) es tema, imagen, avisos, cargando, llega o vivo (el panel entero de #panel). Las capturas quedan en <tmp>/mk-panel/.
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ import { chromium } from "playwright";
 
 const base = process.argv.find((a) => /^https?:/.test(a)) ?? "http://localhost:5173";
 const solo = process.argv.slice(2).find((a) => !/^https?:/.test(a));
-const PARTES = ["tema", "imagen", "avisos", "cargando", "llega"];
+const PARTES = ["tema", "imagen", "avisos", "cargando", "llega", "vivo"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -32,7 +32,7 @@ async function abrir(tamano, { tema = "claro", reducido = false } = {}) {
   const errores = [];
   pagina.on("pageerror", (e) => errores.push(e.message));
   await pagina.route(/fonts\.googleapis|fonts\.gstatic/, (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
-  await pagina.goto(`${base}/#panel`);
+  await pagina.goto(`${base}/#panel-piezas`);
   await pagina.waitForSelector("[data-prueba=panel-tema]");
   if (tema !== "claro") await pagina.selectOption("[data-prueba=panel-tema]", tema);
   await pagina.waitForTimeout(150);
@@ -562,6 +562,113 @@ if (parte("llega")) {
   const movimiento = [...(await movimientoDe(pagina, "[data-mk-clave=p3]")), ...(await movimientoDe(pagina, "[data-prueba=contador]"))];
   revisar(entra.includes("p3") && movimiento.length === 0, `llega (reducido): entra con un fundido, sin deslizar ni latir (${movimiento.join(" | ")})`);
   await ctx.close();
+}
+
+/** El panel entero (#panel): todas las secciones de la barra, con las piezas funcionando dentro. */
+async function abrirVivo(tamano, seccion, { reducido = false } = {}) {
+  const ctx = await navegador.newContext({ viewport: tamano, reducedMotion: reducido ? "reduce" : "no-preference" });
+  const pagina = await ctx.newPage();
+  const errores = [];
+  pagina.on("pageerror", (e) => errores.push(e.message));
+  pagina.on("console", (m) => m.type() === "error" && errores.push(m.text()));
+  await pagina.goto(`${base}/#panel?s=${seccion}`);
+  await pagina.waitForSelector(".pv-panel");
+  await pagina.waitForTimeout(700);
+  return { ctx, pagina, errores };
+}
+const sinEspacios = (x) => (x ?? "").replace(/\s+/g, "");
+const tarjetas = (pagina) => pagina.$$eval(".pv-colab", (l) => l.length);
+
+if (parte("vivo")) {
+  // Escritorio: la barra con todas las secciones y cada una se abre con su título.
+  {
+    const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "resumen");
+    const nombres = await pagina.$$eval(".pv-lado .pv-item", (l) => l.map((b) => [b.dataset.seccion, [...b.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()]));
+    revisar(nombres.length === 41, `vivo: la barra tiene las 41 secciones del panel (${nombres.length})`);
+    const malas = [];
+    for (const [id, nombre] of nombres) {
+      await pagina.click(`.pv-lado [data-seccion="${id}"]`);
+      await pagina.waitForTimeout(120);
+      const titulo = await pagina.$eval(".pv-titulo", (h) => h.textContent).catch(() => "");
+      const activa = await pagina.$eval(".pv-lado [aria-current=page]", (b) => b.dataset.seccion).catch(() => "");
+      if (sinEspacios(titulo) !== sinEspacios(nombre) || activa !== id) malas.push(id);
+    }
+    revisar(malas.length === 0, `vivo: cada sección se abre con su título y queda marcada${malas.length ? ` (fallan: ${malas.join(", ")})` : ""}`);
+    revisar(errores.length === 0, `vivo: recorrer todas sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Colaboraciones, como la pantalla de verdad: filtrar, responder, borrar con confirmación y deshacer.
+  {
+    const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "colaboraciones");
+    revisar((await tarjetas(pagina)) === 4, `vivo: colaboraciones parte con 4 tarjetas`);
+    await pagina.click(".pv-pestanas >> text=Nueva (1)");
+    await pagina.waitForTimeout(400);
+    revisar((await tarjetas(pagina)) === 1, `vivo: el filtro «Nueva» deja una`);
+    await pagina.click(".pv-colab >> text=Responder por correo");
+    await pagina.waitForTimeout(300);
+    revisar((await pagina.$$eval(".pv-pestanas [role=tab], .pv-pestanas button", (l) => l.map((b) => b.textContent).join("|"))).includes("Conversando (2)"), `vivo: responder a una nueva la pasa a «Conversando»`);
+    await pagina.click(".pv-pestanas >> text=Todas (4)");
+    await pagina.waitForTimeout(400);
+    await pagina.click(".pv-colab >> nth=0 >> text=Borrar");
+    await pagina.waitForSelector("[role=alertdialog]");
+    await pagina.click("[role=alertdialog] >> text=Sí, borrar");
+    await pagina.waitForTimeout(1200);
+    revisar((await tarjetas(pagina)) === 3, `vivo: borrar pide confirmar y la saca`);
+    await pagina.click("text=Deshacer");
+    await pagina.waitForTimeout(700);
+    revisar((await tarjetas(pagina)) === 4, `vivo: «Deshacer» la devuelve`);
+    await pagina.screenshot({ path: join(CAPTURAS, "vivo-colaboraciones.png") });
+    revisar(errores.length === 0, `vivo: colaboraciones sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Una sección vacía: la mano señala «Crear el primero», se llena y se celebra. Publicar la página también celebra.
+  {
+    const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "sellos");
+    revisar(Boolean(await pagina.$(".pv-principal .mk-mano")), `vivo: la sección vacía tiene la mano que señala`);
+    await pagina.click("text=Crear el primero");
+    await pagina.waitForTimeout(500);
+    revisar((await pagina.$$eval(".pv-principal .pv-hoja", (l) => l.length)) === 3, `vivo: «Crear el primero» la llena con 3 ejemplos`);
+    revisar(Boolean(await pagina.$(".mk-celebrar")), `vivo: y lo celebra`);
+    await pagina.click('.pv-lado [data-seccion="pagina"]');
+    await pagina.waitForTimeout(300);
+    await pagina.click(".pv-principal >> text=Publicar");
+    await pagina.waitForTimeout(400);
+    revisar(Boolean(await pagina.$(".pv-vista-sello")), `vivo: publicar pone el sello «¡En vivo!» en la vista`);
+    // La guía recorre el panel y se cierra con Esc.
+    await pagina.waitForTimeout(2600);
+    await pagina.click("text=¿Cómo se usa?");
+    await pagina.waitForTimeout(700);
+    revisar(Boolean(await pagina.$(".mk-guia [role=dialog]")), `vivo: «¿Cómo se usa?» abre la guía`);
+    await pagina.keyboard.press("Escape");
+    await pagina.waitForTimeout(500);
+    revisar(!(await pagina.$(".mk-guia [role=dialog]")), `vivo: y Esc la cierra`);
+    revisar(errores.length === 0, `vivo: vacíos, publicar y guía sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Teléfono: sin correrse de lado, las secciones en una hoja desde abajo y botones de 44 px.
+  {
+    const { ctx, pagina, errores } = await abrirVivo(TELEFONO, "colaboraciones");
+    const ancho = await pagina.evaluate(() => document.scrollingElement.scrollWidth);
+    revisar(ancho <= TELEFONO.width, `vivo (teléfono): no se corre de lado (${ancho} px)`);
+    const chicos = await pagina.$$eval(".pv-panel .pv-boton, .pv-panel select", (l) => l.filter((b) => b.getBoundingClientRect().height > 0 && b.getBoundingClientRect().height < 44).length);
+    revisar(chicos === 0, `vivo (teléfono): botones de al menos 44 px de alto (${chicos} más chicos)`);
+    await pagina.screenshot({ path: join(CAPTURAS, "vivo-telefono.png") });
+    await pagina.click("[aria-label=Secciones]");
+    await pagina.waitForTimeout(500);
+    await pagina.click('.pv-hoja-menu [data-seccion="caja"]');
+    await pagina.waitForTimeout(600);
+    revisar(sinEspacios(await pagina.$eval(".pv-titulo", (h) => h.textContent)) === "Caja", `vivo (teléfono): la hoja de secciones lleva a «Caja»`);
+    revisar(!(await pagina.$(".pv-hoja-menu")), `vivo (teléfono): y se cierra al elegir`);
+    revisar(errores.length === 0, `vivo (teléfono): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Movimiento reducido: nada se estampa ni gira.
+  {
+    const { ctx, pagina } = await abrirVivo(ESCRITORIO, "resumen", { reducido: true });
+    const animadas = await pagina.$$eval(".pv-panel *", (l) => l.filter((el) => el.getAnimations().some((a) => a.playState === "running" && String(a.animationName ?? "").startsWith("pv-"))).length);
+    revisar(animadas === 0, `vivo (reducido): ninguna animación propia del panel corre (${animadas})`);
+    await ctx.close();
+  }
 }
 
 await navegador.close();

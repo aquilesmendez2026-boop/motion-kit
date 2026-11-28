@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.6.0 (27-11-2026)
+
+Una entrada nueva, `motion-kit/comic` (el cómic del panel), y piezas nuevas en `motion-kit/interfaz`. Ningún contrato
+cambia de versión. `BottomSheet` suma `rol`, `focoInicial` y `capa` (opcionales: nada cambia para quien ya la usa).
+
+- **`motion-kit/interfaz`**: `BotonQueGuarda` (guardando, guardado, no se pudo), `Copiar` (con su globo), `Campo`
+  (etiqueta, ayuda y error accesibles) y `Confirmar` (globo o hoja, foco atrapado, `ocupado`). Tope 28 KB.
+- **`motion-kit/comic`** (nueva): la `Mano` de cómic que apunta y toca, `Globo`, `Estallido`, `Colgante`, `Vacio`,
+  `Oferta`, `CartelNovedad`, la `Guia` que recorre la pantalla y `useCelebrar`. Tope 14 KB.
+- El tope de `motion-kit` (todo) sube a 105 KB (decisión de Aquiles del 27-11).
+- **Contratos** (encargo del backend del 27-11): `contrato/partituras-casa-motionkit.json` (las partituras de la casa
+  en JSON, con qué hace cada una) y `contrato/indice.json` (la versión del paquete y la de cada contrato).
+- Demo: `#panel` es ahora el panel vivo (las 41 secciones, estilo manga); las piezas sueltas pasan a `#panel-piezas`.
+
 ## 0.5.5 (26-11-2026)
 
 Una entrada nueva, `motion-kit/interfaz` (encargo del front de La Mente), y las piezas del panel de cada negocio.

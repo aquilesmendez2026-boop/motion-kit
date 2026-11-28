@@ -78,8 +78,20 @@ export { useScrollProgress } from "./hooks/useScrollProgress";
 export { useViewTransition } from "./hooks/useViewTransition";
 
 // Los colores de las piezas de interfaz (motion-kit/interfaz).
-export { variablesTema } from "./interfaz/tema";
+export { variablesTema, fuenteCartel, CARTEL } from "./interfaz/tema";
+// El cómic del panel (también en motion-kit/comic).
+export { Mano, Globo, Estallido, Colgante, PUNTA_MANO, letraEstallido, Vacio, Oferta, CartelNovedad, Guia, useCelebrar, CelebrarProvider } from "./entradas/comic";
+export type { ManoProps, GloboProps, EstallidoProps, ColganteProps, Direccion, Piel } from "./entradas/comic";
 export { SubirImagen } from "./interfaz/SubirImagen";
+export { BotonQueGuarda } from "./interfaz/BotonQueGuarda";
+export { Copiar } from "./interfaz/Copiar";
+export { Confirmar } from "./interfaz/Confirmar";
+export type { ConfirmarProps } from "./interfaz/Confirmar";
+export type { CopiarProps } from "./interfaz/Copiar";
+export { Campo } from "./interfaz/Campo";
+export type { CampoProps } from "./interfaz/Campo";
+export type { BotonQueGuardaProps } from "./interfaz/BotonQueGuarda";
+export type { EstadoGuardar } from "./interfaz/guardar";
 export { Cargando } from "./interfaz/Cargando";
 export { ListaViva } from "./interfaz/ListaViva";
 export type { ListaVivaProps } from "./interfaz/ListaViva";

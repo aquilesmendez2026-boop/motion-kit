@@ -101,6 +101,18 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.6.0 (27-11-2026)
+
+Etiqueta `v0.6.0`: suma la entrada `motion-kit/comic` (la `Mano` que apunta y toca, `Globo`, `Estallido`, `Colgante`,
+`Vacio`, `Oferta`, `CartelNovedad`, la `Guia` que recorre la pantalla y `useCelebrar`) y, en `motion-kit/interfaz`,
+`BotonQueGuarda`, `Copiar`, `Campo` y `Confirmar` (ver «Guardar y cómic del panel»). Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.6.0`. Ningún contrato cambia de versión; se suman
+`contrato/partituras-casa-motionkit.json` y `contrato/indice.json` (encargo del backend del 27-11). `BottomSheet` suma
+`rol`, `focoInicial` y `capa`, opcionales. Topes nuevos (decisión de Aquiles del 27-11): `motion-kit` 105 KB (queda en
+97,0), `interfaz` 28 (20,7) y `comic` 14 (8,0). Antes de la etiqueta: 389 pruebas calculables, probar-paquete bien, la
+**batería completa** (20 de 20; `piezas` y `relatos` corridas de nuevo solas porque el Mac estaba cargado por procesos
+del sistema) y la pasada rápida; revisión final en Opus, con sus 8 arreglos. La demo estrena el panel vivo (`#panel`).
+
 ## Paquete v0.5.5 (26-11-2026)
 
 Etiqueta `v0.5.5`: suma la entrada `motion-kit/interfaz` (encargo del front) y las piezas del panel de cada negocio:
@@ -1138,7 +1150,7 @@ cargar y que no se cuele ninguna clase de los fondos, escenas, encabezados ni re
 Pedido de Aquiles («debemos mejorar toda la visual de La Mente»; «parte con el grupo 1 y 2, mejoremos lo de las
 imágenes»). Diseño: `docs/superpowers/specs/2026-11-26-panel-interfaz-design.md`; plan:
 `docs/superpowers/plans/2026-11-26-panel-interfaz.md`. Todo en `motion-kit/interfaz` (y en `motion-kit`), para el panel
-de cada negocio. Vitrina `#panel` (con el tema claro y oscuro del panel de La Mente).
+de cada negocio. Vitrina `#panel-piezas` (con el tema claro y oscuro del panel de La Mente).
 
 - **Colores del tema** (`src/interfaz/tema.ts`): las piezas de interfaz leen `--mk-fondo`, `--mk-superficie`,
   `--mk-texto`, `--mk-suave`, `--mk-borde`, `--mk-acento`, `--mk-sobre-acento`, `--mk-bien` y `--mk-mal` (con respaldo
@@ -1170,7 +1182,59 @@ pasó de 80,8 a 87,6 KB (tope 90: queda poco).
 
 Pruebas: `pruebas/{tema-interfaz,subir-imagen,avisos,cargando,lista-viva}.test.ts` y `scripts/verificar-panel.mjs`
 (partes `tema`, `imagen`, `avisos`, `cargando` y `llega`, en el teléfono y en escritorio, también con el motor de
-Safari); `#panel` en la pasada rápida.
+Safari); `#panel-piezas` en la pasada rápida.
+
+## Guardar y cómic del panel (27-11-2026)
+
+Pedido de Aquiles («necesitamos crear animación como carteles, manos que apuntan, tipo cómic o anime […] para crear la
+guía de cómo se usa»; «parte con los grupos 1 y 3»). Diseño: `docs/superpowers/specs/2026-11-27-guardar-y-comic-design.md`;
+plan: `docs/superpowers/plans/2026-11-27-guardar-y-comic.md`. Vitrinas: `#panel-piezas` (grupo 1), `#comic` (grupo 3),
+`#propuesta` (la propuesta con muestras) y `#guia` (la guía de todas las piezas del front, con su propuesta).
+
+**El panel vivo (`#panel`):** una maqueta del panel de cada negocio con las 41 secciones de su barra (por grupo y con
+la tinta de cada grupo), armada solo con estas piezas y con estilo de manga: trazo grueso, sombra dura, líneas de
+velocidad, sellos que se estampan, títulos que caen y cosas que llegan solas (pedidos, colaboraciones, el resumen).
+Colaboraciones copia la pantalla de verdad (filtros con cuenta, estados, responder, borrar con confirmación y
+deshacer); Página, Precios, Novedades, Pedidos, Agenda, Caja y Mi consumo tienen la suya; las demás parten vacías con la
+mano y se llenan con ejemplos. `#panel?s=<sección>` abre una. Su prueba es la parte `vivo` de `verificar-panel`.
+Lo de la maqueta (las clases `pv-*`) es de la demo: lo que pasa al front son las piezas.
+
+**Un solo lugar de verdad:** cada pieza acepta la clase, el estilo y las props de su elemento, así el front la viste con
+su look sin copiarla; los colores salen de `--mk-*` y la letra de cartel de `--mk-fuente-cartel` (el front la conecta a
+`--lmt-cartel`). Cambiar la pieza o la variable cambia todas las pantallas que la usan.
+
+**Grupo 1, en `motion-kit/interfaz`:**
+
+- **`BotonQueGuarda`**: «Guardar» → «Guardando…» (anillo) → «✓ Guardado» (saltito con `scale`) → vuelve a los 1,6 s; si
+  falla, «No se pudo» con sacudida (`translate`) y vuelve a los 2 s. No manda dos veces; se puede reintentar; el ancho no
+  salta (los textos se apilan); convive con un botón que se hunde con `transform`; limpio al desmontarse.
+- **`Copiar`**: copia y un globo dice «¡Copiado!» (o «Cópialo a mano» si el navegador no deja); se anuncia.
+- **`Campo`**: etiqueta, ayuda y error con `role="alert"`; el control recibe `id`, `aria-invalid` y
+  `aria-describedby`; el error se sacude una vez por mensaje nuevo y el borde se pone `--mk-mal`.
+- **`Confirmar`**: un globo centrado (computador) o una hoja desde abajo (teléfono, `BottomSheet`); `alertdialog`, foco
+  en el botón seguro, foco atrapado, Escape y el fondo cancelan, el foco vuelve; `ocupado` (rueda, nada cierra); una sola
+  confirmación por vez. `BottomSheet` suma `rol` y `focoInicial` (opcionales).
+
+**Grupo 3, en la entrada nueva `motion-kit/comic`:**
+
+- **Dibujos:** `Mano` (SVG propio, 4 pieles, manga del acento, 4 direcciones, toca con «¡pop!»; `PUNTA_MANO` dice dónde
+  queda la punta), `Globo`, `Estallido` (la letra se ajusta a la palabra más larga) y `Colgante`.
+- **`Vacio`** (la mano señala la acción: toca una vez al entrar en pantalla; desde arriba en el teléfono), **`Oferta`**
+  (estallido que late con el destacado), **`CartelNovedad`** (cuelga de su ancla, se mece al llegar y queda quieto).
+- **`Guia`**: la mano viaja a cada elemento (un selector por paso), lo toca y el globo explica; el resto se oscurece con
+  cuatro paneles (lo señalado se sigue pudiendo tocar); espera 1,5 s a un elemento que tarda y salta el que no existe;
+  si ninguno existe, termina; flechas, Escape, foco en «Siguiente»; sigue al elemento al hacer scroll. `ubicar()` pone
+  la mano y el globo dentro de la vista.
+- **`useCelebrar`**: estallido grande y confeti 2,5 s, sin recibir toques; se monta solo (raíz propia) o en
+  `CelebrarProvider`; dos seguidas, la última.
+
+Pesos (gzip, lo que importa una app desde `dist`): `{ BotonQueGuarda }` 1,6 KB, `{ Campo }` 1,3, `{ Confirmar }` 3,5,
+`{ Copiar }` 1,7 (tope 1,5: pendiente de Aquiles); `motion-kit/comic` 7,7 KB al cargar (tope 14), `{ Mano }` 2,9,
+`{ Vacio }` 3,6, `{ Guia }` 5,3, `{ useCelebrar }` 3,3; `motion-kit/interfaz` 20,6 (tope 28); `motion-kit` 96,7 (tope 105).
+
+Pruebas: `pruebas/{comic-dibujos,boton-guarda,copiar-campo,foco,guia}.test.ts` y `scripts/verificar-comic.mjs` (partes
+`dibujos`, `boton`, `copiar`, `campo`, `confirmar`, `vacio`, `guia`, `celebrar`; teléfono y escritorio; también con el
+motor de Safari); `#comic` en la pasada rápida; `probar-paquete` arma un panel con `BotonQueGuarda` y `Guia`.
 
 ## Safari (sondeo del 24-11-2026)
 

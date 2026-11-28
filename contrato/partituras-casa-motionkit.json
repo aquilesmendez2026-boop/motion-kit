@@ -1,0 +1,603 @@
+{
+  "$comentario": "Partituras de la casa de motion-kit, versión 1. Generado por scripts/generar-contrato.mjs desde src/director/casa.ts: no editar a mano. Cada una: id, nombre, qué hace (una línea), grupo (texto, encabezado, momento o especial), las partes que mueve (data-mk-parte) y la partitura (versión 1 del contrato de partitura).",
+  "version": 1,
+  "partituras": [
+    {
+      "id": "revelar",
+      "nombre": "Revelar",
+      "que": "El título entra palabra por palabra, subiendo desde abajo como detrás de una línea.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "revelar",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "palabra",
+                "mascara": true,
+                "de": {
+                  "y": "135%"
+                },
+                "dura": 800,
+                "cada": 90
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "trailer",
+      "nombre": "Tráiler",
+      "que": "El título aparece palabra por palabra, achicándose desde grande, como un tráiler de cine.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "trailer",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "palabra",
+                "de": {
+                  "escala": 1.18,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "cada": 300
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "maquina",
+      "nombre": "Máquina de escribir",
+      "que": "El título se escribe letra por letra, como una máquina de escribir.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "Igual al original, sin el cursor que parpadea.",
+      "partitura": {
+        "version": 1,
+        "nombre": "maquina",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "letra",
+                "de": {
+                  "opacidad": 0
+                },
+                "dura": 60,
+                "cada": 55,
+                "curva": "lineal"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "voltear",
+      "nombre": "Voltear",
+      "que": "Cada letra del título gira desde atrás hasta quedar de frente.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "Parecido al original: con la profundidad del Director.",
+      "partitura": {
+        "version": 1,
+        "nombre": "voltear",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "letra",
+                "de": {
+                  "inclinaX": -90,
+                  "opacidad": 0
+                },
+                "dura": 700,
+                "cada": 40
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "impacto",
+      "nombre": "Impacto",
+      "que": "Cada palabra del título cae desde muy grande y rebota al llegar.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "Parecido al original: el rebote lo da la curva «resorte».",
+      "partitura": {
+        "version": 1,
+        "nombre": "impacto",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "palabra",
+                "de": {
+                  "escala": 2.6,
+                  "opacidad": 0
+                },
+                "dura": 550,
+                "cada": 160,
+                "curva": "resorte"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rebote",
+      "nombre": "Rebote",
+      "que": "Cada letra del título crece desde nada con un rebote.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "Parecido al original: el rebote lo da la curva «resorte».",
+      "partitura": {
+        "version": 1,
+        "nombre": "rebote",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "letra",
+                "de": {
+                  "escala": 0,
+                  "opacidad": 0
+                },
+                "dura": 600,
+                "cada": 45,
+                "curva": "resorte"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "caer",
+      "nombre": "Caer",
+      "que": "Las letras del título caen desde arriba, girando, y rebotan al llegar.",
+      "grupo": "texto",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "Parecido al original: el rebote lo da la curva «resorte».",
+      "partitura": {
+        "version": 1,
+        "nombre": "caer",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "por": "letra",
+                "de": {
+                  "y": "-120%",
+                  "giro": -25,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "cada": 45,
+                "curva": "resorte"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cascada",
+      "nombre": "Cascada",
+      "que": "El encabezado entra en cascada: antetítulo, título palabra por palabra, foto, bajada y botones.",
+      "grupo": "encabezado",
+      "partes": [
+        "antetitulo",
+        "titulo",
+        "bajada",
+        "botones",
+        "media"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "cascada",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "antetitulo",
+                "de": {
+                  "y": 20,
+                  "opacidad": 0
+                },
+                "dura": 800,
+                "en": 50
+              },
+              {
+                "actor": "titulo",
+                "por": "palabra",
+                "mascara": true,
+                "de": {
+                  "y": "135%"
+                },
+                "dura": 800,
+                "cada": 90,
+                "en": 150
+              },
+              {
+                "actor": "media",
+                "de": {
+                  "opacidad": 0
+                },
+                "dura": 1000,
+                "en": 200
+              },
+              {
+                "actor": "bajada",
+                "de": {
+                  "y": 20,
+                  "opacidad": 0
+                },
+                "dura": 800,
+                "en": 550
+              },
+              {
+                "actor": "botones",
+                "de": {
+                  "y": 20,
+                  "opacidad": 0
+                },
+                "dura": 800,
+                "en": 850
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "deslizar",
+      "nombre": "Deslizar",
+      "que": "Todo el encabezado entra deslizándose de lado; la foto, desde el otro lado.",
+      "grupo": "encabezado",
+      "partes": [
+        "antetitulo",
+        "titulo",
+        "bajada",
+        "botones",
+        "media"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "deslizar",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "antetitulo",
+                "de": {
+                  "x": -60,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "en": 0
+              },
+              {
+                "actor": "titulo",
+                "de": {
+                  "x": -60,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "en": 100
+              },
+              {
+                "actor": "media",
+                "de": {
+                  "x": 60,
+                  "opacidad": 0
+                },
+                "dura": 1000,
+                "en": 150
+              },
+              {
+                "actor": "bajada",
+                "de": {
+                  "x": -60,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "en": 200
+              },
+              {
+                "actor": "botones",
+                "de": {
+                  "x": -60,
+                  "opacidad": 0
+                },
+                "dura": 900,
+                "en": 300
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "zoom",
+      "nombre": "Zoom",
+      "que": "La foto se acerca lento y el contenido sube encima.",
+      "grupo": "encabezado",
+      "partes": [
+        "contenido",
+        "media"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "zoom",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "media",
+                "de": {
+                  "escala": 1.25
+                },
+                "dura": 1800
+              },
+              {
+                "actor": "contenido",
+                "de": {
+                  "y": 30,
+                  "opacidad": 0
+                },
+                "dura": 1000,
+                "en": 350
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sellos",
+      "nombre": "Sellos que se estampan",
+      "que": "Los elementos de la grilla se estampan uno tras otro, como sellos.",
+      "grupo": "momento",
+      "partes": [
+        "grilla"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "sellos",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "grilla",
+                "por": "hijo",
+                "de": {
+                  "escala": 1.6,
+                  "giro": -12,
+                  "opacidad": 0
+                },
+                "dura": 380,
+                "cada": 90,
+                "curva": "resorte"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "correo",
+      "nombre": "Novedades que llegan",
+      "que": "Los elementos de la grilla caen uno tras otro, como novedades que llegan.",
+      "grupo": "momento",
+      "partes": [
+        "grilla"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "correo",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "grilla",
+                "por": "hijo",
+                "de": {
+                  "y": -40,
+                  "giro": 6,
+                  "opacidad": 0
+                },
+                "dura": 600,
+                "cada": 110,
+                "curva": "resorte"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "domino",
+      "nombre": "Fichas de dominó",
+      "que": "Los elementos de la grilla se paran uno tras otro, como fichas de dominó.",
+      "grupo": "momento",
+      "partes": [
+        "grilla"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "domino",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "grilla",
+                "por": "hijo",
+                "de": {
+                  "inclinaX": -80,
+                  "opacidad": 0
+                },
+                "dura": 600,
+                "cada": 90
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "hojas",
+      "nombre": "Hojas que se voltean",
+      "que": "El rótulo entra letra por letra y la grilla se voltea como hojas.",
+      "grupo": "momento",
+      "partes": [
+        "rotulo",
+        "grilla"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "hojas",
+        "escenas": [
+          {
+            "con": "verse",
+            "pasos": [
+              {
+                "actor": "rotulo",
+                "por": "letra",
+                "de": {
+                  "y": 14,
+                  "opacidad": 0
+                },
+                "dura": 420,
+                "cada": 24
+              },
+              {
+                "actor": "grilla",
+                "por": "hijo",
+                "de": {
+                  "inclinaX": 85,
+                  "opacidad": 0
+                },
+                "dura": 700,
+                "cada": 100,
+                "junto": 200
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "titulo-con-volumen",
+      "nombre": "Título con volumen",
+      "que": "El título se inclina siguiendo el dedo o el mouse, con volumen.",
+      "grupo": "especial",
+      "partes": [
+        "titulo"
+      ],
+      "nota": "El volumen es un estilo de la página; la partitura da la inclinación.",
+      "partitura": {
+        "version": 1,
+        "nombre": "titulo-con-volumen",
+        "escenas": [
+          {
+            "con": "puntero",
+            "pasos": [
+              {
+                "actor": "titulo",
+                "a": {
+                  "inclinaX": 10,
+                  "inclinaY": 14
+                },
+                "resorte": "suave"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "tarjeta-holografica",
+      "nombre": "Tarjeta holográfica",
+      "que": "La tarjeta se inclina con el dedo o el mouse y su brillo se mueve encima.",
+      "grupo": "especial",
+      "partes": [
+        "tarjeta",
+        "brillo"
+      ],
+      "partitura": {
+        "version": 1,
+        "nombre": "tarjeta-holografica",
+        "escenas": [
+          {
+            "con": "puntero",
+            "pasos": [
+              {
+                "actor": "tarjeta",
+                "a": {
+                  "inclinaX": 9,
+                  "inclinaY": 12
+                },
+                "resorte": "firme"
+              },
+              {
+                "actor": "brillo",
+                "a": {
+                  "x": -60,
+                  "y": -40
+                },
+                "resorte": "suave"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

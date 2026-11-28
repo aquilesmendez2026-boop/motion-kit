@@ -42,5 +42,8 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
   (0.5 → 0.6); el script ya la pide solo si cambió algo común. Anotar en el commit del paquete cuál se corrió.
 - `node scripts/en-safari.mjs <prueba> [parte]`: la misma prueba con el motor de Safari (WebKit). No es semáforo: ver
   «Safari» en `docs/CATALOGO.md`.
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos>.mjs [url]` con el servidor
+- `motion-kit/comic`: el cómic del panel (la mano, globos, carteles, `Guia`, `useCelebrar`). Ver «Guardar y cómic del
+  panel» en `docs/CATALOGO.md`; su prueba visual es `verificar-comic` (con `#comic` y `#panel-piezas`). El panel
+  vivo (`#panel`, todas las secciones) se prueba con `node scripts/verificar-panel.mjs vivo`.
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos|panel|comic>.mjs [url]` con el servidor
   arriba (usan Playwright).

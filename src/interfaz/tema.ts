@@ -29,6 +29,14 @@ export function c(nombre: ColorInterfaz): string {
   return `var(${variable(nombre)},${respaldo})`;
 }
 
+/** La letra de cartel (títulos de cómic, globos): el front la conecta a la suya (`--lmt-cartel`). */
+export function fuenteCartel(): string {
+  return "var(--mk-fuente-cartel,'Arial Black','Helvetica Neue',sans-serif)";
+}
+
+/** El amarillo de los carteles y estallidos de cómic. */
+export const CARTEL = "var(--mk-cartel,#ffd23f)";
+
 /** Las variables para un `style`: `variablesTema({ acento: "#7c3aed" })` → `{ "--mk-acento": "#7c3aed" }`. */
 export function variablesTema(t: Partial<TemaInterfaz>): Record<string, string> {
   const r: Record<string, string> = {};

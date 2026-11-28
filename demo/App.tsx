@@ -98,6 +98,10 @@ export function App() {
           <a href="#director">Director</a>
           <a href="#luz">Luz</a>
           <a href="#panel">Panel</a>
+          <a href="#panel-piezas">Piezas del panel</a>
+          <a href="#comic">Cómic</a>
+          <a href="#propuesta">Propuesta</a>
+          <a href="#guia">Guía del front</a>
           <a href="#profundidad">Foto profunda</a>
           <a href="#pagina">Página</a>
         </div>

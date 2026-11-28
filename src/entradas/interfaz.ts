@@ -3,6 +3,15 @@
 // La Mente, 25-11-2026). Las piezas ponen su propio CSS al montarse: no hace falta importar ninguna hoja.
 
 export { SubirImagen } from "../interfaz/SubirImagen";
+export { BotonQueGuarda } from "../interfaz/BotonQueGuarda";
+export { Copiar } from "../interfaz/Copiar";
+export { Confirmar } from "../interfaz/Confirmar";
+export type { ConfirmarProps } from "../interfaz/Confirmar";
+export type { CopiarProps } from "../interfaz/Copiar";
+export { Campo } from "../interfaz/Campo";
+export type { CampoProps } from "../interfaz/Campo";
+export type { BotonQueGuardaProps } from "../interfaz/BotonQueGuarda";
+export type { EstadoGuardar } from "../interfaz/guardar";
 export { Cargando } from "../interfaz/Cargando";
 export { ListaViva } from "../interfaz/ListaViva";
 export type { ListaVivaProps } from "../interfaz/ListaViva";

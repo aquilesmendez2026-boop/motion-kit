@@ -14,7 +14,7 @@ async function usar(nombres: string[]) {
   const r = await build({
     stdin: { contents: `import { ${nombres.join(", ")} } from "./${ENTRADA}";\nconsole.log(${nombres.join(", ")});`, resolveDir: process.cwd(), loader: "ts" },
     bundle: true, format: "esm", minify: true, write: false, metafile: true, platform: "browser", logLevel: "error",
-    external: ["react", "react-dom", "react/jsx-runtime"],
+    external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
   });
   return { kb: gzipSync(r.outputFiles[0].contents, { level: 9 }).length / 1000, archivos: Object.keys(r.metafile.inputs) };
 }
@@ -37,7 +37,7 @@ test("interfaz: trae todas las piezas y los hooks pedidos, y ninguna arrastra lo
     "Accordion", "CountUp", "Reveal", "Stagger", "Presencia", "Skeleton", "Pressable", "Ripple", "Tabs", "TabBar", "BottomSheet",
     "ToastProvider", "useToast", "Tarjeta", "TarjetaCuerpo", "TarjetaMedia", "GlowBorder", "ShinyButton", "TextoCinetico",
     "SplitText", "Typewriter", "WordRotate", "useReducedMotion", "useInView", "useScrollProgress", "useViewTransition", "transicionVista",
-    "SubirImagen", "variablesTema", "Cargando", "ListaViva", "Contador", "Interruptor",
+    "SubirImagen", "variablesTema", "Cargando", "ListaViva", "Contador", "Interruptor", "BotonQueGuarda", "Copiar", "Campo", "Confirmar",
   ];
   const modulo = await import("../src/entradas/interfaz");
   const faltan = PIEZAS.filter((p) => !(p in modulo));
@@ -46,5 +46,5 @@ test("interfaz: trae todas las piezas y los hooks pedidos, y ninguna arrastra lo
   const pesados = archivos.filter((a) => PESADO.test(a));
   assert.deepEqual(pesados, [], `traen: ${pesados.join(", ")}`);
   // Todas juntas, igual livianas (el tope de la entrada lo revisa medir-paquete).
-  assert.ok(kb < 20, `todas juntas pesan ${kb.toFixed(1)} KB`);
+  assert.ok(kb < 28, `todas juntas pesan ${kb.toFixed(1)} KB`);
 });

@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz", "interfaz"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz", "interfaz", "comic"];
 const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css", "estilos-luz.css"];
 
 /**
@@ -38,14 +38,24 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // panel, `{ Accordion, CountUp }`, menos de 5 KB: el criterio del encargo.
 // 26-11-2026: interfaz 20 (decisión de Aquiles: «sí, apruebo el diseño y el tope de 20 KB»; suma las piezas del panel:
 // SubirImagen, avisos, Cargando y lo que llega).
-export const TOPES_KB = { "motion-kit": 90, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8, interfaz: 20 };
+// 27-11-2026 (decisiones de Aquiles: «1 sí, 2 sí»): motion-kit 105 (nadie en La Mente importa el paquete entero), interfaz
+// 28 (el grupo 1: botón que guarda, copiar, confirmar, campo) y comic 14 (la entrada nueva con el cómic del panel).
+export const TOPES_KB = { "motion-kit": 105, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8, interfaz: 28, comic: 14 };
 /** Lo que importa el panel desde `motion-kit/interfaz`, con su tope (KB gzip, al cargar y con lo que no usa descartado). */
 const USOS = [
   { nombre: "motion-kit/interfaz { Accordion, CountUp }", entrada: "interfaz", piezas: ["Accordion", "CountUp"], tope: 5 },
   { nombre: "motion-kit/interfaz { SubirImagen }", entrada: "interfaz", piezas: ["SubirImagen"], tope: 4 },
   { nombre: "motion-kit/interfaz { ToastProvider, useToast }", entrada: "interfaz", piezas: ["ToastProvider", "useToast"], tope: 3.1 }, // 3 en el diseño; 3,1 tras los arreglos de la revisión (decisión de Aquiles del 26-11-2026)
-  { nombre: "motion-kit/interfaz { Cargando }", entrada: "interfaz", piezas: ["Cargando"], tope: 2 },
+  { nombre: "motion-kit/interfaz { Cargando }", entrada: "interfaz", piezas: ["Cargando"], tope: 2.1 }, // 2 en el diseño; 2,1 por decisión de Aquiles (27-11), al sumarse la entrada comic
   { nombre: "motion-kit/interfaz { ListaViva, Contador, Interruptor }", entrada: "interfaz", piezas: ["ListaViva", "Contador", "Interruptor"], tope: 4 },
+  { nombre: "motion-kit/interfaz { BotonQueGuarda }", entrada: "interfaz", piezas: ["BotonQueGuarda"], tope: 2 },
+  { nombre: "motion-kit/interfaz { Copiar }", entrada: "interfaz", piezas: ["Copiar"], tope: 1.7 }, // 1,5 en el diseño; 1,7 por decisión de Aquiles (27-11: «sí a todo, sube los topes»)
+  { nombre: "motion-kit/interfaz { Campo }", entrada: "interfaz", piezas: ["Campo"], tope: 1.5 },
+  { nombre: "motion-kit/interfaz { Confirmar }", entrada: "interfaz", piezas: ["Confirmar"], tope: 4 },
+  { nombre: "motion-kit/comic { Mano }", entrada: "comic", piezas: ["Mano"], tope: 3 },
+  { nombre: "motion-kit/comic { Vacio }", entrada: "comic", piezas: ["Vacio"], tope: 4 },
+  { nombre: "motion-kit/comic { Guia }", entrada: "comic", piezas: ["Guia"], tope: 7 },
+  { nombre: "motion-kit/comic { useCelebrar }", entrada: "comic", piezas: ["useCelebrar"], tope: 4 },
 ];
 
 const kb = (b) => b / 1000;
@@ -55,7 +65,7 @@ const gz = (x) => gzipSync(x, { level: 9 }).length;
 async function medir(entrada) {
   const r = await build({
     entryPoints: [entrada], bundle: true, splitting: true, format: "esm", minify: true, write: false, metafile: true,
-    outdir: "salida", platform: "browser", external: ["react", "react-dom", "react/jsx-runtime"], logLevel: "error",
+    outdir: "salida", platform: "browser", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
   });
   const textos = new Map(r.outputFiles.map((f) => [f.path.slice(f.path.indexOf("salida")), f.contents]));
   const salidas = Object.entries(r.metafile.outputs).filter(([k]) => k.endsWith(".js"));
@@ -90,7 +100,7 @@ for (const e of ENTRADAS) {
 for (const u of USOS) {
   const r = await build({
     stdin: { contents: `import { ${u.piezas.join(", ")} } from "./${DIST}/${u.entrada}.js";\nconsole.log(${u.piezas.join(", ")});`, resolveDir: process.cwd() },
-    bundle: true, format: "esm", minify: true, write: false, platform: "browser", external: ["react", "react-dom", "react/jsx-runtime"], logLevel: "error",
+    bundle: true, format: "esm", minify: true, write: false, platform: "browser", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
   });
   const peso = gz(r.outputFiles[0].contents);
   const pasa = kb(peso) > u.tope;

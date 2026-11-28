@@ -1,6 +1,6 @@
 {
   "name": "motion-kit",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "Librería propia de efectos y animaciones para React",
   "license": "MIT",
   "type": "module",
@@ -53,6 +53,11 @@
       "import": "./dist/interfaz.js",
       "require": "./dist/interfaz.cjs"
     },
+    "./comic": {
+      "types": "./dist/entradas/comic.d.ts",
+      "import": "./dist/comic.js",
+      "require": "./dist/comic.cjs"
+    },
     "./receta": {
       "types": "./dist/receta/index.d.ts",
       "import": "./dist/receta.js",
@@ -76,6 +81,7 @@
     "**/*.css"
   ],
   "scripts": {
+    "tabla": "node scripts/revisar-tabla-nombres.mjs",
     "dev": "vite",
     "demo:armar": "vite build --mode demo",
     "demo:servir": "vite preview --mode demo --port 4173 --strictPort",

@@ -30,13 +30,14 @@ export default defineConfig(({ command, mode }) => ({
               partitura: fileURLToPath(new URL("./src/entradas/partitura.ts", import.meta.url)),
               luz: fileURLToPath(new URL("./src/entradas/luz.ts", import.meta.url)),
               interfaz: fileURLToPath(new URL("./src/entradas/interfaz.ts", import.meta.url)),
+              comic: fileURLToPath(new URL("./src/entradas/comic.ts", import.meta.url)),
               receta: fileURLToPath(new URL("./src/receta/index.ts", import.meta.url)),
             },
             formats: ["es", "cjs"],
             fileName: (format, entrada) => `${entrada}.${format === "es" ? "js" : "cjs"}`,
           },
           rollupOptions: {
-            external: ["react", "react-dom", "react/jsx-runtime"],
+            external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
           },
         }
       : undefined,

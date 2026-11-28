@@ -79,6 +79,18 @@ if (receta && p.ok && fondo.ok && vale.ok && leida.ok && escrita && subida.ok) c
 );
 `);
 // 2b. Un panel que usa solo dos piezas de interfaz (lo que pidió el front de La Mente).
+writeFileSync(join(P, "panel-comic.tsx"), `
+import { createRoot } from "react-dom/client";
+import { BotonQueGuarda } from "motion-kit/interfaz";
+import { Guia } from "motion-kit/comic";
+
+createRoot(document.getElementById("raiz")!).render(
+  <>
+    <BotonQueGuarda alGuardar={() => Promise.resolve()}>Guardar</BotonQueGuarda>
+    <Guia abierta pasos={[{ objetivo: "button", texto: "Aquí guardas." }]} />
+  </>,
+);
+`);
 writeFileSync(join(P, "panel-completo.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Cargando, SubirImagen, ToastProvider, useToast } from "motion-kit/interfaz";
@@ -102,7 +114,7 @@ createRoot(document.getElementById("raiz")!).render(<><CountUp to={128} /><Accor
 `);
 writeFileSync(join(P, "tsconfig.json"), JSON.stringify({
   compilerOptions: { target: "ES2020", lib: ["ES2020", "DOM"], module: "ESNext", moduleResolution: "bundler", jsx: "react-jsx", strict: true, noEmit: true, skipLibCheck: false },
-  files: ["pagina.tsx", "panel.tsx", "panel-completo.tsx"],
+  files: ["pagina.tsx", "panel.tsx", "panel-completo.tsx", "panel-comic.tsx"],
 }));
 
 let fallos = 0;
@@ -175,6 +187,19 @@ const textoCompleto = Object.keys(completo.metafile.outputs).filter((f) => f.end
 for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato"]) ok(!textoCompleto.includes(pieza), `no se cuela «${pieza}» en el panel con imágenes, avisos y cargas`);
 const pesoCompleto = Object.keys(completo.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((t, f) => t + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
 ok(pesoCompleto < 10, `el panel con imágenes, avisos y cargas pesa ${pesoCompleto.toFixed(1)} KB comprimidos (menos de 10)`);
+
+// 7. El panel con el cómic: BotonQueGuarda (interfaz) y Guia (comic), sin nada pesado.
+const comic = await build({
+  entryPoints: [join(P, "panel-comic.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-panel-comic"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const delKitComic = Object.keys(comic.metafile.inputs).filter((f) => f.includes("node_modules/motion-kit/"));
+const ajenosComic = delKitComic.filter((f) => /\/(motion-kit|encabezado|pagina|escena|momentos|director|partitura|luz)\.js$/.test(f));
+ok(delKitComic.some((f) => f.endsWith("/comic.js")) && ajenosComic.length === 0, "el panel con el cómic solo trae motion-kit/interfaz y motion-kit/comic" + (ajenosComic.length ? ": " + ajenosComic.join(", ") : ""));
+const textoComic = Object.keys(comic.metafile.outputs).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(P, f), "utf8")).join("");
+for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato"]) ok(!textoComic.includes(pieza), `no se cuela «${pieza}» en el panel con el cómic`);
+const pesoComic = Object.keys(comic.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((s, f) => s + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
+ok(pesoComic < 10, `el panel con el botón que guarda y la guía pesa ${pesoComic.toFixed(1)} KB comprimidos (menos de 10)`);
 
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);
