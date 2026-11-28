@@ -78,6 +78,27 @@ export { useScrollProgress } from "./hooks/useScrollProgress";
 export { useViewTransition } from "./hooks/useViewTransition";
 
 // Los colores de las piezas de interfaz (motion-kit/interfaz).
+export { CabezaSeccion } from "./interfaz/CabezaSeccion";
+export type { CabezaSeccionProps } from "./interfaz/CabezaSeccion";
+// En el índice general, `SeccionPanel` (ya existe el tipo `Seccion` de las plantillas); en motion-kit/interfaz, `Seccion`.
+export { Seccion as SeccionPanel } from "./interfaz/Seccion";
+export type { SeccionProps as SeccionPanelProps } from "./interfaz/Seccion";
+export { GrillaTarjetas } from "./interfaz/GrillaTarjetas";
+export type { GrillaTarjetasProps } from "./interfaz/GrillaTarjetas";
+export { TarjetaFila } from "./interfaz/TarjetaFila";
+export type { TarjetaFilaProps } from "./interfaz/TarjetaFila";
+export { Selector } from "./interfaz/Selector";
+export type { SelectorProps } from "./interfaz/Selector";
+export { BarraLateral } from "./interfaz/BarraLateral";
+export type { BarraLateralProps, GrupoBarra, SeccionBarra } from "./interfaz/BarraLateral";
+export { IconoCaja } from "./interfaz/IconoCaja";
+export type { IconoCajaProps } from "./interfaz/IconoCaja";
+export { BotonPanel } from "./interfaz/BotonPanel";
+export type { BotonPanelProps } from "./interfaz/BotonPanel";
+export { Pastilla } from "./interfaz/Pastilla";
+export type { PastillaProps } from "./interfaz/Pastilla";
+export { colorDeTono, TONOS } from "./interfaz/tonos";
+export type { TonoEstado } from "./interfaz/tonos";
 export { variablesTema, fuenteCartel, CARTEL, f, letra, tiempo, fuerza, ritmoDe, RITMOS } from "./interfaz/tema";
 // El cómic del panel (también en motion-kit/comic).
 export { Mano, Globo, Estallido, Colgante, PUNTA_MANO, letraEstallido, Vacio, Oferta, CartelNovedad, Guia, useCelebrar, CelebrarProvider } from "./entradas/comic";

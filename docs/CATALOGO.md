@@ -101,6 +101,31 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.9.0 (28-11-2026)
+
+Etiqueta `v0.9.0`: fase 3 de «Un solo motor», **las piezas del panel** (ver «Piezas del panel»). `motion-kit/interfaz`
+suma `IconoCaja`, `BotonPanel`, `Pastilla`, `CabezaSeccion`, `GrillaTarjetas`, `TarjetaFila`, `Seccion`, `Selector` y
+`BarraLateral`, y las conductas del panel viven en `SubirImagen`, `ListaViva` y `Campo`. `interfaz` pesa 26,3 de 28 KB. El
+contrato de temas suma una línea (el rojo de «noche»). Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.9.0`.
+
+**Antes de la etiqueta:** `verificar --desde=v0.8.0` (panel, piezas, temas, estilos, efectos) y la pasada rápida, dos
+veces: antes y después de los arreglos de la revisión. Además: la suite, los tipos, los pesos, `probar-paquete` (caso
+nuevo: un panel con `BotonPanel`, `TarjetaFila` y `BarraLateral` solo trae `interfaz`, 5 KB), `npm run temas` y
+`npm run tabla`.
+
+**Revisión final en Opus:** 1 crítico y 7 importantes, todos arreglados con su prueba:
+- con «cancha», los estados no se leían;
+- los botones del panel se movían con movimiento reducido;
+- un estado largo corría el ancho;
+- la elegida sin módulo no se leía;
+- el foco se perdía en la elegida con 10 firmas;
+- el selector tenía la letra del navegador;
+- la barra no se veía como la del front;
+- al encargo le faltaba lo que rompe en las pruebas del front.
+
+Quedan 9 menores anotados.
+
 ## Paquete v0.8.0 (28-11-2026)
 
 Etiqueta `v0.8.0`: fase 2 de «Un solo motor», **los temas como datos** (ver «Temas como datos»). Entrada nueva
@@ -1295,13 +1320,67 @@ el catálogo (`TEMAS`, `PALETAS`; las mezclas van solo en el contrato), `variabl
   (`variablesDeTema`), sin la marca entera. Así lo hace el front con `data-tema-panel-cuerpo`.
 
 **Fuente y revisión:** `src/temas/datos/` (importado del front el 28-11 con `scripts/temas-del-front.mjs importar` y
-`adornos`); `npm run temas` lo compara con el CSS del front.
+`adornos`). El front borró su CSS de temas en su fase 2. Desde entonces, `npm run temas` revisa dos cosas:
+- que el front no vuelva a declarar un tema;
+- que tenga su copia del contrato. Si la copia es de una etiqueta anterior, solo lo avisa.
 
 **La copia chica de la página** (`src/receta/lamente.ts`) se queda, porque viaja en `encabezado` y `receta`. Una prueba
 exige que sea igual al catálogo.
 
 **Pruebas:** `pruebas/temas.test.ts`, `pruebas/contratos.test.ts`, `scripts/verificar-temas.mjs` y la parte `vivo` de
 `verificar-panel`.
+
+## Piezas del panel (28-11-2026)
+
+Fase 3 de «Un solo motor» (plan `docs/superpowers/plans/2026-11-28-un-solo-motor-fase-3.md`; inventario
+`docs/un-solo-motor/piezas-del-panel.md`). Las piezas del panel de cada negocio, en `motion-kit/interfaz`:
+
+| Pieza | Para qué |
+|---|---|
+| `IconoCaja` | El ícono de una sección en su cuadradito de cartel (36, 44 o 56 px). |
+| `BotonPanel` | El grande, para la acción principal de una sección. El chico, en píldora, para una tarjeta (`tono`: principal o peligro). Al menos 44 px. |
+| `Pastilla` | El estado de algo (verde, gris, naranjo, morado, rojo). Su texto lee `--mk-estado-texto`, no `--mk-sobre-sol` (que puede ser blanco). |
+| `CabezaSeccion` | La cabecera de una sección: ícono, título en letra de cartel, bajada y acción. Bajo 768 px, la acción baja. |
+| `GrillaTarjetas` | Una columna; dos desde 1024 px. |
+| `TarjetaFila` | Lo que el negocio tiene (una lista, un producto): foto o ícono, título `h3`, estado, detalle, acciones y pie. |
+| `Seccion` | Una hoja con su título `h2`; separa lo que lleva adentro. En `motion-kit` se llama `SeccionPanel`. |
+| `Selector` | Un `Campo` con su `select`, con la letra de la página. |
+| `BarraLateral` | La barra del panel (ver abajo). |
+
+**`BarraLateral`:**
+- Es un `nav` con nombre. Cada grupo es un `role="group"` con su color (`--mk-grupo`), y la elegida lleva
+  `aria-current="page"`.
+- Tab recorre las secciones; las flechas, Inicio y Fin también mueven el foco.
+- El ícono salta al pasar y hace un pop al elegir.
+- Lo que no tiene módulo va punteado, con un «+».
+- **Contraída** (`contraida`, con el botón si viene `alContraer`): solo íconos de 44 px, cada uno con su nombre
+  (`aria-label` y `title`). La novedad queda como un punto.
+- Cada sección puede traer `corto`, `titulo` (abierta), `tituloContraida`, `insignia` y `atributos` (`data-*`). El
+  botón de contraer toma `propsContraer` (`aria-controls`, `data-soporte-accion`, sus textos).
+- Se ve como la barra del front (`barraLateral.css`): la prueba compara 10 partes contra su guía. Dos diferencias van a
+  propósito: cada sección mide al menos 44 px, y las no elegidas usan `--mk-suave` en vez de los grises de Chakra.
+- El foco de teclado se ve siempre, también en la elegida, aunque la firma del tema le quite el contorno.
+
+**Reglas:**
+- **Las piezas no traen colores ni formas fijas:** todo va por `--mk-*`, con el valor de «lamente» de respaldo. Lo
+  revisa `pruebas/piezas-panel.test.ts`.
+- **Las piezas se marcan para la firma del tema:** `icono`, `boton`, `estado`, `titulo`, `hoja`, `barra` y `grupo`.
+- **Lo que el front animaba en sombra, fondo o borde** ahora cambia al instante: solo `transform` se mueve.
+- **El modo oscuro** sale de los colores del tema, no de reglas aparte.
+
+**Lo que se queda en el front:** `.lm-cabeza`, `.lm-boton-sol`, `.lm-ajustes`, `PasosEnPestanas`, las pestañas de
+Chakra y los colores de cada grupo.
+
+**Pruebas:**
+- `pruebas/piezas-panel.test.ts`: contraste de los estados y del rojo de peligro en los 14 temas, sin formas fijas,
+  las marcas y los niveles de título.
+- `verificar-panel`:
+  - `piezas-panel` (44 px, hundir, «taller», «cancha», la grilla, los títulos largos y la comparación con la guía del
+    front en `localhost:5181`, si está arriba);
+  - `conductas`;
+  - `vivo` (la barra).
+- `verificar-temas` (la guía con los 14 temas).
+- `probar-paquete`: un panel con `BotonPanel`, `TarjetaFila` y `BarraLateral` solo trae `interfaz`.
 
 ## Regla de los contratos (28-11-2026)
 

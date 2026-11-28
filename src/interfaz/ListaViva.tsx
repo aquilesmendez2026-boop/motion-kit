@@ -2,6 +2,7 @@
 // que sale se desvanece donde estaba. La primera carga no se anima (todo ya estaba).
 import { Children, isValidElement, useLayoutEffect, useRef, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { useStyles } from "../utils/styles";
 import { cambios, esPrimera } from "./lista";
 import { c, f, ritmoDe } from "./tema";
 
@@ -24,7 +25,22 @@ const clave = (k: ReactElement["key"]) => String(k).replace(/^\.\$/, "");
  * `<ListaViva>{pedidos.map((p) => <Fila key={p.id} … />)}</ListaViva>`. Cada hijo va dentro de un `div` con su clave
  * (`data-mk-clave`), que es lo que se anima. Con «reducir movimiento», solo fundidos.
  */
+/**
+ * El destello de lo que llega: un marco del color del tema (cartel) y otro de tinta, con un halo, que late dos veces
+ * (fase 3: así lo pidió el front, porque el de antes casi no se veía). `--mk-destello-color` y `--mk-destello-ancho`
+ * lo cambian.
+ */
+// (Texto plano, sin interpolar: así se descarta al armar si no se usa ListaViva.)
+const HALO =
+  "0 0 0 var(--mk-destello-ancho,3px) var(--mk-destello-color,var(--mk-cartel,#ffc83d)),0 0 0 calc(var(--mk-destello-ancho,3px) + 2px) var(--mk-texto,#1C1A22),0 0 24px color-mix(in srgb,var(--mk-destello-color,var(--mk-cartel,#ffc83d)) 70%,transparent)";
+let css: string | undefined;
+const estilos = () =>
+  (css ??= `
+@media (prefers-reduced-motion:no-preference){[data-mk-destello]{animation:mk-lista-latido .45s ease-in-out 2}}
+@keyframes mk-lista-latido{50%{transform:scale(1.025)}}`);
+
 export function ListaViva({ destello = true, children, style, ...resto }: ListaVivaProps) {
+  useStyles("lista-viva", estilos());
   const caja = useRef<HTMLDivElement>(null);
   const reducido = useReducedMotion();
   const hijos = Children.toArray(children).filter(isValidElement);
@@ -80,7 +96,7 @@ export function ListaViva({ destello = true, children, style, ...resto }: ListaV
         halo.dataset.mkDestello = "";
         halo.setAttribute("aria-hidden", "true");
         const radio = n.firstElementChild ? getComputedStyle(n.firstElementChild).borderRadius : f("radioTarjeta", "12px");
-        Object.assign(halo.style, { position: "absolute", inset: "0", borderRadius: radio, pointerEvents: "none", boxShadow: `0 0 0 2px ${c("acento")},0 0 18px color-mix(in srgb,${c("acento")} 45%,transparent)` }); // adn:no: el halo es un efecto
+        Object.assign(halo.style, { position: "absolute", inset: "0", borderRadius: radio, pointerEvents: "none", boxShadow: HALO }); // adn:no: el halo es un efecto
         n.appendChild(halo);
         halo.animate([{ opacity: 1 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: 1200 * r.tiempo, easing: "ease-out" }).onfinish = () => halo.remove();
       }

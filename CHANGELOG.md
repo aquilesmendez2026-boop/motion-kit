@@ -1,5 +1,53 @@
 # Cambios
 
+## 0.9.0 (28-11-2026)
+
+Fase 3 de «Un solo motor»: **las piezas del panel**. Lo que el front de La Mente tenía en `Modulo.tsx`, `modulo.css`,
+`temaPanel.css` y `barraLateral.css` pasa a `motion-kit/interfaz`. El inventario, pieza por pieza, está en
+`docs/un-solo-motor/piezas-del-panel.md`. El contrato de temas suma una línea: el rojo de «noche».
+
+- **Piezas nuevas en `motion-kit/interfaz`.** Leen el tema (`--mk-*`, con los valores de «lamente» de respaldo) y se
+  marcan para la firma (`data-mk-adorno`):
+  - `IconoCaja`;
+  - `BotonPanel` (grande o chico; tono principal o peligro);
+  - `Pastilla` (verde, gris, naranjo, morado o rojo; AA en los 14 temas del panel; su texto lee `--mk-estado-texto`);
+  - `CabezaSeccion`;
+  - `GrillaTarjetas`;
+  - `TarjetaFila`;
+  - `Seccion` (en `motion-kit` se llama `SeccionPanel`);
+  - `Selector`;
+  - `BarraLateral`: grupos con su color, la elegida con `aria-current`, flechas, Inicio y Fin; contraída, solo íconos
+    con su nombre; insignia de novedad, nombre corto, textos al pasar (abierta y contraída) y atributos por sección;
+    atributos del botón de contraer (`propsContraer`). Se ve como la barra del front (10 partes comparadas).
+  Con «lamente», se ven como las del front: borde, esquina, sombra, colores, letra y relleno comparados contra su guía.
+- **Las conductas del panel, en las piezas que ya existían:**
+  - `SubirImagen`:
+    - rayas, se levanta al pasar y el ícono se inclina;
+    - al arrastrar se agranda y el ícono salta;
+    - mientras sube, una franja de luz la cruza, y la foto entra revelándose;
+    - Cambiar y Quitar como botón chico.
+  - `ListaViva`: el destello es un marco de cartel y tinta que late dos veces.
+  - `Campo`:
+    - se marca al pasar y se levanta con el foco;
+    - deshabilitado, punteado;
+    - el error con su «!»;
+    - las casillas en el color del acento.
+  Lo que el front animaba en sombra o fondo ahora cambia al instante. El barrido y el revelado se rehicieron con
+  `transform` y `opacity`.
+- **Temas:**
+  - «noche» trae su rojo (`#ff7a7a`). El de respaldo no se leía sobre su superficie (2,71); ahora da 7,05.
+  - El «al pasar» de «taller» también calza con `BarraLateral`.
+  - `npm run temas` revisa que el front no vuelva a declarar temas y que tenga su copia del contrato.
+- **Demo:**
+  - `#temas` es la guía completa: todas las piezas, con los 14 temas del panel y los 12 de la página. Era la guía del
+    front, que en `#guia` queda como historial.
+  - `#panel` usa `BarraLateral`.
+  - `#panel-piezas` muestra las piezas nuevas.
+- **Pesos:**
+  - Topes nuevos: `BotonPanel` 1,5 KB; `IconoCaja` y `Pastilla` 1,5; `TarjetaFila` 2,5; `CabezaSeccion`, `Seccion`,
+    `GrillaTarjetas` y `Selector` 3,1; `BarraLateral` 3. La entrada `interfaz` queda en 26,3 de 28 KB.
+  - Topes subidos por las conductas, con el OK de Aquiles: `SubirImagen` 4,8 KB y `Campo` 2,1 KB.
+
 ## 0.8.0 (28-11-2026)
 
 Fase 2 de «Un solo motor»: **los temas como datos**. Una entrada nueva, `motion-kit/temas`, y un contrato nuevo,

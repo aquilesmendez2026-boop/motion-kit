@@ -83,7 +83,11 @@ test("adn: fuenteCartel no cambia", () => {
 // el CSS: el CSS viaja al navegador.)
 const EXCEPCIONES = [
   ".16em solid currentColor", // la rueda de carga (BotonQueGuarda, Confirmar)
-  "1.5px dashed var(--b)", // el borde punteado de la zona para soltar (SubirImagen)
+  "2px dashed color-mix(", // el borde punteado de la zona para soltar (SubirImagen)
+  "1px 1px 0 var(--t)", // SubirImagen hundida al tocar
+  "2.5px solid var(--a)", "5px 5px 0 var(--a)", // SubirImagen mientras arrastras: el color del acento
+  "2.5px solid var(--m)", "4px 4px 0 var(--m)", // SubirImagen con error: el rojo
+  "2px solid var(--t)", // el cuadradito del ícono de SubirImagen (el trazo fino de los íconos del panel)
   "0 1px 3px rgba(0,0,0,.25)", // la sombra de la perilla (Interruptor)
   "0 0 0 4px ${CARTEL}", // el aro amarillo de la guía (Guia)
 ];
@@ -94,7 +98,8 @@ const ARCHIVOS_FORMA = [
   "components/Toast.tsx", "components/BottomSheet.tsx", "components/Tabs.tsx", "components/TabBar.tsx",
 ];
 const PROPIEDAD = /(border(?:-(?:top|bottom|left|right))?(?:-radius)?|box-shadow|borderRadius|boxShadow|border(?:Top|Bottom|Left|Right)?)\s*:\s*/g;
-const PERMITIDO = /^(?:\$\{f\(|f\(|0(?:px)?\b|50%|999(?:px)?\b|none\b|radio\b|"?0"?\s*[,}])/;
+// También lo que lee una variable del tema (`var(--mk-campo-borde,…)`): esa forma la pone el catálogo (fase 3).
+const PERMITIDO = /^(?:\$\{f\(|f\(|var\(--mk-|0(?:px)?\b|50%|999(?:px)?\b|none\b|radio\b|"?0"?\s*[,}])/;
 
 test("adn: las piezas no traen forma fija", () => {
   const malas: string[] = [];

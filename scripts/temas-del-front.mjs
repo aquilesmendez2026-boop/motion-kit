@@ -1,7 +1,9 @@
 // Los temas del front de La Mente → el catálogo de motion-kit (fase 2 de «Un solo motor»). Lee el front sin tocarlo.
 //   node scripts/temas-del-front.mjs importar   escribe src/temas/datos/*.ts (una vez; después se editan ahí)
 //   node scripts/temas-del-front.mjs revisar    (npm run temas) revisa que el catálogo dé lo mismo que el CSS del
-//                                               front, tema por tema, hasta que el front borre el suyo
+//                                               front, tema por tema, mientras el front tenga el suyo. Desde que lo
+//                                               borró (fase 2 del front, 0d85a61): que no vuelva a declarar temas
+//                                               y que su copia del contrato sea la de motion-kit.
 // Traduce cada variable con docs/un-solo-motor/tabla-de-nombres.md.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -39,7 +41,8 @@ function destino(v) {
 // --- El CSS del front ----------------------------------------------------------------------------------------------
 const sinComentarios = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "");
 const temaPanelCss = sinComentarios(readFileSync(join(PANEL, "pages/temaPanel.css"), "utf8"));
-const temasPanelCss = sinComentarios(readFileSync(join(PANEL, "pages/temasPanel.css"), "utf8"));
+const CSS_TEMAS = join(PANEL, "pages/temasPanel.css");
+const temasPanelCss = existsSync(CSS_TEMAS) ? sinComentarios(readFileSync(CSS_TEMAS, "utf8")) : "";
 /** Las variables (`--x: valor`) del bloque cuyo selector es exactamente `selector`. */
 function bloque(css, selector) {
   const i = css.indexOf(selector + " {");
@@ -221,7 +224,37 @@ async function importar() {
   console.log(`Las reglas de firma de cada tema quedaron en ${join(process.env.TMPDIR ?? "/tmp", "mk-firmas-del-front.json")}.`);
 }
 
+/** El front ya no tiene temas propios: no vuelve a declararlos y su copia del contrato es la de motion-kit. */
+async function revisarSinTemasDelFront() {
+  const { readdirSync } = await import("node:fs");
+  const malas = [];
+  const recorrer = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) recorrer(p);
+      else if (p.endsWith(".css") && /\[data-tema-panel="[a-z-]+"\][^{]*\{[^}]*--lmt-/.test(sinComentarios(readFileSync(p, "utf8")))) malas.push(`${p.replace(FRONT + "/", "")} vuelve a declarar un tema del panel (sus colores y formas viven en motion-kit/temas)`);
+    }
+  };
+  recorrer(PANEL);
+  if (malas.length) {
+    console.log(malas.join("\n"));
+    process.exit(1);
+  }
+  const copia = join(FRONT, "packages/ui/src/contrato-temas-motionkit.json");
+  if (!existsSync(copia)) {
+    console.log("El front no tiene su copia de contrato/temas-motionkit.json (packages/ui/src/contrato-temas-motionkit.json).");
+    process.exit(1);
+  }
+  const igual = readFileSync(copia, "utf8").trim() === readFileSync("contrato/temas-motionkit.json", "utf8").trim();
+  console.log(
+    igual
+      ? "El front no tiene temas propios y su copia del contrato de temas es la de motion-kit."
+      : "El front no tiene temas propios. Su copia del contrato de temas es de una etiqueta anterior: se pone al día con la próxima (no es un error).",
+  );
+}
+
 async function revisar() {
+  if (!temasPanelCss) return revisarSinTemasDelFront();
   const faltan = new Set();
   const { variablesDeTema } = await importarTs("src/temas/aplicar.ts");
   const malas = [];

@@ -1,7 +1,7 @@
 // La prueba visual de los temas como datos (#temas, fase 2 de «Un solo motor»).
 // Uso: npm run dev (en otra terminal) y después `node scripts/verificar-temas.mjs [http://localhost:5173]`.
 // Las capturas quedan en <tmp>/mk-temas/.
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium } from "playwright";
@@ -85,6 +85,78 @@ for (const [d, tamano] of TAMANOS) {
   await elegir(pagina, "panel", "barberia");
   await pagina.screenshot({ path: join(CAPTURAS, `temas-${tamano.width}.png`) });
   revisar(errores.length === 0, `${d}: sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+  await ctx.close();
+}
+
+// La guía (fase 3): cada uno de los 14 temas del panel, en teléfono y escritorio, con todas sus secciones, sin errores,
+// sin correrse de lado y con su firma montada (los adornos del contrato).
+{
+  const CONTRATO = JSON.parse(readFileSync(new URL("../contrato/temas-motionkit.json", import.meta.url), "utf8"));
+  const adornosDe = (id) => {
+    const t = CONTRATO.temas.find((x) => x.id === id);
+    return t?.panel?.adornos ?? t?.adornos ?? [];
+  };
+  const inicio = Date.now();
+  for (const [d, tamano] of TAMANOS) {
+    const { ctx, pagina, errores } = await abrir(tamano);
+    await pagina.click('[data-lado="panel"]');
+    const ids = await pagina.$$eval("[data-tema-id]", (l) => l.map((b) => b.dataset.temaId));
+    const malos = [];
+    for (const id of ids) {
+      await pagina.click(`[data-tema-id="${id}"]`);
+      await pagina.waitForTimeout(250);
+      const r = await pagina.evaluate((tid) => {
+        const secciones = [...document.querySelectorAll(".tm-guia > section")];
+        return {
+          tema: document.querySelector(".tm-vista")?.dataset.mkTema,
+          secciones: secciones.length,
+          sinBajada: secciones.filter((s) => !s.querySelector("h2") || !(s.textContent ?? "").trim()).length,
+          ancho: document.scrollingElement.scrollWidth,
+          firma: [...document.querySelectorAll("style")].some((s) => s.textContent.includes(`[data-mk-tema="${tid}"][data-mk-para="panel"]`)),
+          barra: document.querySelectorAll(".tm-guia .mk-barra").length,
+        };
+      }, id);
+      const conFirma = adornosDe(id).length > 0;
+      const fallas = [];
+      if (r.tema !== id) fallas.push(`vista ${r.tema}`);
+      if (r.secciones !== 12 || r.sinBajada) fallas.push(`${r.secciones} secciones`);
+      if (r.ancho > tamano.width) fallas.push(`ancho ${r.ancho}`);
+      if (conFirma && !r.firma) fallas.push("sin firma");
+      if (r.barra !== 2) fallas.push(`${r.barra} barras`);
+      if (fallas.length) malos.push(`${id}: ${fallas.join(", ")}`);
+    }
+    revisar(ids.length === 14 && malos.length === 0, `guía (${d}): los 14 temas con las 12 secciones, sin correrse de lado y con su firma (${malos.join("; ") || "todos"})`);
+    revisar(errores.length === 0, `guía (${d}): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await pagina.screenshot({ path: join(CAPTURAS, `guia-${tamano.width}.png`), fullPage: true });
+    await ctx.close();
+  }
+  const segundos = (Date.now() - inicio) / 1000;
+  revisar(segundos < 120, `guía: el recorrido dura menos de 2 minutos (${segundos.toFixed(0)} s)`);
+}
+// La guía en uso: la subida de muestra hace su recorrido completo, llega un pedido, se confirma y suena un aviso.
+{
+  const { ctx, pagina, errores } = await abrir(TAMANOS[0][1]);
+  const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  await pagina.setInputFiles(".tm-guia .mk-subir >> nth=0 >> input[type=file]", { name: "logo.png", mimeType: "image/png", buffer: PNG });
+  await pagina.waitForTimeout(200);
+  const subiendo = await pagina.$eval(".tm-guia .mk-subir >> nth=0", (el) => el.dataset.estado).catch(() => pagina.$$eval(".tm-guia .mk-subir", (l) => l[0]?.dataset.estado));
+  await pagina.waitForTimeout(2200);
+  const lista = await pagina.$$eval(".tm-guia .mk-subir", (l) => l[0]?.dataset.estado);
+  revisar(subiendo === "subiendo" && lista === "lista", `guía: la subida de muestra sube y queda lista (${subiendo} → ${lista})`);
+  const antes = await pagina.$$eval(".tm-pedido", (l) => l.length);
+  await pagina.click("text=Llega un pedido");
+  await pagina.waitForTimeout(150);
+  revisar((await pagina.$$eval(".tm-pedido", (l) => l.length)) === antes + 1 && Boolean(await pagina.$(".tm-pedidos [data-mk-destello]")), `guía: llega un pedido, con su destello`);
+  await pagina.click("text=Borrar «Latte»");
+  await pagina.waitForSelector("[role=alertdialog]");
+  await pagina.click("[role=alertdialog] >> text=Sí, borrar");
+  await pagina.waitForTimeout(500);
+  revisar(Boolean(await pagina.$("text=Borraste «Latte»")), `guía: confirmar borra y avisa`);
+  await pagina.click("text=Recorrer la guía");
+  await pagina.waitForTimeout(700);
+  revisar(Boolean(await pagina.$(".mk-guia [role=dialog]")), `guía: «Recorrer la guía» abre el recorrido`);
+  await pagina.keyboard.press("Escape");
+  revisar(errores.length === 0, `guía en uso: sin errores${errores.length ? ` (${errores[0]})` : ""}`);
   await ctx.close();
 }
 

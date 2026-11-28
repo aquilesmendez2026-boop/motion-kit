@@ -1,7 +1,8 @@
 // La vitrina del panel: las piezas de motion-kit/interfaz con los colores del panel de cada negocio de La Mente (claro
 // y oscuro). La prueba es scripts/verificar-panel.mjs.
 import { useEffect, useRef, useState } from "react";
-import { BotonQueGuarda, BottomSheet, Campo, Cargando, Confirmar, Copiar, Contador, Interruptor, ListaViva, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
+import { BarraLateral, BotonPanel, BotonQueGuarda, CabezaSeccion, GrillaTarjetas, Seccion, Selector, TarjetaFila, BottomSheet, Campo, Cargando, Confirmar, Copiar, Contador, IconoCaja, Interruptor, ListaViva, Pastilla, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
+import { TEMAS as CATALOGO, Tema } from "../src/entradas/temas";
 import { variablesTema, type TemaInterfaz } from "../src/interfaz/tema";
 
 /** Los colores del panel de La Mente (lamente-front/fronts/panel/src/theme.ts) y su violeta. */
@@ -296,6 +297,14 @@ export function PanelVitrina() {
             {(a11y) => <input {...a11y} data-prueba="campo-input" className="panel-input" value={nombre} onChange={(e) => setNombre(e.target.value)} />}
           </Campo>
         </div>
+        <div style={{ maxWidth: 360, display: "grid", gap: 12 }}>
+          <Campo etiqueta="Deshabilitado" ayuda="Así se ve un campo que no se puede cambiar.">
+            {(a11y) => <input {...a11y} data-prueba="campo-deshabilitado" className="panel-input" disabled defaultValue="Cami Viaja" />}
+          </Campo>
+          <Campo etiqueta="Recibir pedidos por la página">
+            {(a11y) => <input {...a11y} type="checkbox" data-prueba="campo-casilla" defaultChecked />}
+          </Campo>
+        </div>
         <div className="panel-fila">
           <button type="button" className="panel-boton" data-prueba="error-uno" onClick={() => setErrorNombre("Escribe el nombre de tu negocio.")}>Guardar vacío</button>
           <button type="button" className="panel-boton" data-prueba="error-mismo" onClick={() => setRepinta((n) => n + 1)}>Repintar (mismo error)</button>
@@ -303,6 +312,8 @@ export function PanelVitrina() {
           <button type="button" className="panel-boton" data-prueba="error-nada" onClick={() => setErrorNombre(undefined)}>Sin error</button>
         </div>
       </section>
+
+      <PiezasDelPanel />
 
       <section className="panel-seccion" data-prueba="panel-confirmar">
         <h2>Confirmar</h2>
@@ -382,5 +393,83 @@ export function PanelVitrina() {
         </div>
       </BottomSheet>
     </div>
+  );
+}
+
+/** Fase 3 de «Un solo motor»: las piezas del panel de La Mente en motion-kit, con cualquier tema del catálogo. */
+/** La barra de muestra de la guía del front (GuiaLaMente.tsx), para compararlas. */
+const BARRA_MUESTRA = [
+  { nombre: null, color: "#1C1A22", secciones: [{ id: "resumen", nombre: "Resumen", icono: "🏠" }] },
+  {
+    nombre: "Tu página",
+    color: "#a855f7",
+    secciones: [
+      { id: "pagina", nombre: "Página", icono: "🌐" },
+      { id: "exclusiva", nombre: "Página exclusiva", icono: "💎" },
+      { id: "precios", nombre: "Precios", icono: "🏷️" },
+      { id: "galeria", nombre: "Galería", icono: "🖼️" },
+      { id: "avisos", nombre: "Avisos", icono: "📣", sinModulo: true },
+    ],
+  },
+  { nombre: "Clientes", color: "#14b8a6", secciones: [{ id: "clientes", nombre: "Clientes", icono: "👥" }, { id: "enlaces", nombre: "Enlaces", icono: "🔗" }] },
+  { nombre: "Tu negocio", color: "#f97316", secciones: [{ id: "pedidos", nombre: "Pedidos", icono: "🛍️" }, { id: "estadisticas", nombre: "Estadísticas", icono: "📈", sinModulo: true }] },
+];
+
+function PiezasDelPanel() {
+  const [barra, setBarra] = useState("precios");
+  const [tema, setTema] = useState("lamente");
+  const icono = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" />
+      <circle cx="7.5" cy="7.5" r="1.5" />
+    </svg>
+  );
+  return (
+    <section className="panel-seccion" data-prueba="panel-piezas-panel">
+      <h2>Piezas del panel</h2>
+      <p className="panel-nota">Las de Modulo.tsx del front, ahora en motion-kit: el ícono en su caja, los botones y los estados. Toman el tema.</p>
+      <label className="panel-fila">
+        Tema{" "}
+        <select value={tema} onChange={(e) => setTema(e.target.value)} data-prueba="tema-piezas">
+          {CATALOGO.filter((x) => x.para.includes("panel")).map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.nombre}
+            </option>
+          ))}
+        </select>
+      </label>
+      <Tema tema={tema} para="panel" className="panel-fila" data-prueba="piezas-panel" style={{ padding: 16, flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+        <IconoCaja tamano={36}>{icono}</IconoCaja>
+        <IconoCaja data-prueba="icono-caja">{icono}</IconoCaja>
+        <IconoCaja tamano={56}>{icono}</IconoCaja>
+        <BotonPanel data-prueba="boton-grande">Nueva lista</BotonPanel>
+        <BotonPanel tamano="chico" data-prueba="boton-chico">Editar</BotonPanel>
+        <BotonPanel tamano="chico" tono="principal" data-prueba="boton-principal">Publicar</BotonPanel>
+        <BotonPanel tamano="chico" tono="peligro" data-prueba="boton-peligro">Borrar</BotonPanel>
+        <BotonPanel disabled>Deshabilitado</BotonPanel>
+        {(["verde", "gris", "naranjo", "morado", "rojo"] as const).map((t) => (
+          <Pastilla key={t} tono={t} data-prueba={`pastilla-${t}`}>
+            {{ verde: "Activa", gris: "Pausada", naranjo: "Por revisar", morado: "Nueva", rojo: "Vencida" }[t]}
+          </Pastilla>
+        ))}
+        <div style={{ flexBasis: "100%", display: "grid", gap: 20 }}>
+          <CabezaSeccion icono={icono} titulo="Precios" bajada="Arma tus listas y descarga el QR para imprimirlo en tu local." accion={<BotonPanel>Nueva lista</BotonPanel>} data-prueba="cabeza-seccion" />
+          <GrillaTarjetas data-prueba="grilla">
+            <TarjetaFila icono={icono} titulo="Carta de verano" estado={{ texto: "Publicada", tono: "verde" }} detalle={<span>12 productos · actualizada hoy</span>} acciones={<><BotonPanel tamano="chico">Editar</BotonPanel><BotonPanel tamano="chico" tono="peligro">Borrar</BotonPanel></>} data-prueba="tarjeta-fila" />
+            <TarjetaFila icono={icono} titulo={"Una lista con un nombre larguísimo que no termina nunca ".repeat(2)} estado={{ texto: "Borrador sin publicar desde hace muchísimo tiempo, esperando revisión", tono: "gris" }} detalle={<a href="#panel-piezas">Ver en la página</a>} acciones={<BotonPanel tamano="chico">Editar</BotonPanel>} data-prueba="tarjeta-larga" />
+          </GrillaTarjetas>
+          <Seccion titulo="Horario" bajada="Cuándo abres cada día." accion={<BotonPanel tamano="chico">Editar</BotonPanel>} data-prueba="seccion">
+            <Selector etiqueta="Abres los domingos" ayuda="Sale en tu página." defaultValue="no" data-prueba="selector">
+              <option value="no">No</option>
+              <option value="si">Sí, de 10:00 a 14:00</option>
+            </Selector>
+          </Seccion>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" }}>
+            <BarraLateral grupos={BARRA_MUESTRA} actual={barra} alElegir={setBarra} etiqueta="Secciones de muestra" data-prueba="barra-muestra" style={{ width: 240 }} />
+            <BarraLateral grupos={BARRA_MUESTRA} actual={barra} alElegir={setBarra} contraida etiqueta="Secciones de muestra (contraída)" data-prueba="barra-contraida" />
+          </div>
+        </div>
+      </Tema>
+    </section>
   );
 }

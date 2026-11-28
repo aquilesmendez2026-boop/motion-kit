@@ -356,6 +356,7 @@ export const TEMAS: Tema[] = [
       "radioCampo": "12px"
     },
     "detalle": {
+      "mal": "#ff7a7a",
       "sobre-sol": "#071318",
       "fila-borde": "1px solid color-mix(in srgb, var(--mk-texto) 13%, transparent)",
       "fila-radio": "12px",

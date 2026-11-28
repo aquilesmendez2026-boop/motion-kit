@@ -761,7 +761,7 @@ h2 {
 .panel-cabeza p,.panel-nota{margin:0 0 1em;color:var(--mk-suave);line-height:1.45}
 .panel-tema select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--mk-borde);background:var(--mk-superficie);color:inherit}
 .panel-seccion{max-width:960px;margin:0 auto 32px;padding:clamp(16px,3vw,24px);border:1px solid var(--mk-borde);border-radius:16px;background:var(--mk-superficie);display:grid;gap:14px}
-.panel-seccion h2{margin:0;font-size:1.2rem}
+.panel-seccion h2:not([data-mk-adorno]){margin:0;font-size:1.2rem}
 .panel-fila{display:flex;flex-wrap:wrap;gap:10px}
 .panel-boton{font:inherit;font-weight:600;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--mk-borde);background:var(--mk-fondo);color:inherit;cursor:pointer}
 .panel-tarjeta{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--mk-borde);border-radius:12px;background:var(--mk-fondo)}
@@ -771,7 +771,7 @@ h2 {
 .panel-formas{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
 .panel-formas small{display:block;margin-bottom:8px;color:var(--mk-suave)}
 .panel-tarjeta td,.panel-tarjeta th{padding:6px 4px;border-bottom:1px solid var(--mk-borde)}
-.panel-seccion h2{display:flex;align-items:center;gap:10px}
+.panel-seccion h2:not([data-mk-adorno]){display:flex;align-items:center;gap:10px}
 .panel-pedidos{display:grid;gap:8px}
 .panel-pedido{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--mk-borde);border-radius:12px;background:var(--mk-fondo)}
 .panel-pedido[data-listo]{opacity:.7}

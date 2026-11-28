@@ -169,7 +169,7 @@ npm install github:aquilesmendez2026-boop/motion-kit
 
 Al instalarla así se compila sola (script `prepare`); no hace falta subir `dist/`.
 
-Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.8.0`.
+Una versión fija (recomendado): `npm install github:aquilesmendez2026-boop/motion-kit#v0.9.0`.
 
 Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su receta; es la que usa La Mente),
 `motion-kit/pagina` (los relatos y la receta de página), `motion-kit/momentos` (un momento por bloque),
@@ -177,7 +177,7 @@ Entradas: `motion-kit` (todo), `motion-kit/encabezado` (el encabezado desde su r
 escrito como dato), `motion-kit/partitura` (para quien crea partituras: el lenguaje en español y las de la casa) y
 `motion-kit/luz` (una sola luz para la página y las superficies que le responden; desde la `v0.5.0`),
 `motion-kit/interfaz` (solo las piezas de interfaz y sus hooks, para un panel o una app: acordeón, contador, pestañas,
-avisos, subir una imagen, cargando, listas que se animan, el botón que guarda, confirmar…; toman los colores del tema por
+avisos, subir una imagen, cargando, listas que se animan, el botón que guarda, confirmar y, desde la `v0.9.0`, las piezas del panel: botones, tarjetas, secciones, selector y la barra lateral…; toman los colores del tema por
 variables `--mk-*`; sin fondos ni encabezados), `motion-kit/comic` (la cara de cómic del panel: la mano que apunta,
 globos, carteles, la guía y la celebración), `motion-kit/temas` (los temas como datos: el catálogo, `<Tema>` y las variables de cada uno; desde la `v0.8.0`); y
 los CSS `motion-kit/estilos.css`, `motion-kit/estilos-encabezado.css`, `motion-kit/estilos-pagina.css`,

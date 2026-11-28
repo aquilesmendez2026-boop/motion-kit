@@ -3,7 +3,7 @@
 // manga: trazo grueso, sombra dura, líneas de velocidad, sellos que se estampan y cosas que llegan solas.
 // Las piezas sueltas están en #panel-piezas (su prueba, verificar-panel) y el cómic en #comic.
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { BotonQueGuarda, BottomSheet, Campo, Confirmar, Contador, Copiar, CountUp, Interruptor, ListaViva, SubirImagen, Tabs, TextoCinetico, useToast } from "../src/entradas/interfaz";
+import { BarraLateral, BotonQueGuarda, BottomSheet, Campo, Confirmar, Contador, Copiar, CountUp, Interruptor, ListaViva, SubirImagen, Tabs, TextoCinetico, useToast } from "../src/entradas/interfaz";
 import { CartelNovedad, Estallido, Globo, Guia, Oferta, useCelebrar, Vacio, type PasoGuia } from "../src/entradas/comic";
 import { variablesTema } from "../src/interfaz/tema";
 import { TEMAS, Tema, variablesDeTema } from "../src/entradas/temas";
@@ -14,13 +14,33 @@ interface Seccion {
   id: string;
   nombre: string;
   icono: string;
+  /** El negocio no tiene su módulo: en la barra va punteada. */
+  sinModulo?: boolean;
+  corto?: string;
+  titulo?: string;
+  tituloContraida?: string;
+  insignia?: string;
+  atributos?: Record<`data-${string}`, string>;
 }
 interface Grupo {
   nombre: string | null;
   color: string;
   secciones: Seccion[];
 }
-const s = (id: string, nombre: string, icono: string): Seccion => ({ id, nombre, icono });
+/** Cami Viaja no tiene estos módulos (en la barra van punteados). */
+const SIN_MODULO = new Set(["exclusiva", "turnos", "comisiones"]);
+const CORTOS: Record<string, string> = { "clientes-cuenta": "Con cuenta" };
+const s = (id: string, nombre: string, icono: string): Seccion => ({
+  id,
+  nombre,
+  icono,
+  corto: CORTOS[id],
+  sinModulo: SIN_MODULO.has(id) || undefined,
+  titulo: SIN_MODULO.has(id) ? "No está en tu pack. Ábrelo para ver cómo sumarlo." : undefined,
+  tituloContraida: SIN_MODULO.has(id) ? `${nombre}. No está en tu pack.` : undefined,
+  insignia: id === "pedidos" ? "3" : undefined,
+  atributos: { "data-soporte-accion": `Pestaña ${nombre}` },
+});
 
 /** Los grupos de la barra y su tinta (Panel.tsx, COLOR_GRUPO del 27-11). */
 const GRUPOS: Grupo[] = [
@@ -203,6 +223,7 @@ export function PanelVivo() {
   const toast = useToast();
   const [id, setId] = useState(() => (location.hash.startsWith("#panel?s=") ? location.hash.slice(9) : "colaboraciones"));
   const [menu, setMenu] = useState(false);
+  const [contraida, setContraida] = useState(false);
   const [guia, setGuia] = useState(false);
   const [novedad, setNovedad] = useState(true);
   const [globo, setGlobo] = useState(false);
@@ -244,28 +265,15 @@ export function PanelVivo() {
     lado.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "nearest" });
   }, [id]);
 
-  const barra = (
-    <nav className="pv-barra" aria-label="Secciones">
-      {GRUPOS.map((g) => (
-        <div key={g.nombre ?? "inicio"} className="pv-grupo" style={{ "--pv-grupo": g.color, "--mk-grupo": g.color } as CSSProperties}>
-          {g.nombre && (
-            <p className="pv-grupo-nombre" data-mk-adorno="grupo" aria-hidden="true">
-              <i />
-              {g.nombre}
-            </p>
-          )}
-          {g.secciones.map((x) => (
-            <button key={x.id} type="button" className="pv-item" aria-current={x.id === id ? "page" : undefined} onClick={() => ir(x.id)} data-seccion={x.id}>
-              <span className="pv-item-icono" data-mk-adorno="icono" aria-hidden="true">
-                {x.icono}
-              </span>
-              {x.nombre}
-              {x.id === id && <span className="pv-chispa" aria-hidden="true">✦</span>}
-            </button>
-          ))}
-        </div>
-      ))}
-    </nav>
+  const barra = (conContraer: boolean) => (
+    <BarraLateral
+      grupos={GRUPOS}
+      actual={id}
+      alElegir={ir}
+      contraida={conContraer && contraida}
+      alContraer={conContraer ? () => setContraida((c) => !c) : undefined}
+      propsContraer={{ "data-soporte-accion": "Contraer la barra", "aria-controls": "secciones-del-panel" }}
+    />
   );
 
   return (
@@ -315,10 +323,10 @@ export function PanelVivo() {
         </button>
       </header>
 
-      <div className="pv-cuerpo">
+      <div className="pv-cuerpo" data-contraida={!tel && contraida ? "" : undefined}>
         {!tel && (
-          <aside className="pv-lado" data-guia="barra" data-mk-adorno="barra" ref={lado}>
-            {barra}
+          <aside className="pv-lado" data-guia="barra" ref={lado}>
+            {barra(true)}
           </aside>
         )}
         <main className="pv-principal" style={{ "--pv-grupo": actual.grupo.color } as CSSProperties}>
@@ -330,7 +338,7 @@ export function PanelVivo() {
       </div>
 
       <BottomSheet open={menu} onClose={() => setMenu(false)} label="Secciones" maxHeight="80vh">
-        <div className="pv-hoja-menu">{barra}</div>
+        <div className="pv-hoja-menu">{barra(false)}</div>
       </BottomSheet>
 
       <div className="pv-soporte-caja">
@@ -1132,20 +1140,12 @@ const CSS = `
 .pv-forma{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700}
 .pv-forma select{min-height:44px;padding:0 8px;border:2px solid var(--pv-tinta);border-radius:10px;background:#fff;font:inherit;color:inherit}
 .pv-campana{display:grid;place-items:center;width:44px;height:44px;font-size:1.3rem}
-.pv-cuerpo{display:grid;grid-template-columns:250px minmax(0,1fr);align-items:start}
-.pv-lado{position:sticky;top:62px;max-height:calc(100vh - 62px);overflow:auto;padding:12px 10px 90px;border-right:2.5px solid var(--pv-tinta);background:#fff}
-.pv-grupo-nombre{display:flex;align-items:center;gap:6px;margin:14px 10px 4px;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--pv-grupo)}
-.pv-grupo-nombre i{width:8px;height:8px;border-radius:2px;background:var(--pv-grupo);transform:rotate(45deg)}
-.pv-item{position:relative;display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:6px 10px;border:2px solid transparent;border-radius:10px;background:none;color:inherit;font:inherit;font-size:.92rem;text-align:left;cursor:pointer;transition:transform .15s}
-.pv-item:hover{transform:translateX(3px)}
-.pv-item:focus-visible{outline:3px solid var(--pv-grupo);outline-offset:1px}
-.pv-item-icono{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:color-mix(in srgb,var(--pv-grupo) 16%,#fff);font-size:.85rem}
-.pv-item[aria-current=page]{background:var(--pv-tinta);color:var(--mk-superficie,#fff);border-color:var(--pv-tinta);box-shadow:3px 3px 0 var(--pv-grupo)}
-.pv-item[aria-current=page] .pv-item-icono{background:var(--pv-sol)}
-.pv-chispa{margin-left:auto;color:var(--pv-sol)}
+.pv-cuerpo{display:grid;grid-template-columns:262px minmax(0,1fr);align-items:start}
+.pv-cuerpo[data-contraida]{grid-template-columns:92px minmax(0,1fr)}
+.pv-lado{position:sticky;top:62px;max-height:calc(100vh - 62px);overflow:auto;padding:14px 12px 90px 14px}
 .pv-principal{min-width:0;padding:clamp(16px,3vw,32px) clamp(16px,3vw,36px) 120px;background-image:radial-gradient(color-mix(in srgb,var(--pv-tinta) 9%,transparent) 1px,transparent 1.4px);background-size:14px 14px}
 .pv-hoja-menu{padding:4px 8px 24px}
-.pv-hoja-menu .pv-item[aria-current=page]{box-shadow:none}
+.pv-hoja-menu .mk-barra{padding:0;border:0;box-shadow:none}
 
 .pv-cabeza{display:flex;align-items:center;gap:18px;margin:0 0 22px}
 .pv-icono-caja{position:relative;flex:none;display:grid;place-items:center;width:76px;height:76px}
@@ -1273,8 +1273,6 @@ const CSS = `
   .pv-antetitulo,.pv-bajada{animation:pv-sube .45s ease-out both .12s}
   .pv-contenido{animation:pv-sube .35s ease-out both}
   .pv-pastilla{animation:pv-sello .42s cubic-bezier(.3,1.8,.5,1) both}
-  .pv-chispa{animation:pv-chispa 1.6s ease-in-out infinite}
-  .pv-item[aria-current=page]{animation:pv-pop .32s cubic-bezier(.3,1.7,.5,1)}
   .pv-barra-dia b{animation:pv-crece .7s cubic-bezier(.3,1.4,.5,1) both;animation-delay:calc(var(--i) * 80ms + .2s)}
   .pv-uso b{animation:pv-llena 1s cubic-bezier(.3,1.2,.5,1) both;animation-delay:calc(var(--i) * 120ms + .2s)}
   .pv-envivo{animation:pv-late 1.2s ease-in-out infinite}
@@ -1287,8 +1285,6 @@ const CSS = `
 @keyframes pv-gira{to{transform:rotate(360deg)}}
 @keyframes pv-sube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes pv-sello{0%{opacity:0;transform:scale(1.8) rotate(-12deg)}100%{opacity:1;transform:none}}
-@keyframes pv-chispa{0%,100%{transform:scale(.8) rotate(0)}50%{transform:scale(1.25) rotate(90deg)}}
-@keyframes pv-pop{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:none}}
 @keyframes pv-crece{from{transform:scaleY(0)}to{transform:scaleY(var(--alto))}}
 @keyframes pv-llena{from{transform:scaleX(0)}to{transform:scaleX(var(--uso))}}
 @keyframes pv-late{0%,100%{opacity:1}50%{opacity:.35}}

@@ -51,36 +51,51 @@ const estilos = () => (css ??= `
 .mk-subir[data-forma=redonda]>.mk-subir-etiqueta{grid-column:1/-1}
 .mk-subir-etiqueta{font-weight:600;font-size:.95rem}
 .mk-subir-caja{position:relative;display:grid;place-items:center;overflow:hidden;box-sizing:border-box;cursor:pointer;
-  border:1.5px dashed var(--b);background:color-mix(in srgb,var(--t) 3%,transparent);border-radius:${f("radioCampo", "14px")};
-  transition:border-color .2s,background-color .2s}
+  border:2px dashed color-mix(in srgb,var(--t) 60%,transparent);border-radius:var(--mk-radio-foto,14px);
+  background:repeating-linear-gradient(135deg,var(--mk-fondo,#FAF7F2) 0 10px,var(--s) 10px 20px);transition:transform .15s ease}
+.mk-subir:not([aria-disabled=true]):not([data-estado=arrastrando]) .mk-subir-caja:hover{border-color:var(--t);transform:var(--mk-levantar,translate(-2px,-2px));box-shadow:var(--mk-sombra-chica,4px 4px 0 var(--t))}
+.mk-subir:not([aria-disabled=true]):not([data-estado=arrastrando]) .mk-subir-caja:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--t)}
 .mk-subir[data-forma=redonda] .mk-subir-caja{width:112px;height:112px;border-radius:50%}
 .mk-subir[data-forma=cuadrada] .mk-subir-caja{width:160px;height:160px}
 .mk-subir[data-forma=apaisada] .mk-subir-caja{width:100%;max-width:480px;aspect-ratio:16/9}
 .mk-subir-caja:focus-within{outline:2px solid var(--a);outline-offset:3px}
-.mk-subir[data-estado=arrastrando] .mk-subir-caja{border-style:solid;border-color:var(--a);background:color-mix(in srgb,var(--a) 12%,transparent)}
-.mk-subir[data-estado=error] .mk-subir-caja{border-color:var(--m)}
-.mk-subir[data-estado=lista] .mk-subir-caja,.mk-subir[data-estado=subiendo] .mk-subir-caja{border-style:solid}
+.mk-subir[data-estado=arrastrando] .mk-subir-caja{border:2.5px solid var(--a);background:color-mix(in srgb,var(--a) 14%,var(--s));transform:scale(1.03);box-shadow:5px 5px 0 var(--a)}
+.mk-subir[data-estado=arrastrando] .mk-subir-vacia svg{animation:mk-subir-salto .6s ease-in-out infinite alternate}
+.mk-subir[data-estado=error] .mk-subir-caja{border:2.5px solid var(--m);box-shadow:4px 4px 0 var(--m)}
+.mk-subir[data-estado=lista] .mk-subir-caja,.mk-subir[data-estado=subiendo] .mk-subir-caja{border:${f("trazo", "2.5px solid var(--t)")};box-shadow:var(--mk-sombra-chica,4px 4px 0 var(--t))}
+.mk-subir[data-estado=subiendo] .mk-subir-caja::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:60%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--mk-cartel,#ffc83d) 55%,transparent),transparent);animation:mk-subir-barrido 1.1s linear infinite}
+.mk-subir[data-estado=lista] .mk-subir-foto{animation:mk-subir-revela .55s cubic-bezier(.22,1,.36,1)}
 .mk-subir[aria-disabled=true] .mk-subir-caja{cursor:not-allowed;opacity:.55}
 .mk-subir-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .mk-subir-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .25s}
 .mk-subir[data-estado=subiendo] .mk-subir-foto{opacity:.5}
 .mk-subir-vacia{display:grid;justify-items:center;gap:6px;padding:10px;text-align:center;font-size:.85rem;line-height:1.3;color:var(--u)}
-.mk-subir-vacia svg{width:28px;height:28px;color:var(--a)}
+.mk-subir-vacia svg{box-sizing:content-box;width:22px;height:22px;padding:7px;border:2px solid var(--t);border-radius:var(--mk-radio-icono,10px);
+  background:var(--mk-cartel,#ffc83d);color:var(--mk-sobre-sol,#10223f);transition:transform .3s cubic-bezier(.3,1.8,.5,1)}
+.mk-subir-caja:hover .mk-subir-vacia svg{transform:translateY(-3px) rotate(-6deg)}
 .mk-subir[data-forma=redonda] .mk-subir-vacia span{display:none}
 .mk-subir-anillo{position:absolute;width:48px;height:48px}
 .mk-subir-anillo[data-gira]{animation:mk-subir-gira 1s linear infinite}
-.mk-subir-listo{position:absolute;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--v);color:#fff}
+.mk-subir-listo{position:absolute;display:grid;place-items:center;box-sizing:border-box;width:48px;height:48px;border-radius:50%;border:${f("trazo", "2.5px solid var(--t)")};
+  background:var(--mk-cartel,#ffc83d);color:var(--mk-sobre-sol,#10223f);box-shadow:${f("sombraSuave", "3px 3px 0 var(--t)")}}
 @media (prefers-reduced-motion:no-preference){.mk-subir-listo{animation:mk-subir-listo ${tiempo(360)} ease-out}}
 @keyframes mk-subir-listo{0%{opacity:0;transform:scale(calc(1 - ${fuerza(0.6)}))}60%{opacity:1;transform:scale(calc(1 + ${fuerza(0.08)}))}}
 .mk-subir-lado{display:grid;gap:6px;min-width:0}
 .mk-subir-acciones{display:flex;gap:8px;flex-wrap:wrap}
-.mk-subir-acciones button{font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:0 12px;border-radius:${f("radioBoton", "9px")};cursor:pointer;
-  border:${f("trazo", "1px solid var(--b)")};background:var(--s);color:var(--t)}
-.mk-subir-acciones .mk-subir-quitar{color:var(--m)}
+.mk-subir-acciones button{font:inherit;font-size:.85rem;font-weight:600;min-height:44px;padding:6px 14px;border-radius:var(--mk-pildora,999px);cursor:pointer;
+  border:${f("trazo", "2.5px solid var(--t)")};background:var(--s);color:var(--t);transition:transform .12s ease}
+.mk-subir-acciones button:hover:not(:disabled){background:var(--mk-cielo,#eef8fd)}
+.mk-subir-acciones button:active:not(:disabled){transform:translateY(1px)}
+.mk-subir-acciones .mk-subir-quitar{color:var(--m);border-color:var(--m)}
 .mk-subir-ayuda,.mk-subir-pista{margin:0;font-size:.8rem;line-height:1.35;color:var(--u)}
 .mk-subir-error{margin:0;font-size:.85rem;font-weight:600;color:var(--m)}
 .mk-subir-oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-@keyframes mk-subir-gira{to{transform:rotate(1turn)}}`);
+@keyframes mk-subir-gira{to{transform:rotate(1turn)}}
+@keyframes mk-subir-salto{to{transform:translateY(-5px)}}
+@keyframes mk-subir-barrido{to{transform:translateX(270%)}}
+@keyframes mk-subir-revela{from{opacity:0;transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.mk-subir :is(.mk-subir-caja,.mk-subir-vacia svg,.mk-subir-foto,.mk-subir-acciones button),.mk-subir .mk-subir-caja::after{transition:none;animation:none!important;transform:none!important}}`);
 
 /** Una flecha que sube a una foto (ícono propio, sin librerías). */
 const Icono = () => (

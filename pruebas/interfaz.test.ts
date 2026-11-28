@@ -26,9 +26,9 @@ test("interfaz: Accordion y CountUp pesan menos de 5 KB comprimidos y no traen n
   assert.deepEqual(pesados, [], `traen: ${pesados.join(", ")}`);
 });
 
-test("interfaz: SubirImagen sola pesa menos de 4,2 KB y no trae nada pesado", async () => {
+test("interfaz: SubirImagen sola pesa menos de 4,8 KB y no trae nada pesado", async () => {
   const { kb, archivos } = await usar(["SubirImagen"]);
-  assert.ok(kb < 4.2, `pesa ${kb.toFixed(2)} KB`); // 4,2 por el ADN (Aquiles, 28-11)
+  assert.ok(kb < 4.8, `pesa ${kb.toFixed(2)} KB`); // 4,2 por el ADN (Aquiles, 28-11); 4,8 por las conductas del panel (fase 3)
   assert.deepEqual(archivos.filter((a) => PESADO.test(a)), []);
 });
 

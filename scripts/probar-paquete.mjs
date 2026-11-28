@@ -101,6 +101,18 @@ createRoot(document.getElementById("raiz")!).render(
   <Tema tema="taller" para="panel"><p data-mk-parte="titulo">{cuerpo["--mk-trazo"]}</p></Tema>,
 );
 `);
+writeFileSync(join(P, "panel-piezas.tsx"), `
+import { createRoot } from "react-dom/client";
+import { BarraLateral, BotonPanel, TarjetaFila } from "motion-kit/interfaz";
+
+createRoot(document.getElementById("raiz")!).render(
+  <>
+    <BarraLateral grupos={[{ nombre: "Tu página", color: "#8b5cf6", secciones: [{ id: "precios", nombre: "Precios", icono: "🏷️", insignia: "2" }] }]} actual="precios" alElegir={() => {}} />
+    <TarjetaFila titulo="Carta de verano" estado={{ texto: "Publicada", tono: "verde" }} acciones={<BotonPanel tamano="chico">Editar</BotonPanel>} />
+    <BotonPanel>Nueva lista</BotonPanel>
+  </>,
+);
+`);
 writeFileSync(join(P, "panel-completo.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Cargando, SubirImagen, ToastProvider, useToast } from "motion-kit/interfaz";
@@ -222,6 +234,19 @@ ok(delKitTemas.some((f) => f.endsWith("/temas.js")) && ajenosTemas.length === 0,
 const entradaTemas = Object.entries(temas.metafile.outputs).find(([, o]) => o.entryPoint)?.[0];
 const pesoTemas = gzipSync(readFileSync(join(P, entradaTemas)), { level: 9 }).length / 1000;
 ok(pesoTemas < 9, `el panel con un tema pesa ${pesoTemas.toFixed(1)} KB comprimidos al cargar (menos de 9; la firma se baja aparte)`);
+
+// 9. El panel con las piezas del panel (fase 3): BotonPanel, TarjetaFila y BarraLateral solo traen motion-kit/interfaz.
+const piezas = await build({
+  entryPoints: [join(P, "panel-piezas.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-panel-piezas"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const delKitPiezas = Object.keys(piezas.metafile.inputs).filter((f) => f.includes("node_modules/motion-kit/"));
+const ajenosPiezas = delKitPiezas.filter((f) => /\/(motion-kit|encabezado|pagina|escena|momentos|director|partitura|luz|comic|temas)\.js$/.test(f));
+ok(delKitPiezas.some((f) => f.endsWith("/interfaz.js")) && ajenosPiezas.length === 0, "el panel con BotonPanel, TarjetaFila y BarraLateral solo trae motion-kit/interfaz" + (ajenosPiezas.length ? ": " + ajenosPiezas.join(", ") : ""));
+const textoPiezas = Object.keys(piezas.metafile.outputs).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(P, f), "utf8")).join("");
+for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato", "mk-subir", "mk-confirmar"]) ok(!textoPiezas.includes(pieza), `no se cuela «${pieza}» en el panel con las piezas del panel`);
+const pesoPiezas = Object.keys(piezas.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((s, f) => s + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
+ok(pesoPiezas < 6, `el panel con las piezas del panel pesa ${pesoPiezas.toFixed(1)} KB comprimidos (menos de 6)`);
 
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);

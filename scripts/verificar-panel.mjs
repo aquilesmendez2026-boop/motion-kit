@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 
 const base = process.argv.find((a) => /^https?:/.test(a)) ?? "http://localhost:5173";
 const solo = process.argv.slice(2).find((a) => !/^https?:/.test(a));
-const PARTES = ["tema", "imagen", "avisos", "cargando", "llega", "vivo", "adn"];
+const PARTES = ["tema", "imagen", "avisos", "cargando", "llega", "vivo", "adn", "piezas-panel", "conductas"];
 if (solo && !PARTES.includes(solo)) {
   console.log(`No existe la parte «${solo}». Las que hay: ${PARTES.join(", ")}.`);
   process.exit(1);
@@ -584,7 +584,7 @@ if (parte("vivo")) {
   // Escritorio: la barra con todas las secciones y cada una se abre con su título.
   {
     const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "resumen");
-    const nombres = await pagina.$$eval(".pv-lado .pv-item", (l) => l.map((b) => [b.dataset.seccion, [...b.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()]));
+    const nombres = await pagina.$$eval(".pv-lado .mk-barra-item", (l) => l.map((b) => [b.dataset.seccion, (b.querySelector(".mk-barra-oculto") ?? b.querySelector(".mk-barra-nombre"))?.textContent.trim() ?? ""]));
     revisar(nombres.length === 41, `vivo: la barra tiene las 41 secciones del panel (${nombres.length})`);
     const malas = [];
     for (const [id, nombre] of nombres) {
@@ -596,6 +596,110 @@ if (parte("vivo")) {
     }
     revisar(malas.length === 0, `vivo: cada sección se abre con su título y queda marcada${malas.length ? ` (fallan: ${malas.join(", ")})` : ""}`);
     revisar(errores.length === 0, `vivo: recorrer todas sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // La barra lateral es la pieza BarraLateral (fase 3): grupos, teclado, elegida, contraída, la firma del tema y el ritmo.
+  for (const reducido of [false, true]) {
+    const d = reducido ? "vivo (reducido)" : "vivo";
+    const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "resumen", { reducido });
+    const barra = ".pv-lado nav.mk-barra";
+    const info = await pagina.$eval(barra, (n) => ({
+      etiqueta: n.getAttribute("aria-label"), marca: n.dataset.mkAdorno,
+      grupos: [...n.querySelectorAll(".mk-barra-grupo")].map((g) => [g.style.getPropertyValue("--mk-grupo"), g.querySelectorAll(".mk-barra-item").length]),
+      sueltas: [...n.querySelectorAll(".mk-barra-item")].filter((b) => !b.closest(".mk-barra-grupo")).length,
+    })).catch(() => null);
+    revisar(Boolean(info) && info.etiqueta === "Secciones" && info.marca === "barra", `${d}: la barra es un nav con nombre y la marca «barra»`);
+    revisar(Boolean(info) && info.sueltas === 0 && info.grupos.length === 6 && info.grupos.every(([c, n]) => c && n > 0) && info.grupos.reduce((s, [, n]) => s + n, 0) === 41, `${d}: las 41 secciones, cada una en su grupo con su color (${JSON.stringify(info?.grupos)})`);
+    // Teclado: Tab entra, las flechas bajan y suben, Enter elige.
+    await pagina.focus(`${barra} [data-seccion=resumen]`);
+    await pagina.keyboard.press("ArrowDown");
+    const trasFlecha = await pagina.evaluate(() => document.activeElement?.dataset.seccion);
+    await pagina.keyboard.press("ArrowUp");
+    const trasSubir = await pagina.evaluate(() => document.activeElement?.dataset.seccion);
+    await pagina.keyboard.press("Tab");
+    const trasTab = await pagina.evaluate(() => document.activeElement?.dataset.seccion);
+    revisar(trasFlecha === "pagina" && trasSubir === "resumen" && trasTab === "pagina", `${d}: las flechas y Tab la recorren (${trasFlecha}, ${trasSubir}, ${trasTab})`);
+    await pagina.keyboard.press("End");
+    const alFinal = await pagina.evaluate(() => document.activeElement?.dataset.seccion);
+    await pagina.keyboard.press("Home");
+    const alInicio = await pagina.evaluate(() => document.activeElement?.dataset.seccion);
+    revisar(alFinal === "consumo" && alInicio === "resumen", `${d}: Inicio y Fin van a la primera y a la última (${alInicio}, ${alFinal})`);
+    await pagina.keyboard.press("ArrowDown");
+    await pagina.keyboard.press("Enter");
+    await pagina.waitForTimeout(80);
+    const elegida = await pagina.$$eval(`${barra} [aria-current]`, (l) => l.map((b) => `${b.dataset.seccion}=${b.getAttribute("aria-current")}`));
+    revisar(elegida.length === 1 && elegida[0] === "pagina=page", `${d}: Enter elige y aria-current queda solo en la elegida (${elegida.join(", ")})`);
+    const pop = await pagina.$eval(`${barra} [aria-current=page] .mk-icono-caja`, (i) => i.getAnimations().some((a) => String(a.animationName ?? "").startsWith("mk-barra-pop")));
+    revisar(reducido ? !pop : pop, `${d}: el ícono de la elegida ${reducido ? "no hace pop" : "hace pop"}`);
+    // Al pasar, el ícono salta.
+    await pagina.hover(`${barra} [data-seccion=agenda]`);
+    await pagina.waitForTimeout(450);
+    const salto = await pagina.$eval(`${barra} [data-seccion=agenda] .mk-icono-caja`, (i) => getComputedStyle(i).transform);
+    revisar(reducido ? salto === "none" : salto !== "none", `${d}: al pasar, el ícono ${reducido ? "no se mueve" : "salta"} (${salto})`);
+    // Sin módulo: punteada, con su propio texto al pasar.
+    const sinModulo = await pagina.$eval(`${barra} [data-sin-modulo]`, (b) => [getComputedStyle(b.querySelector(".mk-icono-caja")).borderTopStyle, b.title]).catch(() => []);
+    revisar(sinModulo[0] === "dashed" && /No está en tu pack/.test(sinModulo[1]), `${d}: lo que no tiene módulo lleva el ícono punteado y lo dice al pasar (${sinModulo.join(", ")})`);
+    // Elegir algo sin módulo: el nombre se lee igual que en cualquier elegida (revisión de la v0.9.0).
+    const colorElegida = await pagina.$eval(`${barra} [aria-current=page]`, (b) => getComputedStyle(b).color);
+    await pagina.click(`${barra} [data-seccion=exclusiva]`);
+    await pagina.waitForTimeout(150);
+    const colorSinModulo = await pagina.$eval(`${barra} [data-seccion=exclusiva]`, (b) => [b.getAttribute("aria-current"), getComputedStyle(b).color]);
+    revisar(colorSinModulo[0] === "page" && colorSinModulo[1] === colorElegida, `${d}: elegida, una sección sin módulo se lee como cualquier elegida (${colorSinModulo[1]} y ${colorElegida})`);
+    await pagina.click(`${barra} [data-seccion=pagina]`);
+    await pagina.waitForTimeout(150);
+    // El botón de contraer lleva lo que le pase el front (soporte y aria-controls).
+    const contraer = await pagina.$eval(`${barra} .mk-barra-contraer`, (b) => [b.dataset.soporteAccion, b.getAttribute("aria-controls")]);
+    revisar(contraer[0] === "Contraer la barra" && contraer[1] === "secciones-del-panel", `${d}: el botón de contraer lleva sus atributos (${contraer.join(", ")})`);
+    // Lo que el front necesita de su barra: la insignia de novedad, el nombre corto y sus atributos (soporte).
+    const extra = await pagina.evaluate((sel) => {
+      const n = document.querySelector(sel);
+      const ped = n.querySelector("[data-seccion=pedidos]");
+      const ins = ped?.querySelector(".mk-barra-insignia");
+      const cc = n.querySelector("[data-seccion=clientes-cuenta]");
+      const visible = (e) => Boolean(e) && e.getBoundingClientRect().width > 1 && getComputedStyle(e).visibility !== "hidden";
+      return {
+        insignia: ins?.textContent, insigniaVisible: visible(ins), novedad: ped?.hasAttribute("data-novedad"),
+        corto: cc?.querySelector(".mk-barra-nombre [aria-hidden=true]")?.textContent, completo: cc?.querySelector(".mk-barra-oculto")?.textContent,
+        soporte: n.querySelector("[data-seccion=agenda]")?.dataset.soporteAccion,
+      };
+    }, barra);
+    revisar(extra.insignia === "3" && extra.insigniaVisible && extra.novedad, `${d}: la insignia de novedad se ve en la barra abierta (${JSON.stringify(extra)})`);
+    revisar(extra.corto === "Con cuenta" && extra.completo === "Clientes con cuenta", `${d}: el nombre corto se ve y el completo queda para el lector`);
+    revisar(extra.soporte === "Pestaña Agenda", `${d}: cada sección lleva sus atributos (data-soporte-accion)`);
+    // Contraída: solo íconos, cada uno con su nombre y de 44 px.
+    await pagina.click(`${barra} .mk-barra-contraer`);
+    await pagina.waitForTimeout(350);
+    const contraida = await pagina.$$eval(`${barra} .mk-barra-item`, (l) => l.map((b) => {
+      const r = b.getBoundingClientRect(); const nombre = b.querySelector(".mk-barra-nombre");
+      return { etiqueta: b.getAttribute("aria-label"), titulo: b.title, ancho: r.width, alto: r.height, nombreVisible: nombre ? nombre.getBoundingClientRect().width > 1 : false };
+    }));
+    revisar(contraida.length === 41 && contraida.every((x) => x.etiqueta && x.titulo.startsWith(x.etiqueta) && !x.nombreVisible), `${d}: contraída, solo íconos y cada uno con su nombre (aria-label y title)`);
+    const tituloContraida = await pagina.$eval(`${barra} [data-seccion=exclusiva]`, (b) => b.title);
+    revisar(tituloContraida === "Página exclusiva. No está en tu pack.", `${d}: contraída, lo que no está en el pack lo dice con su nombre (${tituloContraida})`);
+    const punto = await pagina.$eval(`${barra} [data-seccion=pedidos]`, (b) => {
+      const v = (e) => Boolean(e) && e.getBoundingClientRect().width > 1 && getComputedStyle(e).display !== "none";
+      return { punto: v(b.querySelector(".mk-barra-punto")), insignia: v(b.querySelector(".mk-barra-insignia")) };
+    });
+    revisar(punto.punto && !punto.insignia, `${d}: contraída, la novedad queda como un punto (${JSON.stringify(punto)})`);
+    revisar(contraida.every((x) => x.ancho >= 44 && x.alto >= 44), `${d}: contraída, cada ícono mide al menos 44 px (${Math.min(...contraida.map((x) => Math.round(x.alto)))} de alto)`);
+    revisar(await pagina.$eval(`${barra} .mk-barra-contraer`, (b) => b.getAttribute("aria-expanded") === "false"), `${d}: el botón de contraer dice que está contraída`);
+    await pagina.click(`${barra} .mk-barra-contraer`);
+    await pagina.waitForTimeout(200);
+    // La firma de «taller»: la cinta de peligro arriba de la barra.
+    await pagina.selectOption("[data-prueba=tema]", "taller");
+    await pagina.waitForTimeout(500);
+    const cinta = await pagina.$eval(barra, (n) => getComputedStyle(n).backgroundImage);
+    revisar(/repeating-linear-gradient/.test(cinta), `${d}: con «taller», la barra lleva la cinta de su firma`);
+    await pagina.hover(`${barra} [data-seccion=agenda]`);
+    await pagina.waitForTimeout(200);
+    const pasarTaller = await pagina.$eval(`${barra} [data-seccion=agenda]`, (b) => getComputedStyle(b).backgroundColor);
+    // Con «taller» (su firma pone outline:none en la elegida), el foco de teclado sigue viéndose (revisión de la v0.9.0).
+    await pagina.focus(`${barra} [data-seccion=resumen]`);
+    await pagina.keyboard.press("ArrowDown");
+    const foco = await pagina.evaluate(() => { const s = getComputedStyle(document.activeElement); return [document.activeElement.getAttribute("aria-current"), s.outlineStyle, s.outlineWidth]; });
+    revisar(foco[0] === "page" && foco[1] === "solid" && foco[2] === "3px", `${d}: con «taller», el foco se ve en la elegida (${foco.join(", ")})`);
+    revisar(/255, 106, 20|srgb 1 0\.41/.test(pasarTaller), `${d}: con «taller», al pasar una sección se tiñe del naranjo de su firma (${pasarTaller})`);
+    revisar(errores.length === 0, `${d}: la barra sin errores${errores.length ? ` (${errores[0]})` : ""}`);
     await ctx.close();
   }
   // Colaboraciones, como la pantalla de verdad: filtrar, responder, borrar con confirmación y deshacer.
@@ -688,7 +792,7 @@ if (parte("vivo")) {
   // Movimiento reducido: nada se estampa ni gira.
   {
     const { ctx, pagina } = await abrirVivo(ESCRITORIO, "resumen", { reducido: true });
-    const animadas = await pagina.$$eval(".pv-panel *", (l) => l.filter((el) => el.getAnimations().some((a) => a.playState === "running" && String(a.animationName ?? "").startsWith("pv-"))).length);
+    const animadas = await pagina.$$eval(".pv-panel *", (l) => l.filter((el) => el.getAnimations().some((a) => a.playState === "running" && /^(pv-|mk-barra)/.test(String(a.animationName ?? "")))).length);
     revisar(animadas === 0, `vivo (reducido): ninguna animación propia del panel corre (${animadas})`);
     await ctx.close();
   }
@@ -804,6 +908,221 @@ if (parte("adn")) {
   const vacio = await estiloDe(pagina, ".mk-vacio-titulo", ["font-family"]);
   revisar(Boolean(vacio) && vacio["font-family"].includes("Georgia"), `adn: el título de Vacio toma la letra de títulos`);
   await ctx.close();
+}
+
+// Fase 3 de «Un solo motor»: las piezas del panel (IconoCaja, BotonPanel, Pastilla), comparadas con las del front.
+const PROPS = ["borderTopWidth", "borderTopStyle", "borderTopColor", "borderTopLeftRadius", "boxShadow", "backgroundColor", "color", "fontSize", "fontWeight", "paddingTop", "paddingLeft"];
+// Un borde de ancho 0 no se ve: su estilo y su color no cuentan (el reseteo de Chakra pone `0 solid` en todo).
+const PROPS_BARRA = [...PROPS, "textTransform", "letterSpacing", "outlineStyle", "outlineWidth", "outlineOffset", "opacity"];
+const estilos = (pagina, sel, props = PROPS) => pagina.$eval(sel, (el, ps) => {
+  const s = getComputedStyle(el); const r = el.getBoundingClientRect();
+  const v = Object.fromEntries(ps.map((p) => [p, s[p]]));
+  if (parseFloat(s.borderTopWidth) === 0) Object.assign(v, { borderTopStyle: "(sin borde)", borderTopColor: "(sin borde)" });
+  return { ...v, alto: Math.round(r.height) };
+}, props).catch(() => null);
+if (parte("piezas-panel")) {
+  for (const [d, tamano] of [["teléfono", TELEFONO], ["escritorio", ESCRITORIO]]) {
+    const { ctx, pagina, errores } = await abrir(tamano);
+    await pagina.$eval("[data-prueba=panel-piezas-panel]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.waitForTimeout(200);
+    const altos = await pagina.$$eval("[data-prueba=piezas-panel] .mk-bp", (l) => l.map((b) => Math.round(b.getBoundingClientRect().height)));
+    revisar(altos.length >= 4 && altos.every((a) => a >= 44), `piezas-panel (${d}): los botones miden al menos 44 px (${altos.join(", ")})`);
+    // Se hunde al tocarlo (solo con transform).
+    await pagina.$eval("[data-prueba=boton-grande]", (b) => b.scrollIntoView({ block: "center" }));
+    await pagina.waitForTimeout(150);
+    const caja = await pagina.$eval("[data-prueba=boton-grande]", (b) => b.getBoundingClientRect().toJSON());
+    await pagina.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+    await pagina.mouse.down();
+    await pagina.waitForTimeout(200);
+    const hundido = await pagina.$eval("[data-prueba=boton-grande]", (b) => getComputedStyle(b).transform);
+    await pagina.mouse.up();
+    revisar(hundido !== "none" && /matrix\(1, 0, 0, 1, 3, 3\)/.test(hundido), `piezas-panel (${d}): el botón grande se hunde al tocarlo (${hundido})`);
+    // Con «taller»: su trazo de 3 px y su esquina de 2 px.
+    await pagina.selectOption("[data-prueba=tema-piezas]", "taller");
+    await pagina.waitForTimeout(150);
+    const taller = await estilos(pagina, "[data-prueba=boton-grande]");
+    revisar(taller?.borderTopWidth === "3px" && taller?.borderTopLeftRadius === "2px", `piezas-panel (${d}): con «taller» toma su trazo y su esquina (${taller?.borderTopWidth}, ${taller?.borderTopLeftRadius})`);
+    // Con «cancha», su firma inclina el título de la sección.
+    await pagina.selectOption("[data-prueba=tema-piezas]", "cancha");
+    await pagina.waitForTimeout(400);
+    const inclinado = await pagina.$eval("[data-prueba=cabeza-seccion] h2", (h) => getComputedStyle(h).transform).catch(() => "none");
+    revisar(inclinado !== "none", `piezas-panel (${d}): con «cancha», la firma inclina el título (${inclinado})`);
+    await pagina.selectOption("[data-prueba=tema-piezas]", "lamente");
+    await pagina.waitForTimeout(150);
+    // La grilla: una columna en el teléfono, dos desde 1024 px; un título larguísimo no corre el ancho.
+    const columnas = await pagina.$eval("[data-prueba=grilla]", (g) => getComputedStyle(g).gridTemplateColumns.split(" ").length);
+    revisar(columnas === (tamano.width >= 1024 ? 2 : 1), `piezas-panel (${d}): la grilla tiene ${columnas} columna(s)`);
+    const ancho = await pagina.evaluate(() => document.scrollingElement.scrollWidth);
+    const larga = await pagina.$eval("[data-prueba=tarjeta-larga]", (el) => Math.round(el.getBoundingClientRect().right));
+    revisar(ancho <= tamano.width && larga <= tamano.width, `piezas-panel (${d}): un título larguísimo no corre el ancho (${larga} de ${tamano.width})`);
+    // El selector: su etiqueta y su ayuda accesibles.
+    const sel = await pagina.$eval("[data-prueba=selector]", (s) => ({ etiqueta: s.labels?.[0]?.textContent ?? "", ayuda: (s.getAttribute("aria-describedby") ?? "").split(" ").map((id) => document.getElementById(id)?.textContent ?? "").join(" ") }));
+    revisar(sel.etiqueta.includes("domingos") && sel.ayuda.includes("Sale en tu página"), `piezas-panel (${d}): el selector tiene su etiqueta y su ayuda (${JSON.stringify(sel)})`);
+    // La cabecera: en el teléfono la acción baja bajo el título; desde 768 px va a la derecha (como en el front).
+    const cab = await pagina.$eval("[data-prueba=cabeza-seccion]", (c) => {
+      const lado = c.querySelector(".mk-cabeza-seccion-lado").getBoundingClientRect();
+      const acc = c.querySelector(".mk-cabeza-seccion-accion").getBoundingClientRect();
+      return { abajo: acc.top >= lado.bottom - 1, ladoAncho: Math.round(lado.width), ancho: Math.round(c.getBoundingClientRect().width) };
+    });
+    revisar(tamano.width >= 768 ? !cab.abajo : cab.abajo && cab.ladoAncho >= cab.ancho - 1, `piezas-panel (${d}): la acción de la cabecera va ${tamano.width >= 768 ? "a la derecha" : "abajo y el título usa todo el ancho"} (${JSON.stringify(cab)})`);
+    // Un estado larguísimo no corre el ancho (revisión de la v0.9.0).
+    const estadoLargo = await pagina.$eval("[data-prueba=tarjeta-larga]", (t) => {
+      const p = t.querySelector(".mk-pastilla").getBoundingClientRect();
+      return { derecha: Math.round(p.right), tarjeta: Math.round(t.getBoundingClientRect().right) };
+    });
+    revisar(estadoLargo.derecha <= estadoLargo.tarjeta, `piezas-panel (${d}): un estado larguísimo no se sale de la tarjeta (${estadoLargo.derecha} de ${estadoLargo.tarjeta})`);
+    // El selector tiene la letra de la página y su relleno, no el del navegador (revisión de la v0.9.0).
+    const select = await pagina.$eval("[data-prueba=selector] select, select[data-prueba=selector]", (s) => ({ letra: getComputedStyle(s).fontSize, relleno: parseFloat(getComputedStyle(s).paddingLeft), cuerpo: getComputedStyle(s.closest(".mk-campo")).fontSize }));
+    revisar(select.letra === select.cuerpo && select.relleno >= 10, `piezas-panel (${d}): el selector tiene la letra de la página y su relleno (${JSON.stringify(select)})`);
+    // La sección separa lo que lleva adentro (como el Bloque de la guía del front: 1rem).
+    const separa = await pagina.$eval("[data-prueba=seccion]", (s) => getComputedStyle(s).rowGap);
+    revisar(separa === "16px", `piezas-panel (${d}): la sección separa lo que lleva adentro (${separa})`);
+    revisar(errores.length === 0, `piezas-panel (${d}): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
+  // Movimiento reducido: los botones del panel no se levantan ni se hunden (revisión de la v0.9.0).
+  {
+    const { ctx, pagina } = await abrir(ESCRITORIO, { reducido: true });
+    await pagina.$eval("[data-prueba=panel-piezas-panel]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.waitForTimeout(200);
+    const quieto = [];
+    for (const sel of ["[data-prueba=boton-grande]", "[data-prueba=boton-chico]"]) {
+      await pagina.hover(sel);
+      await pagina.waitForTimeout(150);
+      const pasar = await pagina.$eval(sel, (b) => getComputedStyle(b).transform);
+      await pagina.mouse.down();
+      await pagina.waitForTimeout(150);
+      const tocar = await pagina.$eval(sel, (b) => getComputedStyle(b).transform);
+      await pagina.mouse.up();
+      quieto.push(`${pasar}/${tocar}`);
+    }
+    revisar(quieto.every((x) => x === "none/none"), `piezas-panel (reducido): los botones no se levantan ni se hunden (${quieto.join(", ")})`);
+    await ctx.close();
+  }
+  // Contra las del front de verdad (su guía en local, con «lamente»): mismos bordes, esquinas, sombras, colores y letra.
+  const FRONT = "http://localhost:5181/guia?tema=lamente";
+  const ctxF = await navegador.newContext({ viewport: ESCRITORIO });
+  const front = await ctxF.newPage();
+  const hayFront = await front.goto(FRONT, { timeout: 8000 }).then(() => front.waitForSelector(".lm-mod-boton", { timeout: 8000 })).then(() => true).catch(() => false);
+  if (!hayFront) console.log("· piezas-panel: la guía del front no está en local (localhost:5181) o no muestra sus piezas; se salta la comparación con el front");
+  else {
+    await front.waitForTimeout(1500);
+    const { ctx, pagina } = await abrir(ESCRITORIO);
+    await pagina.$eval("[data-prueba=panel-piezas-panel]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.waitForTimeout(200);
+    for (const [nombre, delFront, nuestro] of [
+      ["el botón grande", ".lm-mod-boton:not(:disabled)", "[data-prueba=boton-grande]"],
+      ["el botón chico", ".lm-mod-chico:not([data-tono]):not(:disabled)", "[data-prueba=boton-chico]"],
+      ["el chico principal", '.lm-mod-chico[data-tono="principal"]', "[data-prueba=boton-principal]"],
+      ["el chico de peligro", '.lm-mod-chico[data-tono="peligro"]', "[data-prueba=boton-peligro]"],
+      ["el ícono", ".lm-mod-icono", "[data-prueba=icono-caja]"],
+      ["el estado verde", '.lm-mod-estado[data-tono="verde"]', "[data-prueba=pastilla-verde]"],
+      ["la tarjeta", ".lm-mod-tarjeta", "[data-prueba=tarjeta-fila]"],
+      ["el título de la tarjeta", ".lm-mod-tarjeta .lm-mod-nombre", "[data-prueba=tarjeta-fila] .mk-tarjeta-fila-nombre"],
+      ["el título de la sección", ".lm-mod-titulo", "[data-prueba=cabeza-seccion] h2"],
+      ["la bajada de la sección", ".lm-mod-bajada", "[data-prueba=cabeza-seccion] .mk-bajada-seccion"],
+    ]) {
+      const a = await estilos(front, delFront);
+      const b = await estilos(pagina, nuestro);
+      const distintos = a && b ? PROPS.filter((p) => a[p] !== b[p]).map((p) => `${p}: front «${a[p]}», motion-kit «${b[p]}»`) : ["falta"];
+      revisar(distintos.length === 0, `piezas-panel: ${nombre} se ve como el del front${distintos.length ? ` (${distintos.join("; ")})` : ""}`);
+    }
+    // La barra lateral (revisión de la v0.9.0): la de muestra de la guía del front, abierta y contraída.
+    await pagina.$eval("[data-prueba=barra-muestra]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.waitForTimeout(500);
+    const FB = ".lm-barra:not([data-colapsada])";
+    const FC = ".lm-barra[data-colapsada]";
+    const NB = "[data-prueba=barra-muestra]";
+    const NC = "[data-prueba=barra-contraida]";
+    const item = ':not([aria-selected="true"]):not([data-sin-modulo])';
+    const SIN_COLOR = PROPS_BARRA.filter((p) => p !== "color");
+    for (const [nombre, delFront, nuestro, props] of [
+      ["la barra", FB, NB],
+      // El color del texto de las no elegidas es a propósito distinto: el front usa grises de Chakra (#52525b y, sin módulo,
+      // #a1a1aa, que da ~2,5 sobre blanco); motion-kit, --mk-suave del tema.
+      ["una sección de la barra", `${FB} [role=tab]${item}`, `${NB} .mk-barra-item:not([aria-current]):not([data-sin-modulo])`, SIN_COLOR],
+      ["su ícono", `${FB} [role=tab]${item} .lm-icono`, `${NB} .mk-barra-item:not([aria-current]):not([data-sin-modulo]) .mk-icono-caja`],
+      ["la sección elegida", `${FB} [role=tab][aria-selected="true"]`, `${NB} [aria-current=page]`, PROPS_BARRA],
+      ["el ícono de la elegida", `${FB} [role=tab][aria-selected="true"] .lm-icono`, `${NB} [aria-current=page] .mk-icono-caja`],
+      ["una sección sin módulo", `${FB} [role=tab][data-sin-modulo]`, `${NB} [data-sin-modulo]`, SIN_COLOR],
+      ["el ícono sin módulo", `${FB} [role=tab][data-sin-modulo] .lm-icono`, `${NB} [data-sin-modulo] .mk-icono-caja`],
+      ["el nombre de un grupo", `${FB} .lm-grupo`, `${NB} .mk-barra-grupo-nombre`, PROPS_BARRA],
+      ["el grupo en la barra contraída", `${FC} .lm-grupo`, `${NC} .mk-barra-grupo-nombre`, ["height", "backgroundColor", "marginTop", "marginLeft"]],
+      ["el ícono sin módulo en la barra contraída", `${FC} [role=tab][data-sin-modulo] .lm-icono`, `${NC} [data-sin-modulo] .mk-icono-caja`, ["opacity", "borderTopStyle"]],
+    ]) {
+      const ps = props ?? PROPS;
+      const a = await estilos(front, delFront, ps);
+      const b = await estilos(pagina, nuestro, ps);
+      const distintos = a && b ? ps.filter((p) => a[p] !== b[p]).map((p) => `${p}: front «${a[p]}», motion-kit «${b[p]}»`) : [`falta (${a ? "nuestra" : "del front"})`];
+      revisar(distintos.length === 0, `piezas-panel: ${nombre} se ve como en el front${distintos.length ? ` (${distintos.join("; ")})` : ""}`);
+    }
+    await ctx.close();
+  }
+  await ctxF.close();
+}
+
+// Fase 3: las conductas que el front tenía en su CSS, ahora en las piezas (SubirImagen, ListaViva, Campo).
+const animaciones = (pagina) => pagina.evaluate(() => document.getAnimations().filter((a) => a.playState === "running").map((a) => a.animationName ?? ""));
+if (parte("conductas")) {
+  for (const reducido of [false, true]) {
+    const d = reducido ? "conductas (reducido)" : "conductas";
+    const { ctx, pagina, errores } = await abrir(ESCRITORIO, { reducido });
+    // SubirImagen vacía: se levanta al pasar.
+    await pagina.$eval("[data-prueba=subir-portada]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.hover("[data-prueba=subir-portada] .mk-subir-caja");
+    await pagina.waitForTimeout(250);
+    const alPasar = await pagina.$eval("[data-prueba=subir-portada] .mk-subir-caja", (c) => ({ t: getComputedStyle(c).transform, s: getComputedStyle(c).boxShadow }));
+    revisar(reducido ? alPasar.t === "none" : alPasar.t === "matrix(1, 0, 0, 1, -2, -2)" && alPasar.s !== "none", `${d}: la foto vacía ${reducido ? "no se mueve" : "se levanta"} al pasar (${alPasar.t})`);
+    // Arrastrando: se agranda y el ícono salta.
+    await pagina.$eval("[data-prueba=subir-portada] .mk-subir-caja", (caja) => {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array(4)], "f.png", { type: "image/png" }));
+      caja.dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: dt }));
+      caja.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: dt }));
+    });
+    await pagina.waitForTimeout(250);
+    const arrastrando = await pagina.$eval("[data-prueba=subir-portada] .mk-subir-caja", (c) => getComputedStyle(c).transform);
+    const salta = (await animaciones(pagina)).includes("mk-subir-salto");
+    revisar(reducido ? !salta : /^matrix\(1\.03/.test(arrastrando) && salta, `${d}: al arrastrar, ${reducido ? "nada se mueve" : "se agranda y el ícono salta"} (${arrastrando}, salto ${salta})`);
+    await pagina.$eval("[data-prueba=subir-portada] .mk-subir-caja", (caja) => caja.dispatchEvent(new DragEvent("dragleave", { bubbles: true, cancelable: true })));
+    // Subiendo: la franja de luz la cruza (con transform); lista: la foto entra revelándose; Cambiar y Quitar en píldora.
+    await soltar(pagina, "subir-logo");
+    await pagina.waitForTimeout(150);
+    const barrido = (await animaciones(pagina)).includes("mk-subir-barrido");
+    revisar(reducido ? !barrido : barrido, `${d}: mientras sube, ${reducido ? "sin franja que se mueva" : "una franja de luz la cruza"}`);
+    await pagina.waitForFunction(() => document.querySelector("[data-prueba=subir-logo] .mk-subir")?.dataset.estado === "lista", null, { timeout: 4000 }).catch(() => {});
+    const revela = (await animaciones(pagina)).includes("mk-subir-revela");
+    revisar(reducido ? !revela : revela, `${d}: la foto ${reducido ? "aparece sin moverse" : "entra revelándose"}`);
+    const pildora = await pagina.$eval("[data-prueba=subir-logo] .mk-subir-acciones button", (b) => getComputedStyle(b).borderTopLeftRadius).catch(() => "falta");
+    revisar(pildora === "999px", `${d}: Cambiar y Quitar van en píldora (${pildora})`);
+    // ListaViva: el destello es un marco de cartel y tinta que late.
+    await pagina.$eval("[data-prueba=panel-llega]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.click("[data-prueba=llega]");
+    await pagina.waitForTimeout(80);
+    const destello = await pagina.$eval("[data-mk-destello]", (h) => getComputedStyle(h).boxShadow).catch(() => "");
+    const late = (await animaciones(pagina)).includes("mk-lista-latido");
+    revisar(/3px/.test(destello) && /5px/.test(destello) && (reducido ? !late : late), `${d}: lo que llega trae un marco ${reducido ? "quieto" : "que late"} (${destello.slice(0, 60)}…)`);
+    // Campo: se levanta al pasar y al escribir; deshabilitado, punteado; el error con su «!»; las casillas, del acento.
+    await pagina.$eval("[data-prueba=campo]", (s) => s.scrollIntoView({ block: "center" }));
+    await pagina.hover("[data-prueba=campo-input]");
+    await pagina.waitForTimeout(200);
+    const pasar = await pagina.$eval("[data-prueba=campo-input]", (i) => getComputedStyle(i).boxShadow);
+    await pagina.focus("[data-prueba=campo-input]");
+    await pagina.keyboard.press("a");
+    await pagina.waitForTimeout(250);
+    const foco = await pagina.$eval("[data-prueba=campo-input]", (i) => getComputedStyle(i).transform);
+    revisar(pasar !== "none" && (reducido ? foco === "none" : foco === "matrix(1, 0, 0, 1, -2, -2)"), `${d}: el campo marca al pasar y ${reducido ? "no se mueve" : "se levanta"} al escribir (${foco})`);
+    const punteado = await pagina.$eval("[data-prueba=campo-deshabilitado]", (i) => getComputedStyle(i).borderTopStyle);
+    revisar(punteado === "dashed", `${d}: un campo deshabilitado se ve punteado (${punteado})`);
+    await pagina.click("[data-prueba=error-uno]");
+    await pagina.waitForTimeout(200);
+    const senal = await pagina.$eval("[data-prueba=campo] .mk-campo-error", (e) => getComputedStyle(e, "::before").content).catch(() => "");
+    revisar(senal === '"!"', `${d}: el error lleva su señal «!» (${senal})`);
+    const casilla = await pagina.$eval("[data-prueba=campo-casilla]", (i) => getComputedStyle(i).accentColor);
+    revisar(casilla !== "auto", `${d}: las casillas usan el color del acento (${casilla})`);
+    revisar(errores.length === 0, `${d}: sin errores${errores.length ? ` (${errores[0]})` : ""}`);
+    await ctx.close();
+  }
 }
 
 await navegador.close();
