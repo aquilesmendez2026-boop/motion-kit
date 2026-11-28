@@ -1,7 +1,7 @@
 // La vitrina del panel: las piezas de motion-kit/interfaz con los colores del panel de cada negocio de La Mente (claro
 // y oscuro). La prueba es scripts/verificar-panel.mjs.
 import { useEffect, useRef, useState } from "react";
-import { BarraLateral, BotonPanel, BotonQueGuarda, CabezaSeccion, GrillaTarjetas, Seccion, Selector, TarjetaFila, BottomSheet, Campo, Cargando, Confirmar, Copiar, Contador, IconoCaja, Interruptor, ListaViva, Pastilla, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
+import { BarraLateral, BotonPanel, BotonQueGuarda, useEstilosBotonPanel, CabezaSeccion, GrillaTarjetas, Seccion, Selector, TarjetaFila, BottomSheet, Campo, Cargando, Confirmar, Copiar, Contador, IconoCaja, Interruptor, ListaViva, Pastilla, Skeleton, SubirImagen, TabBar, useToast, type FormaCarga } from "../src/entradas/interfaz";
 import { TEMAS as CATALOGO, Tema } from "../src/entradas/temas";
 import { variablesTema, type TemaInterfaz } from "../src/interfaz/tema";
 
@@ -415,6 +415,24 @@ const BARRA_MUESTRA = [
   { nombre: "Tu negocio", color: "#f97316", secciones: [{ id: "pedidos", nombre: "Pedidos", icono: "🛍️" }, { id: "estadisticas", nombre: "Estadísticas", icono: "📈", sinModulo: true }] },
 ];
 
+/** Un enlace que se ve como botón chico: solo carga los estilos de BotonPanel (v0.9.1, pedido del front). */
+function EnlaceComoBoton() {
+  useEstilosBotonPanel();
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      <a href="mailto:hola@lamente.cl" className="mk-bp" data-tamano="chico" data-mk-adorno="boton" data-prueba="enlace-chico">
+        Escríbenos
+      </a>
+      <label className="mk-bp" data-tamano="chico" data-mk-adorno="boton" data-prueba="opcion-chica">
+        <input type="radio" name="entrega" defaultChecked /> Despacho
+      </label>
+      <label className="mk-bp" data-tamano="chico" data-mk-adorno="boton" aria-disabled="true" data-prueba="opcion-deshabilitada">
+        <input type="radio" name="entrega" disabled /> Retiro en tienda
+      </label>
+    </div>
+  );
+}
+
 function PiezasDelPanel() {
   const [barra, setBarra] = useState("precios");
   const [tema, setTema] = useState("lamente");
@@ -463,6 +481,9 @@ function PiezasDelPanel() {
               <option value="no">No</option>
               <option value="si">Sí, de 10:00 a 14:00</option>
             </Selector>
+          </Seccion>
+          <Seccion nivel={3} titulo="Packs y abonos" bajada="Una sección dentro de otra, con su título en h3." data-prueba="seccion-h3">
+            <EnlaceComoBoton />
           </Seccion>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" }}>
             <BarraLateral grupos={BARRA_MUESTRA} actual={barra} alElegir={setBarra} etiqueta="Secciones de muestra" data-prueba="barra-muestra" style={{ width: 240 }} />

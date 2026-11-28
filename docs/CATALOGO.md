@@ -101,6 +101,21 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.9.1 (28-11-2026)
+
+Etiqueta `v0.9.1`: dos pedidos del front mientras aplica el encargo de la fase 3: `useEstilosBotonPanel()` y `Seccion`
+con `nivel`. Ningún contrato cambia (solo la versión en `indice.json`). Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.9.1`.
+
+**Antes de la etiqueta:**
+- `verificar --desde=v0.9.0` (panel y piezas) y la pasada rápida;
+- la suite, los tipos, los pesos y `probar-paquete` (caso nuevo: el hook solo trae el CSS del botón).
+
+La comparación con la guía del front ya no corre: el front pasó `Modulo.tsx` a las piezas de motion-kit, y su guía
+dibuja las nuestras. Revisión en Sonnet, por ser una tanda chica: pidió que un enlace o una etiqueta con `.mk-bp` se
+vean y se comporten como el botón (sin subrayado, `aria-disabled`, el foco de su casilla y la marca `boton`). Quedó
+arreglado con su prueba.
+
 ## Paquete v0.9.0 (28-11-2026)
 
 Etiqueta `v0.9.0`: fase 3 de «Un solo motor», **las piezas del panel** (ver «Piezas del panel»). `motion-kit/interfaz`
@@ -1338,12 +1353,12 @@ Fase 3 de «Un solo motor» (plan `docs/superpowers/plans/2026-11-28-un-solo-mot
 | Pieza | Para qué |
 |---|---|
 | `IconoCaja` | El ícono de una sección en su cuadradito de cartel (36, 44 o 56 px). |
-| `BotonPanel` | El grande, para la acción principal de una sección. El chico, en píldora, para una tarjeta (`tono`: principal o peligro). Al menos 44 px. |
+| `BotonPanel` | El grande, para la acción principal de una sección. El chico, en píldora, para una tarjeta (`tono`: principal o peligro). Al menos 44 px. Para lo que se ve como botón sin serlo (un enlace, una etiqueta): `useEstilosBotonPanel()` y `className="mk-bp"` con `data-tamano` (v0.9.1). |
 | `Pastilla` | El estado de algo (verde, gris, naranjo, morado, rojo). Su texto lee `--mk-estado-texto`, no `--mk-sobre-sol` (que puede ser blanco). |
 | `CabezaSeccion` | La cabecera de una sección: ícono, título en letra de cartel, bajada y acción. Bajo 768 px, la acción baja. |
 | `GrillaTarjetas` | Una columna; dos desde 1024 px. |
 | `TarjetaFila` | Lo que el negocio tiene (una lista, un producto): foto o ícono, título `h3`, estado, detalle, acciones y pie. |
-| `Seccion` | Una hoja con su título `h2`; separa lo que lleva adentro. En `motion-kit` se llama `SeccionPanel`. |
+| `Seccion` | Una hoja con su título `h2` (o `h3` con `nivel={3}`, v0.9.1); separa lo que lleva adentro. En `motion-kit` se llama `SeccionPanel`. |
 | `Selector` | Un `Campo` con su `select`, con la letra de la página. |
 | `BarraLateral` | La barra del panel (ver abajo). |
 

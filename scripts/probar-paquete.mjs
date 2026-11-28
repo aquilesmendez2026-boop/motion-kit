@@ -113,6 +113,16 @@ createRoot(document.getElementById("raiz")!).render(
   </>,
 );
 `);
+writeFileSync(join(P, "panel-estilos-boton.tsx"), `
+import { createRoot } from "react-dom/client";
+import { useEstilosBotonPanel } from "motion-kit/interfaz";
+
+function Enlace() {
+  useEstilosBotonPanel();
+  return <a className="mk-bp" data-tamano="chico" href="mailto:hola@lamente.cl">Escríbenos</a>;
+}
+createRoot(document.getElementById("raiz")!).render(<Enlace />);
+`);
 writeFileSync(join(P, "panel-completo.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Cargando, SubirImagen, ToastProvider, useToast } from "motion-kit/interfaz";
@@ -247,6 +257,15 @@ const textoPiezas = Object.keys(piezas.metafile.outputs).filter((f) => f.endsWit
 for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato", "mk-subir", "mk-confirmar"]) ok(!textoPiezas.includes(pieza), `no se cuela «${pieza}» en el panel con las piezas del panel`);
 const pesoPiezas = Object.keys(piezas.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((s, f) => s + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
 ok(pesoPiezas < 6, `el panel con las piezas del panel pesa ${pesoPiezas.toFixed(1)} KB comprimidos (menos de 6)`);
+
+// 10. Solo los estilos de BotonPanel (v0.9.1): trae su CSS y nada más de interfaz.
+const estilosBoton = await build({
+  entryPoints: [join(P, "panel-estilos-boton.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-estilos-boton"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const textoEstilosBoton = Object.keys(estilosBoton.metafile.outputs).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(P, f), "utf8")).join("");
+ok(textoEstilosBoton.includes(".mk-bp[data-tamano=chico]"), "useEstilosBotonPanel trae el CSS del botón chico");
+for (const pieza of ["mk-barra", "mk-tarjeta-fila", "mk-subir", "mk-confirmar"]) ok(!textoEstilosBoton.includes(pieza), `useEstilosBotonPanel no trae «${pieza}»`);
 
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);

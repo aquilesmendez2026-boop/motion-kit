@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.9.1 (28-11-2026)
+
+Dos pedidos del front de La Mente, mientras pasa su panel a las piezas de la v0.9.0. Ningún contrato cambia.
+
+- **`useEstilosBotonPanel()`** (en `motion-kit/interfaz` y `motion-kit`): carga los estilos de `BotonPanel` sin
+  montar uno. Sirve para lo que se ve como botón sin ser un `button`, como un enlace, una etiqueta con su casilla o el
+  botón de `Copiar`. Se les pone `className="mk-bp"`, `data-tamano` (y `data-tono`) y `data-mk-adorno="boton"`. Solo
+  trae el CSS del botón. Para eso, `BotonPanel` ahora:
+  - quita el subrayado de un enlace;
+  - con `aria-disabled="true"` se ve deshabilitado y no reacciona al mouse;
+  - en una etiqueta que envuelve su casilla, muestra el foco de la casilla.
+- **`Seccion` con `nivel`** (`2` por defecto, o `3`): el título va en `h2` o en `h3`, con la misma marca y la misma
+  letra. Es para una sección dentro de otra (los packs del panel).
+
 ## 0.9.0 (28-11-2026)
 
 Fase 3 de «Un solo motor»: **las piezas del panel**. Lo que el front de La Mente tenía en `Modulo.tsx`, `modulo.css`,

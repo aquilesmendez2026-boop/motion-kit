@@ -78,7 +78,10 @@ test("piezas del panel: cada pieza se marca para la firma del tema", () => {
 test("piezas del panel: los títulos van en su nivel (h2 la sección, h3 la tarjeta) y con su marca", () => {
   const leer = (p: string) => readFileSync(`src/interfaz/${p}.tsx`, "utf8");
   assert.match(leer("CabezaSeccion"), /<h2[^>]*data-mk-adorno="titulo"/);
-  assert.match(leer("Seccion"), /<h2[^>]*data-mk-adorno="titulo"/);
+  // Seccion: h2 por defecto, h3 con nivel={3} (v0.9.1); el título lleva su marca.
+  assert.match(leer("Seccion"), /nivel = 2/);
+  assert.match(leer("Seccion"), /nivel === 3 \? "h3" : "h2"/);
+  assert.match(leer("Seccion"), /<Titulo[^>]*data-mk-adorno="titulo"/);
   assert.match(leer("TarjetaFila"), /<h3/);
   assert.match(leer("TarjetaFila"), /data-mk-adorno="hoja"/);
   assert.match(leer("Seccion"), /data-mk-adorno="hoja"/);
@@ -92,6 +95,14 @@ test("piezas del panel: la barra lateral es un nav con nombre, marca la elegida 
   for (const marca of ["barra", "grupo"]) assert.ok(t.includes(`data-mk-adorno="${marca}"`), `BarraLateral no lleva data-mk-adorno="${marca}"`);
   assert.match(t, /"--mk-grupo"/);
   assert.match(t, /prefers-reduced-motion/);
+});
+
+// v0.9.1 (pedido del front): lo que se ve como botón chico sin serlo (un enlace, una etiqueta) carga los estilos solo.
+test("piezas del panel: useEstilosBotonPanel se exporta en interfaz y en motion-kit", async () => {
+  const interfaz = await import("../src/entradas/interfaz");
+  const todo = await import("../src/index");
+  assert.equal(typeof interfaz.useEstilosBotonPanel, "function");
+  assert.equal(typeof todo.useEstilosBotonPanel, "function");
 });
 
 test("piezas del panel: Selector usa Campo (etiqueta, ayuda y error accesibles)", () => {

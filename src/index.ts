@@ -93,7 +93,7 @@ export { BarraLateral } from "./interfaz/BarraLateral";
 export type { BarraLateralProps, GrupoBarra, SeccionBarra } from "./interfaz/BarraLateral";
 export { IconoCaja } from "./interfaz/IconoCaja";
 export type { IconoCajaProps } from "./interfaz/IconoCaja";
-export { BotonPanel } from "./interfaz/BotonPanel";
+export { BotonPanel, useEstilosBotonPanel } from "./interfaz/BotonPanel";
 export type { BotonPanelProps } from "./interfaz/BotonPanel";
 export { Pastilla } from "./interfaz/Pastilla";
 export type { PastillaProps } from "./interfaz/Pastilla";

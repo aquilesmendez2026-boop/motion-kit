@@ -974,6 +974,28 @@ if (parte("piezas-panel")) {
     // El selector tiene la letra de la página y su relleno, no el del navegador (revisión de la v0.9.0).
     const select = await pagina.$eval("[data-prueba=selector] select, select[data-prueba=selector]", (s) => ({ letra: getComputedStyle(s).fontSize, relleno: parseFloat(getComputedStyle(s).paddingLeft), cuerpo: getComputedStyle(s.closest(".mk-campo")).fontSize }));
     revisar(select.letra === select.cuerpo && select.relleno >= 10, `piezas-panel (${d}): el selector tiene la letra de la página y su relleno (${JSON.stringify(select)})`);
+    // v0.9.1: una sección puede llevar su título en h3, con la misma marca y la misma letra.
+    const h3 = await pagina.$eval("[data-prueba=seccion-h3]", (s) => {
+      const t = s.querySelector(".mk-seccion-titulo");
+      const h2 = document.querySelector("[data-prueba=seccion] .mk-seccion-titulo");
+      return { etiqueta: t?.tagName, marca: t?.dataset.mkAdorno, h2: s.querySelectorAll("h2").length, letra: t && getComputedStyle(t).fontSize, otra: h2 && getComputedStyle(h2).fontSize };
+    });
+    revisar(h3.etiqueta === "H3" && h3.marca === "titulo" && h3.h2 === 0 && h3.letra === h3.otra, `piezas-panel (${d}): una sección con nivel 3 lleva su título en h3, con su marca y la misma letra (${JSON.stringify(h3)})`);
+    // v0.9.1: un enlace con los estilos de BotonPanel se ve como el botón chico.
+    const enlace = await pagina.evaluate(() => {
+      const a = document.querySelector("[data-prueba=enlace-chico]");
+      const b = document.querySelector("[data-prueba=boton-chico]");
+      const p = ["borderTopLeftRadius", "borderTopWidth", "paddingLeft", "fontSize", "fontWeight", "minHeight", "textDecorationLine"];
+      return p.filter((x) => getComputedStyle(a)[x] !== getComputedStyle(b)[x]);
+    });
+    revisar(enlace.length === 0, `piezas-panel (${d}): un enlace con los estilos de BotonPanel se ve como el botón chico${enlace.length ? ` (distinto: ${enlace.join(", ")})` : ""}`);
+    // Revisión de la v0.9.1: una etiqueta con aria-disabled se ve deshabilitada, y con el foco en su radio se marca.
+    const apagada = await pagina.$eval("[data-prueba=opcion-deshabilitada]", (l) => [getComputedStyle(l).opacity, getComputedStyle(l).cursor]);
+    revisar(apagada[0] === "0.55" && apagada[1] === "not-allowed", `piezas-panel (${d}): una etiqueta con aria-disabled se ve deshabilitada (${apagada.join(", ")})`);
+    await pagina.focus("[data-prueba=opcion-chica] input");
+    await pagina.keyboard.press("Shift");
+    const marcada = await pagina.$eval("[data-prueba=opcion-chica]", (l) => [getComputedStyle(l).outlineStyle, getComputedStyle(l).outlineWidth]);
+    revisar(marcada[0] === "solid" && marcada[1] === "3px", `piezas-panel (${d}): con el foco en su radio, la etiqueta se marca (${marcada.join(", ")})`);
     // La sección separa lo que lleva adentro (como el Bloque de la guía del front: 1rem).
     const separa = await pagina.$eval("[data-prueba=seccion]", (s) => getComputedStyle(s).rowGap);
     revisar(separa === "16px", `piezas-panel (${d}): la sección separa lo que lleva adentro (${separa})`);
