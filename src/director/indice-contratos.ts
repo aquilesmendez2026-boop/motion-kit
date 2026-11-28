@@ -4,6 +4,7 @@ import { contratoPartitura } from "./contrato-partitura";
 import { contratoCasa } from "./contrato-casa";
 import { contratoEncabezado } from "../receta/contrato";
 import { contratoPagina } from "../relatos/contrato-pagina";
+import { contratoTemas } from "../temas/contrato";
 
 export function indiceContratos(motionKit: string) {
   return {
@@ -16,6 +17,7 @@ export function indiceContratos(motionKit: string) {
       { archivo: "pagina-motionkit.json", version: contratoPagina().version },
       { archivo: "partitura-motionkit.json", version: contratoPartitura().version },
       { archivo: "partituras-casa-motionkit.json", version: contratoCasa().version },
+      { archivo: "temas-motionkit.json", version: contratoTemas().version },
     ],
   };
 }

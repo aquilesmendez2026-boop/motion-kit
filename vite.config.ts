@@ -31,6 +31,7 @@ export default defineConfig(({ command, mode }) => ({
               luz: fileURLToPath(new URL("./src/entradas/luz.ts", import.meta.url)),
               interfaz: fileURLToPath(new URL("./src/entradas/interfaz.ts", import.meta.url)),
               comic: fileURLToPath(new URL("./src/entradas/comic.ts", import.meta.url)),
+              temas: fileURLToPath(new URL("./src/entradas/temas.ts", import.meta.url)),
               receta: fileURLToPath(new URL("./src/receta/index.ts", import.meta.url)),
             },
             formats: ["es", "cjs"],

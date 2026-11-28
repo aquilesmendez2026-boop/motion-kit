@@ -78,3 +78,29 @@ test("los ids calzan con el contrato del backend", { skip: !existsSync(CONTRATO)
   assert.deepEqual([...TEMA_LAMENTE_IDS].sort(), Object.keys(c.temas).sort());
   for (const t of TEMA_LAMENTE_IDS) assert.equal(TEMAS_LAMENTE[t].premium, c.temas[t].premium, `premium de ${t}`);
 });
+
+// Fase 2 de «Un solo motor»: el catálogo de temas es la fuente. Esta copia chica (solo la página) se queda aquí porque
+// viaja en motion-kit/encabezado y motion-kit/receta, que no pueden cargar el catálogo entero; tiene que ser igual a él.
+test("la copia de la página es igual al catálogo de temas", async () => {
+  const { PALETAS, TEMAS } = await import("../src/temas/datos");
+  for (const p of PALETAS) {
+    const c = PALETAS_LAMENTE[p.id as keyof typeof PALETAS_LAMENTE];
+    assert.ok(c, `falta la paleta «${p.id}» en la copia`);
+    const { textoSuave, ...resto } = c.colores;
+    assert.deepEqual({ ...resto, suave: textoSuave }, p.colores, `colores de «${p.id}»`);
+    assert.equal(c.nombre, p.nombre);
+  }
+  for (const t of TEMAS.filter((x) => x.para.includes("pagina"))) {
+    const c = TEMAS_LAMENTE[t.id as keyof typeof TEMAS_LAMENTE] as { nombre: string; premium: boolean; paleta: string; estilo?: Record<string, unknown> };
+    assert.ok(c, `falta el tema «${t.id}» en la copia`);
+    assert.equal(c.nombre, t.nombre);
+    assert.equal(c.paleta, t.paleta);
+    assert.equal(BASE_DE_TEMA[t.id as keyof typeof BASE_DE_TEMA], t.estiloBase);
+    if (c.estilo) {
+      assert.equal(c.estilo.fuenteTitulo, t.letra?.fuenteTitulo);
+      assert.equal(c.estilo.radio, t.forma?.radioTarjeta);
+      assert.equal(c.estilo.redondo, t.forma?.radioBoton);
+    }
+  }
+  assert.equal(Object.keys(TEMAS_LAMENTE).length, TEMAS.filter((x) => x.para.includes("pagina")).length);
+});

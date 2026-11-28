@@ -37,9 +37,11 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
   `-- --todo`, la batería completa (~38 min).
 - `npm run humo` (con el servidor arriba): la pasada rápida (~1 min): entra a cada vitrina, la recorre y revisa que no
   haya errores; en `#hilos` y `#pagina`, cada relato de página.
-- **Antes de una etiqueta** (decisión de Aquiles del 25-11-2026): `npm run verificar -- --desde=<etiqueta anterior>` y
-  `npm run humo` (unos 8 min). La batería completa (`-- --todo`), cada 3 etiquetas o antes de un salto de versión
-  (0.5 → 0.6); el script ya la pide solo si cambió algo común. Anotar en el commit del paquete cuál se corrió.
+- **Antes de una etiqueta** (decisión de Aquiles del 28-11-2026: «siempre solo lo que cambió»):
+  `npm run verificar -- --desde=<etiqueta anterior>` (corre las pruebas que tocan los cambios, también los archivos
+  nuevos; si cambió algo común, como `src/estilos`, `src/utils` o `src/hooks`, el script corre todo porque todo queda
+  tocado) y `npm run humo`. Sin batería completa periódica: `-- --todo` solo si Aquiles la pide. Anotar en el commit
+  del paquete qué se corrió.
 - `npm run capturas -- tomar <carpeta>` y `npm run capturas -- comparar <antes> <después>` (con el servidor arriba):
   la muestra fija de «se ve igual» de «Un solo motor» (50 capturas, ~1 min); falla si una cambia más de 0,5 %.
   `npm run tabla`: revisa que la tabla de nombres (`docs/un-solo-motor/`) cubra cada variable del front.
@@ -48,5 +50,5 @@ Librería propia de efectos y animaciones para React, y estudio de encabezados p
 - `motion-kit/comic`: el cómic del panel (la mano, globos, carteles, `Guia`, `useCelebrar`). Ver «Guardar y cómic del
   panel» en `docs/CATALOGO.md`; su prueba visual es `verificar-comic` (con `#comic` y `#panel-piezas`). El panel
   vivo (`#panel`, todas las secciones) se prueba con `node scripts/verificar-panel.mjs vivo`.
-- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos|panel|comic|growshop>.mjs [url]` con el servidor
+- Pruebas visuales: `node scripts/verificar-<efectos|piezas|estilos|encabezados|escena|lamente|relatos|biblioteca|pelicula|momentos|momentos2|momentos3|momentos4|fotos|dedo|director|luz|hilos|panel|comic|growshop|temas>.mjs [url]` con el servidor
   arriba (usan Playwright).

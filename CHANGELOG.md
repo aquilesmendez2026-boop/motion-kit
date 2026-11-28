@@ -1,5 +1,29 @@
 # Cambios
 
+## 0.8.0 (28-11-2026)
+
+Fase 2 de «Un solo motor»: **los temas como datos**. Una entrada nueva, `motion-kit/temas`, y un contrato nuevo,
+`contrato/temas-motionkit.json` (versión 1). Ningún otro contrato cambia.
+
+- **El catálogo:** 12 paletas, 25 temas y 24 mezclas.
+  - Los temas son los 12 de la página y los 14 del panel; `rock` está en los dos lados, con su versión del panel aparte.
+  - Se importaron del front de La Mente (`scripts/temas-del-front.mjs`). Desde ahora la fuente es motion-kit.
+  - `npm run temas` revisa que el catálogo dé lo mismo que el CSS del front, hasta que el front borre el suyo.
+- **Aplicar un tema:** `variablesDeTema(id, { para, paleta?, oscuro? })` declara todas las `--mk-*`. Lo que el tema no
+  define va como `initial`: cada pieza usa su respaldo y se corta lo que viene de afuera.
+- **El componente `<Tema tema para>`:** marca su caja con `data-mk-tema`, pone sus variables, monta su firma y carga su
+  letra. También: `buscarTema` (un id desconocido cae a «lamente» o «clasico») y `cargarLetra`.
+- **Las firmas, como 13 adornos con nombre** (`cinta-peligro`, `poste-barbero`, `pulso`…):
+  - Apuntan a partes marcadas con `data-mk-adorno` (`hoja`, `titulo`, `icono`, `barra`, `grupo`, `cabeza`, `estado`,
+    `boton`, `vacio`), nunca a clases de quien las usa.
+  - Se bajan aparte, y solo si el tema tiene firma.
+  - Tres animaciones se rehicieron con `transform` y `opacity`: el aura de «calma», el poste de «barbería» y el pulso
+    de «clínica».
+- **Pesos:** `motion-kit/temas` 7,8 de 8 KB (tope de Aquiles, 28-11). Las mezclas no van en la entrada: el Estudio y el
+  backend las leen del contrato.
+- **Demo:** `#temas` (todos los temas, con un selector y una vista previa que no hereda el tema del panel). El panel
+  vivo cambia su selector «Forma» por los 14 temas del panel. Prueba nueva: `verificar-temas`.
+
 ## 0.7.0 (28-11-2026)
 
 Fase 1 de «Un solo motor» (decisión de Aquiles del 28-11): **el ADN**. Las piezas de `motion-kit/interfaz` y

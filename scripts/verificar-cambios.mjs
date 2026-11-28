@@ -2,7 +2,7 @@
 // Uso (con `npm run dev` arriba):
 //   node scripts/verificar-cambios.mjs [url] [--lista] [--todo] [--desde=<commit>]
 //   --lista   solo dice qué correría, sin correr nada
-//   --todo    la batería completa (antes de una etiqueta, o si cambió algo común a todo)
+//   --todo    la batería completa (solo si Aquiles la pide; desde el 28-11 se corre siempre lo que cambió)
 //   --desde   compara contra ese commit (por defecto: lo que hay sin commit, contra el último commit)
 // Lo que no se prueba aquí: lo calculable (`npm test`), los tipos (`npm run typecheck`) y el paquete
 // (`npm run build && npm run peso && npm run probar-paquete`).
@@ -92,6 +92,8 @@ const REGLAS = [
   [/^src\/piezas\/(Boton|Tarjeta)/, ["piezas", "luz:existe", "encabezados"]],
   // El cómic del panel (motion-kit/comic) y su vitrina.
   [/^(src\/comic\/|src\/entradas\/comic|demo\/Comic)/, ["comic", "panel:vivo"]],
+  // Los temas como datos (motion-kit/temas): su vitrina y el panel vivo, que los usa.
+  [/^(src\/temas\/|src\/entradas\/temas|demo\/Temas|scripts\/temas-del-front)/, ["temas", "panel:vivo"]],
   // La página de muestra del growshop: usa encabezados, relatos, momentos y estilos.
   [/^(demo\/Growshop|demo\/growshop\/|src\/(encabezados|relatos|momentos|estilos|receta)\/)/, ["growshop"]],
   // Las piezas del panel (motion-kit/interfaz) y las que toman sus colores: la vitrina #panel y la de piezas.
@@ -117,8 +119,9 @@ const REGLAS = [
 
 function cambiados() {
   const git = (...a) => execFileSync("git", a, { encoding: "utf8" }).split("\n").filter(Boolean);
-  if (desde) return git("diff", "--name-only", desde);
-  return [...new Set([...git("diff", "--name-only", "HEAD"), ...git("ls-files", "--others", "--exclude-standard")])];
+  // Los archivos nuevos sin commit también cuentan (antes, con --desde, no se veían: 28-11).
+  const nuevos = git("ls-files", "--others", "--exclude-standard");
+  return [...new Set([...git("diff", "--name-only", desde ?? "HEAD"), ...nuevos])];
 }
 
 /** De los archivos cambiados, qué correr: { prueba → partes (o null si va entera) } y por qué. */

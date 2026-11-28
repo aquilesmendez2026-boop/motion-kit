@@ -89,10 +89,10 @@ Leído del front el 28-11-2026: `packages/ui/src`, `fronts/pagina-publica/src` y
 | `--lmt-cartel` | `--mk-fuente-cartel` | ya traducido en el panel |
 | `--lm-fuenteTitulo` | `--mk-fuente-titulo` | |
 | `--lm-fuenteTexto` | `--mk-fuente-texto` | |
-| `--lm-tituloPeso` | fase 2 (firma) | |
-| `--lm-tituloMayusculas` | fase 2 (firma) | |
-| `--lm-tituloEspaciado` | fase 2 (firma) | |
-| `--lm-tituloBrillo` | fase 2 (firma) | |
+| `--lm-tituloPeso` | `--mk-titulo-peso` | del tema de la página (catálogo de temas) |
+| `--lm-tituloMayusculas` | `--mk-titulo-mayusculas` | del tema de la página (catálogo de temas) |
+| `--lm-tituloEspaciado` | `--mk-titulo-espaciado` | del tema de la página (catálogo de temas) |
+| `--lm-tituloBrillo` | `--mk-titulo-brillo` | del tema de la página (catálogo de temas) |
 
 ## Ritmo
 
@@ -108,7 +108,7 @@ sin definir (el ritmo de hoy, «vivo»).
 | `--lmt-cielo` | fase 2 (firma) | |
 | `--lmt-poste` | fase 2 (firma) | tema «barberia» |
 | `--lmt-pulso` | fase 2 (firma) | |
-| `--lm-grupo` | se queda | el color de cada grupo de la barra lateral |
+| `--lm-grupo` | `--mk-grupo` | el color de cada grupo de la barra lateral; el front lo sigue declarando en cada grupo (los temas lo usan en sus sombras) |
 | `--lm-paso` | se queda | el color de cada paso en las tarjetas de pasos |
 | `--lm-hueco` | se queda | distribución de `PreciosLista` |
 

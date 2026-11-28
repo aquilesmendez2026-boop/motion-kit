@@ -35,6 +35,8 @@ const VITRINAS = [
   ["#panel", ".pv-panel"],
   ["#panel-piezas", "[data-prueba=panel-tema]"],
   ["#comic", ".cx-pagina"],
+  ["#growshop", ".gs-pagina"],
+  ["#temas", "[data-prueba=selector-temas]"],
   ["#pagina", ".pag-vista .mk-pagina"],
 ];
 

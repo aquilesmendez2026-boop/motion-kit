@@ -101,6 +101,7 @@ export function App() {
           <a href="#panel-piezas">Piezas del panel</a>
           <a href="#comic">Cómic</a>
           <a href="#growshop">Growshop</a>
+          <a href="#temas">Temas</a>
           <a href="#propuesta">Propuesta</a>
           <a href="#guia">Guía del front</a>
           <a href="#profundidad">Foto profunda</a>

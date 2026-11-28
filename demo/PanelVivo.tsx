@@ -5,7 +5,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 import { BotonQueGuarda, BottomSheet, Campo, Confirmar, Contador, Copiar, CountUp, Interruptor, ListaViva, SubirImagen, Tabs, TextoCinetico, useToast } from "../src/entradas/interfaz";
 import { CartelNovedad, Estallido, Globo, Guia, Oferta, useCelebrar, Vacio, type PasoGuia } from "../src/entradas/comic";
-import { variablesTema, type AdnInterfaz } from "../src/interfaz/tema";
+import { variablesTema } from "../src/interfaz/tema";
+import { TEMAS, Tema, variablesDeTema } from "../src/entradas/temas";
 
 // ——— Las secciones, como en el panel de verdad ———
 
@@ -127,30 +128,22 @@ function useTemaEnLaRaiz() {
   }, []);
 }
 
-/** Las formas del ADN para probar en vivo (fase 1 de «Un solo motor»): «La Mente» es sin variables (lo de siempre). */
-const FORMAS: Record<string, Partial<AdnInterfaz>> = {
-  lamente: {},
-  suave: {
-    trazo: "1px solid #E7E1D8", radioTarjeta: "14px", radioBoton: "14px", radioCampo: "14px",
-    sombra: "0 10px 30px rgba(16,34,63,.12)", sombraSuave: "0 4px 12px rgba(16,34,63,.10)", ritmo: "suave",
-  },
-  manga: {
-    trazo: "2.5px solid #10223f", radioTarjeta: "16px", radioBoton: "999px", radioCampo: "12px",
-    sombra: "6px 6px 0 #10223f", sombraSuave: "3px 3px 0 #10223f", hundir: "translate(2px,2px)",
-    fuenteCartel: '"Dela Gothic One","Arial Black",system-ui,sans-serif', ritmo: "manga",
-  },
-};
+/** Los temas del panel del catálogo (fase 2 de «Un solo motor»). */
+const TEMAS_PANEL = TEMAS.filter((x) => x.para.includes("panel"));
 
-/** Pone la forma elegida en :root (como hará el front) y la saca al cambiar. */
-function useFormaEnLaRaiz(forma: string) {
+/**
+ * Las variables del tema también en <body>, solo las variables (como hace el front con data-tema-panel-cuerpo): los
+ * avisos, Confirmar y la guía se dibujan ahí, fuera de la caja del panel.
+ */
+function useTemaEnElCuerpo(tema: string) {
   useEffect(() => {
-    const raiz = document.documentElement;
-    const vars = variablesTema(FORMAS[forma] ?? {});
-    for (const [k, v] of Object.entries(vars)) raiz.style.setProperty(k, v);
+    const cuerpo = document.body;
+    const vars = variablesDeTema(tema, { para: "panel" });
+    for (const [k, v] of Object.entries(vars)) cuerpo.style.setProperty(k, v);
     return () => {
-      for (const k of Object.keys(vars)) raiz.style.removeProperty(k);
+      for (const k of Object.keys(vars)) cuerpo.style.removeProperty(k);
     };
-  }, [forma]);
+  }, [tema]);
 }
 
 const TELEFONO = "(max-width: 819px)";
@@ -184,7 +177,7 @@ const nuevoId = () => ++siguienteId;
 function Hoja({ i = 0, className = "", children, ...resto }: { i?: number; className?: string; children: ReactNode } & HTMLAttributes<HTMLDivElement>) {
   return (
     <div className="pv-sombra" style={{ "--i": i } as CSSProperties}>
-      <div className={`pv-hoja ${className}`} {...resto}>
+      <div className={`pv-hoja ${className}`} data-mk-adorno="hoja" {...resto}>
         {children}
       </div>
     </div>
@@ -194,7 +187,7 @@ function Hoja({ i = 0, className = "", children, ...resto }: { i?: number; class
 /** La pastilla de estado: al cambiar, se estampa de nuevo. */
 function Pastilla({ texto, tono }: { texto: string; tono: string }) {
   return (
-    <span key={texto} className="pv-pastilla" data-tono={tono}>
+    <span key={texto} className="pv-pastilla" data-tono={tono} data-mk-adorno="estado">
       {texto}
     </span>
   );
@@ -204,8 +197,8 @@ function Pastilla({ texto, tono }: { texto: string; tono: string }) {
 
 export function PanelVivo() {
   useTemaEnLaRaiz();
-  const [forma, setForma] = useState("lamente");
-  useFormaEnLaRaiz(forma);
+  const [tema, setTema] = useState("lamente");
+  useTemaEnElCuerpo(tema);
   const tel = useTelefono();
   const toast = useToast();
   const [id, setId] = useState(() => (location.hash.startsWith("#panel?s=") ? location.hash.slice(9) : "colaboraciones"));
@@ -254,16 +247,16 @@ export function PanelVivo() {
   const barra = (
     <nav className="pv-barra" aria-label="Secciones">
       {GRUPOS.map((g) => (
-        <div key={g.nombre ?? "inicio"} className="pv-grupo" style={{ "--pv-grupo": g.color } as CSSProperties}>
+        <div key={g.nombre ?? "inicio"} className="pv-grupo" style={{ "--pv-grupo": g.color, "--mk-grupo": g.color } as CSSProperties}>
           {g.nombre && (
-            <p className="pv-grupo-nombre" aria-hidden="true">
+            <p className="pv-grupo-nombre" data-mk-adorno="grupo" aria-hidden="true">
               <i />
               {g.nombre}
             </p>
           )}
           {g.secciones.map((x) => (
             <button key={x.id} type="button" className="pv-item" aria-current={x.id === id ? "page" : undefined} onClick={() => ir(x.id)} data-seccion={x.id}>
-              <span className="pv-item-icono" aria-hidden="true">
+              <span className="pv-item-icono" data-mk-adorno="icono" aria-hidden="true">
                 {x.icono}
               </span>
               {x.nombre}
@@ -276,7 +269,7 @@ export function PanelVivo() {
   );
 
   return (
-    <div className="pv-panel">
+    <Tema tema={tema} para="panel" className="pv-panel">
       <style>{CSS}</style>
       <header className="pv-arriba">
         <a href="#" className="pv-marca">
@@ -289,7 +282,7 @@ export function PanelVivo() {
           Cami Viaja
         </span>
         {tel && (
-          <button type="button" className="pv-boton pv-chico pv-menu" onClick={() => setMenu(true)} data-guia="barra-tel" aria-label="Secciones">
+          <button type="button" data-mk-adorno="boton" className="pv-boton pv-chico pv-menu" onClick={() => setMenu(true)} data-guia="barra-tel" aria-label="Secciones">
             ☰
           </button>
         )}
@@ -308,21 +301,23 @@ export function PanelVivo() {
           </span>
         </CartelNovedad>
         <label className="pv-forma">
-          <span>Forma</span>
-          <select value={forma} onChange={(ev) => setForma(ev.target.value)} data-prueba="forma">
-            <option value="lamente">La Mente</option>
-            <option value="suave">Suave</option>
-            <option value="manga">Manga</option>
+          <span>Tema</span>
+          <select value={tema} onChange={(ev) => setTema(ev.target.value)} data-prueba="tema">
+            {TEMAS_PANEL.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.nombre}
+              </option>
+            ))}
           </select>
         </label>
-        <button type="button" className="pv-boton pv-chico pv-amarillo" onClick={() => setGuia(true)}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton pv-chico pv-amarillo" onClick={() => setGuia(true)}>
           {tel ? "Guía" : "¿Cómo se usa?"}
         </button>
       </header>
 
       <div className="pv-cuerpo">
         {!tel && (
-          <aside className="pv-lado" data-guia="barra" ref={lado}>
+          <aside className="pv-lado" data-guia="barra" data-mk-adorno="barra" ref={lado}>
             {barra}
           </aside>
         )}
@@ -358,21 +353,21 @@ export function PanelVivo() {
       </div>
 
       <Guia abierta={guia} pasos={pasos} alTerminar={() => setGuia(false)} alSaltar={() => setGuia(false)} />
-    </div>
+    </Tema>
   );
 }
 
 /** El encabezado de cada sección: el ícono amarillo con líneas de velocidad, el grupo y el título que cae. */
 function Cabeza({ seccion }: { seccion: (typeof TODAS)[number] }) {
   return (
-    <div className="pv-cabeza" data-guia="cabeza">
+    <div className="pv-cabeza" data-guia="cabeza" data-mk-adorno="cabeza">
       <span className="pv-icono-caja" aria-hidden="true">
         <span className="pv-rayos" />
-        <span className="pv-icono">{seccion.icono}</span>
+        <span className="pv-icono" data-mk-adorno="icono">{seccion.icono}</span>
       </span>
       <div className="pv-titulos">
         {seccion.grupo.nombre && <p className="pv-antetitulo">{seccion.grupo.nombre}</p>}
-        <TextoCinetico texto={seccion.nombre} efecto="impacto" como="h1" className="pv-titulo" />
+        <TextoCinetico texto={seccion.nombre} efecto="impacto" como="h1" className="pv-titulo" data-mk-adorno="titulo" />
         <p className="pv-bajada">{BAJADA[seccion.id] ?? "Lo que tengas aquí aparece en tu página."}</p>
       </div>
     </div>
@@ -437,7 +432,7 @@ function Resumen({ ir }: { ir: (id: string) => void }) {
       </div>
       <div className="pv-dos">
         <Hoja i={4}>
-          <h2 className="pv-h2">Esta semana</h2>
+          <h2 className="pv-h2" data-mk-adorno="titulo">Esta semana</h2>
           <div className="pv-barras" role="img" aria-label="Visitas de la semana: el sábado fue el mejor día">
             {semana.map((v, i) => (
               <span key={i} className="pv-barra-dia" style={{ "--i": i, "--alto": v / 100 } as CSSProperties}>
@@ -448,7 +443,7 @@ function Resumen({ ir }: { ir: (id: string) => void }) {
           </div>
         </Hoja>
         <Hoja i={5}>
-          <h2 className="pv-h2">
+          <h2 className="pv-h2" data-mk-adorno="titulo">
             Lo que llega <span className="pv-envivo">● en vivo</span>
           </h2>
           <ListaViva className="pv-feed">
@@ -461,10 +456,10 @@ function Resumen({ ir }: { ir: (id: string) => void }) {
         </Hoja>
       </div>
       <div className="pv-fila-botones">
-        <button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => ir("pagina")}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => ir("pagina")}>
           Editar mi página →
         </button>
-        <button type="button" className="pv-boton" onClick={() => ir("pedidos")}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton" onClick={() => ir("pedidos")}>
           Ver pedidos
         </button>
       </div>
@@ -532,18 +527,18 @@ function PaginaSeccion() {
           <span className="pv-vista-boton">Reservar</span>
         </Hoja>
         <Hoja i={1}>
-          <h2 className="pv-h2">Tu link</h2>
+          <h2 className="pv-h2" data-mk-adorno="titulo">Tu link</h2>
           <p className="pv-nota">Compártelo en tu Instagram o por WhatsApp.</p>
           <div className="pv-link">
             <code>lamente.cl/cami-viaja</code>
-            <Copiar texto="https://lamente.cl/cami-viaja" className="pv-boton pv-chico">
+            <Copiar texto="https://lamente.cl/cami-viaja" data-mk-adorno="boton" className="pv-boton pv-chico">
               Copiar
             </Copiar>
           </div>
           <div className="pv-fila-botones">
             <button
               type="button"
-              className="pv-boton pv-amarillo"
+              data-mk-adorno="boton" className="pv-boton pv-amarillo"
               data-guia="accion"
               onClick={() => {
                 setPublicada(true);
@@ -587,7 +582,7 @@ function PaginaSeccion() {
                 {(a11y) => <textarea {...a11y} className="pv-entrada" rows={3} value={texto} onChange={(ev) => setTexto(ev.target.value)} />}
               </Campo>
               <BotonQueGuarda
-                className="pv-boton pv-amarillo"
+                data-mk-adorno="boton" className="pv-boton pv-amarillo"
                 alGuardar={async () => {
                   await espera(700);
                   if (texto.trim().length < 20) {
@@ -636,7 +631,7 @@ function Precios() {
   if (lista.length === 0)
     return (
       <Hoja i={0}>
-        <Vacio icono={<span className="pv-icono-chico pv-icono-grande">🏷️</span>} titulo="Aún no tienes precios" texto="Crea el primero y aparece al tiro en tu página." accion={<button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={agregar}>Crear el primero</button>} />
+        <Vacio icono={<span className="pv-icono-chico pv-icono-grande">🏷️</span>} titulo="Aún no tienes precios" texto="Crea el primero y aparece al tiro en tu página." accion={<button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={agregar}>Crear el primero</button>} />
       </Hoja>
     );
   const quien = lista.find((p) => p.id === borrar);
@@ -651,7 +646,7 @@ function Precios() {
             </div>
             <div className="pv-fila">
               <Interruptor activo={p.visible} etiqueta="Se ve en la página" textos={["Oculto", "Visible"]} alCambiar={(v) => setLista((l) => l.map((x) => (x.id === p.id ? { ...x, visible: v } : x)))} />
-              <button type="button" className="pv-boton pv-chico pv-peligro" onClick={() => setBorrar(p.id)}>
+              <button type="button" data-mk-adorno="boton" className="pv-boton pv-chico pv-peligro" onClick={() => setBorrar(p.id)}>
                 Borrar
               </button>
             </div>
@@ -659,7 +654,7 @@ function Precios() {
         ))}
       </ListaViva>
       <div className="pv-fila-botones">
-        <button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={agregar}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={agregar}>
           + Agregar precio
         </button>
       </div>
@@ -691,9 +686,9 @@ function Novedades() {
   const [posts, setPosts] = useState([{ id: 1, t: "¡Nuevo tour a Chiloé en enero!", f: "hace 2 días" }]);
   if (!activo)
     return (
-      <Oferta destacado="¡30 días gratis!" accion={<button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => { setActivo(true); celebrar("¡Activado!"); }}>Probar gratis</button>}>
+      <Oferta destacado="¡30 días gratis!" accion={<button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => { setActivo(true); celebrar("¡Activado!"); }}>Probar gratis</button>}>
         <Hoja i={0} className="pv-oferta">
-          <h2 className="pv-h2">Novedades</h2>
+          <h2 className="pv-h2" data-mk-adorno="titulo">Novedades</h2>
           <p className="pv-nota">Publica lo nuevo y le llega a tu gente en tu página y por correo.</p>
           <ul className="pv-lista-check">
             <li>Fotos y texto corto</li>
@@ -711,7 +706,7 @@ function Novedades() {
             {(a11y) => <input {...a11y} className="pv-entrada" value={titulo} placeholder="Ej.: ¡Fechas nuevas para Atacama!" onChange={(ev) => setTitulo(ev.target.value)} />}
           </Campo>
           <BotonQueGuarda
-            className="pv-boton pv-amarillo"
+            data-mk-adorno="boton" className="pv-boton pv-amarillo"
             data-guia="accion"
             textos={{ guardando: "Publicando…", bien: "¡Publicada!" }}
             alGuardar={async () => {
@@ -842,7 +837,7 @@ function Colaboraciones() {
                   </span>
                 </div>
                 <div className="pv-colab-acciones">
-                  <a className="pv-boton pv-amarillo pv-chico" href={`mailto:${c.correo}`} onClick={(ev) => { ev.preventDefault(); toast(`Abriría tu correo para responderle a ${c.persona}.`); if (c.estado === "nueva") setLista((l) => l.map((x) => (x.id === c.id ? { ...x, estado: "conversando" } : x))); }} {...(i === 0 ? { "data-guia": "accion" } : {})}>
+                  <a data-mk-adorno="boton" className="pv-boton pv-amarillo pv-chico" href={`mailto:${c.correo}`} onClick={(ev) => { ev.preventDefault(); toast(`Abriría tu correo para responderle a ${c.persona}.`); if (c.estado === "nueva") setLista((l) => l.map((x) => (x.id === c.id ? { ...x, estado: "conversando" } : x))); }} {...(i === 0 ? { "data-guia": "accion" } : {})}>
                     Responder por correo
                   </a>
                   <label className="pv-select">
@@ -855,7 +850,7 @@ function Colaboraciones() {
                       ))}
                     </select>
                   </label>
-                  <button type="button" className="pv-boton pv-chico pv-peligro" onClick={() => setBorrar(c.id)}>
+                  <button type="button" data-mk-adorno="boton" className="pv-boton pv-chico pv-peligro" onClick={() => setBorrar(c.id)}>
                     Borrar
                   </button>
                 </div>
@@ -865,7 +860,7 @@ function Colaboraciones() {
         </ListaViva>
       )}
       <div className="pv-fila-botones">
-        <button type="button" className="pv-boton" onClick={llega}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton" onClick={llega}>
           Simular que llega una
         </button>
       </div>
@@ -928,7 +923,7 @@ function Pedidos() {
       <Hoja i={0} className="pv-fila pv-fila-ancha">
         <Interruptor activo={recibir} alCambiar={setRecibir} etiqueta="Recibir pedidos por la página" textos={["Pausado", "Abierto"]} />
         <Contador valor={pendientes} etiqueta="por atender" />
-        <button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={llega}>
+        <button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={llega}>
           Simular un pedido
         </button>
       </Hoja>
@@ -948,7 +943,7 @@ function Pedidos() {
                 ))}
               </div>
               {p.paso < 3 && (
-                <button type="button" className="pv-boton pv-chico" onClick={() => setPedidos((l) => l.map((x) => (x.id === p.id ? { ...x, paso: x.paso + 1 } : x)))}>
+                <button type="button" data-mk-adorno="boton" className="pv-boton pv-chico" onClick={() => setPedidos((l) => l.map((x) => (x.id === p.id ? { ...x, paso: x.paso + 1 } : x)))}>
                   {PASOS_PEDIDO[p.paso + 1].nombre} →
                 </button>
               )}
@@ -987,7 +982,7 @@ function Agenda() {
               ) : (
                 <button
                   type="button"
-                  className="pv-boton pv-chico pv-amarillo"
+                  data-mk-adorno="boton" className="pv-boton pv-chico pv-amarillo"
                   {...(i === 0 ? { "data-guia": "accion" } : {})}
                   onClick={() => {
                     setReservas((r) => ({ ...r, [clave]: "Tú (a mano)" }));
@@ -1022,10 +1017,10 @@ function Caja() {
           <CountUp to={total} prefix="$" locale="es-CL" duration={700} />
         </span>
         <div className="pv-fila-botones">
-          <button type="button" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => anotar("Venta: asesoría", 35000)}>
+          <button type="button" data-mk-adorno="boton" className="pv-boton pv-amarillo" data-guia="accion" onClick={() => anotar("Venta: asesoría", 35000)}>
             + Venta $35.000
           </button>
-          <button type="button" className="pv-boton" onClick={() => anotar("Gasto: café", -2500)}>
+          <button type="button" data-mk-adorno="boton" className="pv-boton" onClick={() => anotar("Gasto: café", -2500)}>
             − Gasto $2.500
           </button>
         </div>
@@ -1089,7 +1084,7 @@ function Generica({ id }: { id: string }) {
           accion={
             <button
               type="button"
-              className="pv-boton pv-amarillo"
+              data-mk-adorno="boton" className="pv-boton pv-amarillo"
               data-guia="accion"
               onClick={() => {
                 setItems(ejemplos.map(([t, m]) => ({ id: nuevoId(), t, m: m ?? "", activo: true })));
@@ -1126,7 +1121,7 @@ function Generica({ id }: { id: string }) {
 // ——— Estilos (solo de la demo) ———
 
 const CSS = `
-.pv-panel{--pv-tinta:#10223f;--pv-sol:#ffc83d;--pv-fondo:#FAF7F2;--pv-carta:'Dela Gothic One','Arial Black',system-ui,sans-serif;min-height:100vh;background:var(--pv-fondo);color:var(--pv-tinta);font-family:Outfit,Inter,system-ui,sans-serif;overflow-x:clip}
+.pv-panel{--pv-tinta:var(--mk-texto,#10223f);--pv-sol:var(--mk-cartel,#ffc83d);--pv-fondo:var(--mk-fondo,#FAF7F2);--pv-carta:var(--mk-fuente-cartel,'Dela Gothic One','Arial Black',system-ui,sans-serif);min-height:100vh;background:var(--pv-fondo);color:var(--pv-tinta);font-family:Outfit,Inter,system-ui,sans-serif;overflow-x:clip}
 .pv-arriba{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px clamp(12px,3vw,24px);background:var(--pv-fondo);border-bottom:2.5px solid var(--pv-tinta)}
 .pv-pestanas{max-width:100%;overflow-x:auto;scrollbar-width:none}
 .pv-menu{width:44px;padding:0;font-size:1.2rem}
@@ -1145,7 +1140,7 @@ const CSS = `
 .pv-item:hover{transform:translateX(3px)}
 .pv-item:focus-visible{outline:3px solid var(--pv-grupo);outline-offset:1px}
 .pv-item-icono{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:color-mix(in srgb,var(--pv-grupo) 16%,#fff);font-size:.85rem}
-.pv-item[aria-current=page]{background:var(--pv-tinta);color:#fff;border-color:var(--pv-tinta);box-shadow:3px 3px 0 var(--pv-grupo)}
+.pv-item[aria-current=page]{background:var(--pv-tinta);color:var(--mk-superficie,#fff);border-color:var(--pv-tinta);box-shadow:3px 3px 0 var(--pv-grupo)}
 .pv-item[aria-current=page] .pv-item-icono{background:var(--pv-sol)}
 .pv-chispa{margin-left:auto;color:var(--pv-sol)}
 .pv-principal{min-width:0;padding:clamp(16px,3vw,32px) clamp(16px,3vw,36px) 120px;background-image:radial-gradient(color-mix(in srgb,var(--pv-tinta) 9%,transparent) 1px,transparent 1.4px);background-size:14px 14px}
@@ -1161,9 +1156,9 @@ const CSS = `
 .pv-titulo{margin:.05em 0 .1em;font-family:var(--pv-carta);font-weight:900;font-size:clamp(1.9rem,6vw,3rem);line-height:1.02;letter-spacing:-.01em}
 .pv-bajada{margin:0;color:#5E5A68;max-width:60ch;line-height:1.45}
 
-.pv-sombra{border-radius:16px;background:var(--pv-tinta);margin:6px 0 0 6px}
-.pv-hoja{position:relative;height:100%;box-sizing:border-box;padding:18px;border:2.5px solid var(--pv-tinta);border-radius:16px;background:#fff;transform:translate(-6px,-6px);transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
-.pv-hoja:hover{transform:translate(-8px,-8px)}
+.pv-sombra{border-radius:var(--mk-radio-tarjeta,16px)}
+.pv-hoja{position:relative;height:100%;box-sizing:border-box;padding:18px;border:var(--mk-trazo,2.5px solid var(--pv-tinta));border-radius:var(--mk-radio-tarjeta,16px);background:var(--mk-superficie,#fff);box-shadow:var(--mk-sombra,6px 6px 0 var(--pv-tinta));transition:transform .18s cubic-bezier(.3,1.6,.5,1)}
+.pv-hoja:hover{transform:var(--mk-levantar,translate(-2px,-2px))}
 .pv-h2{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:1.05rem;font-weight:800}
 .pv-nota{margin:0 0 12px;color:#5E5A68;font-size:.92rem;line-height:1.45}
 .pv-meta{display:block;color:#5E5A68;font-size:.85rem}
@@ -1171,7 +1166,7 @@ const CSS = `
 .pv-rojo{color:#c2410c}
 .pv-verde{color:#047857}
 
-.pv-boton{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;border:2px solid var(--pv-tinta);border-radius:10px;background:#fff;color:var(--pv-tinta);font:inherit;font-weight:700;text-decoration:none;cursor:pointer;box-shadow:3px 3px 0 var(--pv-tinta);transition:transform .12s}
+.pv-boton{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;border:var(--mk-trazo,2px solid var(--pv-tinta));border-radius:var(--mk-radio-boton,10px);background:var(--mk-superficie,#fff);color:var(--pv-tinta);font:inherit;font-weight:700;text-decoration:none;cursor:pointer;box-shadow:var(--mk-sombra-suave,3px 3px 0 var(--pv-tinta));transition:transform .12s}
 .pv-boton:hover{transform:translate(-1px,-1px)}
 .pv-boton:active{transform:translate(2px,2px)}
 .pv-boton:focus-visible{outline:3px solid #7c3aed;outline-offset:2px}

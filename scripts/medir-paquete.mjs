@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const DIST = "dist";
-const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz", "interfaz", "comic"];
+const ENTRADAS = ["motion-kit", "encabezado", "pagina", "momentos", "escena", "receta", "director", "partitura", "luz", "interfaz", "comic", "temas"];
 const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "estilos-momentos.css", "estilos-luz.css"];
 
 /**
@@ -40,7 +40,7 @@ const CSS = ["estilos.css", "estilos-encabezado.css", "estilos-pagina.css", "est
 // SubirImagen, avisos, Cargando y lo que llega).
 // 27-11-2026 (decisiones de Aquiles: «1 sí, 2 sí»): motion-kit 105 (nadie en La Mente importa el paquete entero), interfaz
 // 28 (el grupo 1: botón que guarda, copiar, confirmar, campo) y comic 14 (la entrada nueva con el cómic del panel).
-export const TOPES_KB = { "motion-kit": 105, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8, interfaz: 28, comic: 14 };
+export const TOPES_KB = { "motion-kit": 105, encabezado: 35, pagina: 17, momentos: 17, escena: 16, receta: 10, director: 10, partitura: 9, luz: 8, interfaz: 28, comic: 14, temas: 8 }; // temas: el catálogo, aprobado por Aquiles el 28-11
 /** Lo que importa el panel desde `motion-kit/interfaz`, con su tope (KB gzip, al cargar y con lo que no usa descartado). */
 const USOS = [
   { nombre: "motion-kit/interfaz { Accordion, CountUp }", entrada: "interfaz", piezas: ["Accordion", "CountUp"], tope: 5 },

@@ -91,6 +91,16 @@ createRoot(document.getElementById("raiz")!).render(
   </>,
 );
 `);
+// 2c. Un panel con un tema del catálogo (fase 2 de «Un solo motor»).
+writeFileSync(join(P, "panel-temas.tsx"), `
+import { createRoot } from "react-dom/client";
+import { Tema, variablesDeTema } from "motion-kit/temas";
+
+const cuerpo: Record<string, string> = variablesDeTema("taller", { para: "panel" });
+createRoot(document.getElementById("raiz")!).render(
+  <Tema tema="taller" para="panel"><p data-mk-parte="titulo">{cuerpo["--mk-trazo"]}</p></Tema>,
+);
+`);
 writeFileSync(join(P, "panel-completo.tsx"), `
 import { createRoot } from "react-dom/client";
 import { Cargando, SubirImagen, ToastProvider, useToast } from "motion-kit/interfaz";
@@ -114,7 +124,7 @@ createRoot(document.getElementById("raiz")!).render(<><CountUp to={128} /><Accor
 `);
 writeFileSync(join(P, "tsconfig.json"), JSON.stringify({
   compilerOptions: { target: "ES2020", lib: ["ES2020", "DOM"], module: "ESNext", moduleResolution: "bundler", jsx: "react-jsx", strict: true, noEmit: true, skipLibCheck: false },
-  files: ["pagina.tsx", "panel.tsx", "panel-completo.tsx", "panel-comic.tsx"],
+  files: ["pagina.tsx", "panel.tsx", "panel-completo.tsx", "panel-comic.tsx", "panel-temas.tsx"],
 }));
 
 let fallos = 0;
@@ -200,6 +210,18 @@ const textoComic = Object.keys(comic.metafile.outputs).filter((f) => f.endsWith(
 for (const pieza of ["mk-lienzo", "mk-capa", "mk-escena", "mk-enc", "mk-relato"]) ok(!textoComic.includes(pieza), `no se cuela «${pieza}» en el panel con el cómic`);
 const pesoComic = Object.keys(comic.metafile.outputs).filter((f) => f.endsWith(".js")).reduce((s, f) => s + gzipSync(readFileSync(join(P, f)), { level: 9 }).length, 0) / 1000;
 ok(pesoComic < 10, `el panel con el botón que guarda y la guía pesa ${pesoComic.toFixed(1)} KB comprimidos (menos de 10)`);
+
+// 8. El panel con un tema: solo motion-kit/temas (y lo poco de interfaz que usa), sin nada pesado; la firma va aparte.
+const temas = await build({
+  entryPoints: [join(P, "panel-temas.tsx")], absWorkingDir: P, bundle: true, splitting: true, format: "esm", minify: true,
+  outdir: join(P, "salida-panel-temas"), metafile: true, write: true, jsx: "automatic", external: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"], logLevel: "error",
+});
+const delKitTemas = Object.keys(temas.metafile.inputs).filter((f) => f.includes("node_modules/motion-kit/"));
+const ajenosTemas = delKitTemas.filter((f) => /\/(motion-kit|encabezado|pagina|escena|momentos|director|partitura|luz|comic)\.js$/.test(f));
+ok(delKitTemas.some((f) => f.endsWith("/temas.js")) && ajenosTemas.length === 0, "el panel con un tema solo trae motion-kit/temas" + (ajenosTemas.length ? ": " + ajenosTemas.join(", ") : ""));
+const entradaTemas = Object.entries(temas.metafile.outputs).find(([, o]) => o.entryPoint)?.[0];
+const pesoTemas = gzipSync(readFileSync(join(P, entradaTemas)), { level: 9 }).length / 1000;
+ok(pesoTemas < 9, `el panel con un tema pesa ${pesoTemas.toFixed(1)} KB comprimidos al cargar (menos de 9; la firma se baja aparte)`);
 
 console.log(fallos ? `\n${fallos} fallas` : "\ntodo bien");
 process.exit(fallos ? 1 : 0);

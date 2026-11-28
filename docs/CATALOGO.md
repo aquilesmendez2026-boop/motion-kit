@@ -101,6 +101,29 @@ Ordenado por cuánto aportan a una plantilla.
 | `Cursor` personalizado | Sitios de portafolio | Solo con puntero fino |
 | `BrowserFrame` | Marco de navegador para capturas | Par de `DeviceFrame` |
 
+## Paquete v0.8.0 (28-11-2026)
+
+Etiqueta `v0.8.0`: fase 2 de «Un solo motor», **los temas como datos** (ver «Temas como datos»). Entrada nueva
+`motion-kit/temas` (7,9 de 8 KB; las firmas se bajan aparte) y contrato nuevo `contrato/temas-motionkit.json`
+(versión 1): 12 paletas, 25 temas, 24 mezclas y 13 adornos. Ningún otro contrato cambia. Se instala con
+`github:aquilesmendez2026-boop/motion-kit#v0.8.0`.
+
+**Antes de la etiqueta** (regla nueva de Aquiles del 28-11, «siempre solo lo que cambió»):
+- `verificar --desde=v0.7.0`: 6 de 6 (`estilos`, `efectos`, `piezas`, `panel`, `director`, `temas`);
+- la pasada rápida;
+- 411 pruebas calculables, `npm run temas` (en las dos direcciones), `npm run tabla` y `probar-paquete`.
+
+**Revisión final en Opus:** 2 críticos y 5 importantes, todos arreglados con su prueba:
+- las firmas del panel se colaban en la página;
+- cambiar de tema en vivo dejaba el nuevo sin firma;
+- «rock» del panel heredaba la letra de la página;
+- las letras no traían sus pesos;
+- una paleta desconocida dejaba la página sin colores;
+- `npm run temas` comparaba en una sola dirección;
+- faltaba precisión en el encargo al front.
+
+Quedan 6 menores anotados.
+
 ## Paquete v0.7.0 (28-11-2026)
 
 Etiqueta `v0.7.0`: fase 1 de «Un solo motor», **el ADN** (ver «ADN: forma, letra y ritmo»). Las piezas de `interfaz` y
@@ -1248,6 +1271,37 @@ Pesos (gzip, lo que importa una app desde `dist`): `{ BotonQueGuarda }` 1,6 KB, 
 Pruebas: `pruebas/{comic-dibujos,boton-guarda,copiar-campo,foco,guia}.test.ts` y `scripts/verificar-comic.mjs` (partes
 `dibujos`, `boton`, `copiar`, `campo`, `confirmar`, `vacio`, `guia`, `celebrar`; teléfono y escritorio; también con el
 motor de Safari); `#comic` en la pasada rápida; `probar-paquete` arma un panel con `BotonQueGuarda` y `Guia`.
+
+## Temas como datos (28-11-2026)
+
+Fase 2 de «Un solo motor» (plan `docs/superpowers/plans/2026-11-28-un-solo-motor-fase-2.md`). `motion-kit/temas` trae
+el catálogo (`TEMAS`, `PALETAS`; las mezclas van solo en el contrato), `variablesDeTema`, `buscarTema`, `<Tema>` y
+`cargarLetra`. Un tema dice:
+- para qué lado sirve (`pagina`, `panel` o los dos, con su versión del panel aparte);
+- sus colores (o su paleta por defecto), su forma, su letra y su ritmo;
+- sus variables de detalle (las de las piezas del panel, como `--mk-campo-foco`);
+- sus adornos y cómo se mueve (`movimiento`: el efecto del título, la tarjeta, la transición y la luz).
+
+**Reglas:**
+- **`variablesDeTema` declara todas las variables:** lo que el tema no define va como `initial`, así cada pieza usa su
+  respaldo y la caja corta lo que hereda. Una página dentro del panel muestra lo suyo.
+- **Los adornos apuntan a partes marcadas** (`data-mk-adorno`, puede llevar varias; no `data-mk-parte`, que es del
+  director y del encabezado), solo en el lado panel y nunca dentro de una página anidada: `hoja`, `titulo`, `icono`, `barra`,
+  `grupo`, `cabeza`, `estado`, `boton`, `vacio`. La sección elegida de una barra es
+  `[role="tab"][aria-selected="true"]` o `[aria-current="page"]`.
+- **Los adornos se bajan aparte** y solo si el tema tiene firma.
+- **Los ids solo se suman** (regla del backend).
+- **Lo que se dibuja en `<body>`** (avisos, `Confirmar`) toma el tema si `<body>` lleva sus variables
+  (`variablesDeTema`), sin la marca entera. Así lo hace el front con `data-tema-panel-cuerpo`.
+
+**Fuente y revisión:** `src/temas/datos/` (importado del front el 28-11 con `scripts/temas-del-front.mjs importar` y
+`adornos`); `npm run temas` lo compara con el CSS del front.
+
+**La copia chica de la página** (`src/receta/lamente.ts`) se queda, porque viaja en `encabezado` y `receta`. Una prueba
+exige que sea igual al catálogo.
+
+**Pruebas:** `pruebas/temas.test.ts`, `pruebas/contratos.test.ts`, `scripts/verificar-temas.mjs` y la parte `vivo` de
+`verificar-panel`.
 
 ## Regla de los contratos (28-11-2026)
 

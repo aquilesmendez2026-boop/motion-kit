@@ -663,7 +663,7 @@ if (parte("vivo")) {
     revisar(errores.length === 0, `vivo (teléfono): sin errores${errores.length ? ` (${errores[0]})` : ""}`);
     await ctx.close();
   }
-  // El selector «Forma» pone el ADN en :root: el globo de Confirmar toma el radio de «Manga» y vuelve al de siempre.
+  // El selector «Tema» (el catálogo, fase 2): el globo de Confirmar toma el radio de cada tema y vuelve.
   {
     const { ctx, pagina, errores } = await abrirVivo(ESCRITORIO, "colaboraciones");
     const radioGlobo = async () => {
@@ -676,11 +676,12 @@ if (parte("vivo")) {
       return r;
     };
     const antes = await radioGlobo();
-    await pagina.selectOption("[data-prueba=forma]", "manga");
-    const manga = await radioGlobo();
-    await pagina.selectOption("[data-prueba=forma]", "lamente");
+    await pagina.selectOption("[data-prueba=tema]", "taller");
+    const taller = await radioGlobo();
+    const marca = await pagina.$eval(".pv-panel", (el) => el.dataset.mkTema);
+    await pagina.selectOption("[data-prueba=tema]", "lamente");
     const despues = await radioGlobo();
-    revisar(antes === "20px" && manga === "16px" && despues === "20px", `vivo: el selector «Forma» cambia la forma de las piezas y vuelve (${antes} → ${manga} → ${despues})`);
+    revisar(antes === "16px" && taller === "0px" && despues === "16px" && marca === "taller", `vivo: el selector «Tema» cambia la forma de las piezas y vuelve (${antes} → ${taller} → ${despues}, ${marca})`);
     revisar(errores.length === 0, `vivo: el selector sin errores${errores.length ? ` (${errores[0]})` : ""}`);
     await ctx.close();
   }
